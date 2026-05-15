@@ -28,7 +28,12 @@
   <div class="sidebar-section">
     <p class="sidebar-label">Tickets</p>
     <a href="/tickets/nuevo"><span class="icon">🎫</span> Nuevo Ticket</a>
-    <a href="/tickets"><span class="icon">📋</span> Ver Tickets</a>
+    <a href="/tickets" style="justify-content:space-between">
+      <span><span class="icon">📋</span> Ver Tickets</span>
+      <% if (tickets_badge > 0) { %>
+        <span class="sidebar-badge"><%= tickets_badge %></span>
+      <% } %>
+    </a>
   </div>
   <% if (usuario.rol === 'admin') { %>
   <div class="sidebar-section">
@@ -38,9 +43,11 @@
   </div>
   <% } %>
   <div class="sidebar-footer">
-    <div><strong><%= usuario.nombre %></strong></div>
-    <div style="font-size:10px;opacity:.7;margin-top:1px"><%= usuario.rol %></div>
-    <div><%= usuario.area_nombre %></div>
+    <a href="/perfil" class="sidebar-footer-link">
+      <div><strong><%= usuario.nombre %></strong></div>
+      <div style="font-size:10px;opacity:.7;margin-top:1px"><%= usuario.rol %></div>
+      <div><%= usuario.area_nombre %></div>
+    </a>
   </div>
 </div>
 

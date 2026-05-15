@@ -3,7 +3,7 @@ const session = require('express-session');
 const flash = require('connect-flash');
 const morgan = require('morgan');
 const path = require('path');
-const { initDB } = require('./database/db');
+const { initDB, query } = require('./database/db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,6 +31,23 @@ app.use((req, res, next) => {
   res.locals.usuario = req.session.usuario || null;
   res.locals.success = req.flash('success');
   res.locals.error = req.flash('error');
+  res.locals.tickets_badge = 0;
+  next();
+});
+
+// Badge: contador de tickets abiertos/en_proceso visibles para el usuario
+app.use(async (req, res, next) => {
+  const u = req.session.usuario;
+  if (!u) return next();
+  try {
+    const esGlobal = ['admin', 'director'].includes(u.rol);
+    const where = esGlobal
+      ? "estatus IN ('abierto','en_proceso')"
+      : "estatus IN ('abierto','en_proceso') AND (area_solicitante_id=? OR area_asignada_id=?)";
+    const params = esGlobal ? [] : [u.area_id, u.area_id];
+    const [row] = await query(`SELECT COUNT(*) as c FROM tickets WHERE ${where}`, params);
+    res.locals.tickets_badge = row.c;
+  } catch (_) { /* no interrumpir la petición si falla */ }
   next();
 });
 
@@ -40,6 +57,7 @@ app.use('/dashboard', require('./routes/dashboard'));
 app.use('/usuarios', require('./routes/usuarios'));
 app.use('/tickets', require('./routes/tickets'));
 app.use('/areas', require('./routes/areas'));
+app.use('/perfil', require('./routes/perfil'));
 
 app.get('/', (req, res) => {
   if (req.session.usuario) return res.redirect('/dashboard');

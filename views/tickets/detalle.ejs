@@ -26,8 +26,11 @@
     <% if (success && success.length) { %><div class="alert alert-success">✓ <%= success[0] %></div><% } %>
     <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
 
-    <div class="flex items-center mb-16">
+    <div class="flex items-center mb-16" style="gap:8px">
       <a href="/tickets" class="btn btn-secondary">← Regresar</a>
+      <% if (!['resuelto','cerrado'].includes(ticket.estatus)) { %>
+        <a href="/tickets/<%= ticket.id %>/editar" class="btn btn-secondary">✏ Editar</a>
+      <% } %>
     </div>
 
     <div class="two-col" style="align-items:start">

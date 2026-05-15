@@ -215,4 +215,42 @@ router.post('/:id/asignar', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ── Editar ticket ────────────────────────────────────────────────
+router.get('/:id/editar', requireAuth, async (req, res, next) => {
+  try {
+    const [ticket] = await query('SELECT * FROM tickets WHERE id=?', [req.params.id]);
+    if (!ticket) { req.flash('error', 'Ticket no encontrado'); return res.redirect('/tickets'); }
+    const areas = await query('SELECT * FROM areas WHERE activa=1 ORDER BY nombre');
+    res.render('tickets/edit', {
+      titulo: `Editar Ticket ${ticket.folio}`,
+      ticket, areas, CATEGORIAS, PRIORIDADES,
+    });
+  } catch (err) { next(err); }
+});
+
+router.post('/:id/editar', requireAuth, async (req, res, next) => {
+  try {
+    const { titulo, descripcion, categoria, prioridad, area_solicitante_id, area_asignada_id, fecha_limite } = req.body;
+    const [before] = await query('SELECT titulo, prioridad FROM tickets WHERE id=?', [req.params.id]);
+    await query(
+      `UPDATE tickets SET titulo=?, descripcion=?, categoria=?, prioridad=?,
+       area_solicitante_id=?, area_asignada_id=?, fecha_limite=? WHERE id=?`,
+      [titulo, descripcion, categoria, prioridad,
+       area_solicitante_id || null, area_asignada_id || null,
+       fecha_limite || null, req.params.id]
+    );
+    const cambios = [];
+    if (before.titulo !== titulo) cambios.push(`título cambiado`);
+    if (before.prioridad !== prioridad) cambios.push(`prioridad: ${before.prioridad} → ${prioridad}`);
+    if (cambios.length) {
+      await query(
+        'INSERT INTO ticket_comentarios (ticket_id, usuario_id, comentario, tipo) VALUES (?,?,?,?)',
+        [req.params.id, req.session.usuario.id, `Ticket editado: ${cambios.join(', ')}`, 'cambio_estado']
+      );
+    }
+    req.flash('success', 'Ticket actualizado correctamente');
+    res.redirect(`/tickets/${req.params.id}`);
+  } catch (err) { next(err); }
+});
+
 module.exports = router;
