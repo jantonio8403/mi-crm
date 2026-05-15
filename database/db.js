@@ -83,6 +83,15 @@ async function initDB() {
     FOREIGN KEY (registrado_por_id) REFERENCES usuarios(id)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
 
+  // Migrar: agregar columna descripcion a areas
+  const [descCol] = await query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='areas' AND COLUMN_NAME='descripcion'`
+  );
+  if (!descCol) {
+    await query(`ALTER TABLE areas ADD COLUMN descripcion VARCHAR(255) NULL AFTER nombre`);
+  }
+
   // Migrar columna rol si aún tiene valores viejos
   const [colInfo] = await query(
     `SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS

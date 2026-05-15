@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1>Gestión de Áreas</h1>
+    <div class="topbar-user">
+      <span><%= usuario.nombre %></span>
+      <a href="/logout">Cerrar sesión</a>
+    </div>
+  </div>
+  <div class="page-content">
+    <% if (success && success.length) { %><div class="alert alert-success">✓ <%= success[0] %></div><% } %>
+    <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+
+    <div class="flex items-center justify-between mb-16">
+      <p class="text-gris text-sm"><%= areas.length %> áreas registradas</p>
+      <a href="/areas/nueva" class="btn btn-primary">+ Nueva Área</a>
+    </div>
+
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Descripción</th>
+              <th>Responsable</th>
+              <th>Estatus</th>
+              <th style="width:160px">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+          <% if (areas.length === 0) { %>
+            <tr><td colspan="5" class="text-center text-gris" style="padding:30px">No hay áreas registradas</td></tr>
+          <% } %>
+          <% areas.forEach(a => { %>
+            <tr>
+              <td><strong><%= a.nombre %></strong></td>
+              <td class="text-gris text-sm"><%= a.descripcion || '—' %></td>
+              <td class="text-sm"><%= a.responsable || '—' %></td>
+              <td>
+                <span class="badge" style="background:<%= a.activa ? '#d1fae5' : '#f3f4f6' %>;color:<%= a.activa ? '#065f46' : '#6b7280' %>">
+                  <%= a.activa ? 'Activa' : 'Inactiva' %>
+                </span>
+              </td>
+              <td>
+                <div class="flex gap-8">
+                  <a href="/areas/<%= a.id %>/editar" class="btn btn-sm btn-secondary">Editar</a>
+                  <form method="POST" action="/areas/<%= a.id %>/toggle" style="display:inline">
+                    <button type="submit" class="btn btn-sm <%= a.activa ? 'btn-danger' : 'btn-secondary' %>"
+                      onclick="return confirm('<%= a.activa ? '¿Desactivar' : '¿Activar' %> el área \"<%= a.nombre %>\"?')">
+                      <%= a.activa ? 'Desactivar' : 'Activar' %>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+</body></html>

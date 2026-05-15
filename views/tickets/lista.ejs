@@ -64,6 +64,12 @@
           <option value="<%= v %>" <%= filtros.categoria===v?'selected':'' %>><%= l %></option>
         <% }) %>
       </select>
+      <select name="area">
+        <option value="">Todas las áreas</option>
+        <% areas.forEach(a => { %>
+          <option value="<%= a.id %>" <%= filtros.area==a.id?'selected':'' %>><%= a.nombre %></option>
+        <% }) %>
+      </select>
       <button type="submit" class="btn btn-secondary">Filtrar</button>
       <a href="/tickets" class="btn btn-secondary">Limpiar</a>
     </form>
@@ -110,14 +116,14 @@
       <% if (paginacion.pages > 1) { %>
       <div class="pagination mt-16">
         <% if (paginacion.page > 1) { %>
-          <a href="?page=<%= paginacion.page-1 %>&buscar=<%= filtros.buscar||'' %>&estatus=<%= filtros.estatus||'' %>&prioridad=<%= filtros.prioridad||'' %>&categoria=<%= filtros.categoria||'' %>">‹</a>
+          <a href="?page=<%= paginacion.page-1 %>&buscar=<%= filtros.buscar||'' %>&estatus=<%= filtros.estatus||'' %>&prioridad=<%= filtros.prioridad||'' %>&categoria=<%= filtros.categoria||'' %>&area=<%= filtros.area||'' %>">‹</a>
         <% } %>
         <% for(let i=1;i<=paginacion.pages;i++){ %>
-          <a href="?page=<%= i %>&buscar=<%= filtros.buscar||'' %>&estatus=<%= filtros.estatus||'' %>&prioridad=<%= filtros.prioridad||'' %>&categoria=<%= filtros.categoria||'' %>"
+          <a href="?page=<%= i %>&buscar=<%= filtros.buscar||'' %>&estatus=<%= filtros.estatus||'' %>&prioridad=<%= filtros.prioridad||'' %>&categoria=<%= filtros.categoria||'' %>&area=<%= filtros.area||'' %>"
              class="<%= i===paginacion.page?'activo':'' %>"><%= i %></a>
         <% } %>
         <% if (paginacion.page < paginacion.pages) { %>
-          <a href="?page=<%= paginacion.page+1 %>&buscar=<%= filtros.buscar||'' %>&estatus=<%= filtros.estatus||'' %>&prioridad=<%= filtros.prioridad||'' %>&categoria=<%= filtros.categoria||'' %>">›</a>
+          <a href="?page=<%= paginacion.page+1 %>&buscar=<%= filtros.buscar||'' %>&estatus=<%= filtros.estatus||'' %>&prioridad=<%= filtros.prioridad||'' %>&categoria=<%= filtros.categoria||'' %>&area=<%= filtros.area||'' %>">›</a>
         <% } %>
       </div>
       <% } %>

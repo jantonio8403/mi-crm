@@ -35,7 +35,7 @@ async function siguienteFolioTicket() {
 // ── Lista ────────────────────────────────────────────────────────
 router.get('/', requireAuth, async (req, res, next) => {
   try {
-    const { estatus, prioridad, categoria, buscar, page = 1 } = req.query;
+    const { estatus, prioridad, categoria, area, buscar, page = 1 } = req.query;
     const limit = 15;
     const offset = (parseInt(page) - 1) * limit;
     const u = req.session.usuario;
@@ -49,9 +49,10 @@ router.get('/', requireAuth, async (req, res, next) => {
       params.push(u.area_id, u.area_id);
     }
 
-    if (estatus)   { where += ' AND t.estatus=?';    params.push(estatus); }
-    if (prioridad) { where += ' AND t.prioridad=?';  params.push(prioridad); }
-    if (categoria) { where += ' AND t.categoria=?';  params.push(categoria); }
+    if (estatus)   { where += ' AND t.estatus=?';                           params.push(estatus); }
+    if (prioridad) { where += ' AND t.prioridad=?';                         params.push(prioridad); }
+    if (categoria) { where += ' AND t.categoria=?';                         params.push(categoria); }
+    if (area)      { where += ' AND (t.area_solicitante_id=? OR t.area_asignada_id=?)'; params.push(area, area); }
     if (buscar)    {
       where += ' AND (t.folio LIKE ? OR t.titulo LIKE ?)';
       params.push(`%${buscar}%`, `%${buscar}%`);
@@ -89,7 +90,7 @@ router.get('/', requireAuth, async (req, res, next) => {
     res.render('tickets/lista', {
       titulo: 'Tickets', tickets, areas, stats,
       CATEGORIAS, PRIORIDADES,
-      filtros: { estatus, prioridad, categoria, buscar },
+      filtros: { estatus, prioridad, categoria, area, buscar },
       paginacion: { page: parseInt(page), total, limit, pages: Math.ceil(total / limit) },
     });
   } catch (err) { next(err); }
