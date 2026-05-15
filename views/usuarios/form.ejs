@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1><%= titulo %></h1>
+    <div class="topbar-user">
+      <span><%= usuario.nombre %></span>
+      <a href="/logout">Cerrar sesión</a>
+    </div>
+  </div>
+  <div class="page-content">
+    <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+
+    <div class="flex items-center mb-16">
+      <a href="/usuarios" class="btn btn-secondary">← Regresar</a>
+    </div>
+
+    <div class="card" style="max-width:680px">
+      <form method="POST" action="<%= accion %>">
+
+        <h4 style="margin-bottom:16px;color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em">
+          Datos personales
+        </h4>
+        <div class="form-grid">
+          <div class="form-group form-full">
+            <label>Nombre completo *</label>
+            <input type="text" name="nombre" required
+                   value="<%= usuarioEdit ? usuarioEdit.nombre : '' %>"
+                   placeholder="Nombre completo del usuario">
+          </div>
+          <div class="form-group">
+            <label>Cargo / Puesto</label>
+            <input type="text" name="cargo"
+                   value="<%= usuarioEdit ? (usuarioEdit.cargo || '') : '' %>"
+                   placeholder="Ej. Jefe de Enfermería">
+          </div>
+          <div class="form-group">
+            <label>Área</label>
+            <select name="area_id">
+              <option value="">— Sin área asignada —</option>
+              <% areas.forEach(a => { %>
+                <option value="<%= a.id %>"
+                  <%= usuarioEdit && usuarioEdit.area_id == a.id ? 'selected' : '' %>>
+                  <%= a.nombre %>
+                </option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--borde);margin:20px 0">
+        <h4 style="margin-bottom:16px;color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em">
+          Acceso al sistema
+        </h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nombre de usuario *</label>
+            <input type="text" name="username" required
+                   value="<%= usuarioEdit ? usuarioEdit.username : '' %>"
+                   placeholder="Sin espacios ni caracteres especiales"
+                   autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label>Rol *</label>
+            <select name="rol" required>
+              <% Object.entries(ROLES).forEach(([val, label]) => { %>
+                <option value="<%= val %>"
+                  <%= usuarioEdit && usuarioEdit.rol === val ? 'selected' : (val === 'secretaria' && !usuarioEdit ? 'selected' : '') %>>
+                  <%= label %>
+                </option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="form-group form-full">
+            <label><%= usuarioEdit ? 'Nueva contraseña (dejar vacío para no cambiar)' : 'Contraseña *' %></label>
+            <input type="password" name="password"
+                   <%= !usuarioEdit ? 'required' : '' %>
+                   placeholder="Mínimo 6 caracteres"
+                   autocomplete="new-password">
+          </div>
+        </div>
+
+        <div class="flex gap-8 mt-16">
+          <button type="submit" class="btn btn-primary">
+            <%= usuarioEdit ? 'Guardar cambios' : 'Crear usuario' %>
+          </button>
+          <a href="/usuarios" class="btn btn-secondary">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+</body></html>

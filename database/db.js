@@ -83,6 +83,16 @@ async function initDB() {
     FOREIGN KEY (registrado_por_id) REFERENCES usuarios(id)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
 
+  // Migrar columna rol si aún tiene valores viejos
+  const [colInfo] = await query(
+    `SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usuarios' AND COLUMN_NAME = 'rol'`
+  );
+  if (colInfo && !colInfo.COLUMN_TYPE.includes('jefe_area')) {
+    await query(`UPDATE usuarios SET rol='secretaria' WHERE rol NOT IN ('admin','director','jefe_area','secretaria','recepcion')`);
+    await query(`ALTER TABLE usuarios MODIFY COLUMN rol ENUM('admin','director','jefe_area','secretaria','recepcion') NOT NULL DEFAULT 'secretaria'`);
+  }
+
   // Datos iniciales solo si las tablas están vacías
   const [countRow] = await query('SELECT COUNT(*) as c FROM areas');
   if (countRow.c === 0) {

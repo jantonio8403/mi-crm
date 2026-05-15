@@ -25,8 +25,15 @@
     <a href="/correspondencia/entrante/nuevo"><span class="icon">➕</span> Registrar Recibido</a>
     <a href="/correspondencia/entrante"><span class="icon">📥</span> Recibidos</a>
   </div>
+  <% if (usuario.rol === 'admin') { %>
+  <div class="sidebar-section">
+    <p class="sidebar-label">Administración</p>
+    <a href="/usuarios"><span class="icon">👥</span> Usuarios</a>
+  </div>
+  <% } %>
   <div class="sidebar-footer">
     <div><strong><%= usuario.nombre %></strong></div>
+    <div style="font-size:10px;opacity:.7;margin-top:1px"><%= usuario.rol %></div>
     <div><%= usuario.area_nombre %></div>
   </div>
 </div>

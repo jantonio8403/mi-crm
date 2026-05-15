@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1><%= titulo %></h1>
+    <div class="topbar-user">
+      <span><%= usuario.nombre %></span>
+      <a href="/logout">Cerrar sesión</a>
+    </div>
+  </div>
+  <div class="page-content">
+    <% if (success && success.length) { %><div class="alert alert-success">✓ <%= success[0] %></div><% } %>
+    <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+
+    <div class="flex items-center justify-between mb-16">
+      <a href="/usuarios/nuevo" class="btn btn-primary">+ Nuevo Usuario</a>
+    </div>
+
+    <!-- Filtros -->
+    <form method="GET" class="filtros-bar">
+      <input type="search" name="buscar" placeholder="Buscar por nombre o usuario..." value="<%= filtros.buscar || '' %>">
+      <select name="rol">
+        <option value="">Todos los roles</option>
+        <% Object.entries(ROLES).forEach(([val, label]) => { %>
+          <option value="<%= val %>" <%= filtros.rol === val ? 'selected' : '' %>><%= label %></option>
+        <% }) %>
+      </select>
+      <select name="area_id">
+        <option value="">Todas las áreas</option>
+        <% areas.forEach(a => { %>
+          <option value="<%= a.id %>" <%= filtros.area_id == a.id ? 'selected' : '' %>><%= a.nombre %></option>
+        <% }) %>
+      </select>
+      <button type="submit" class="btn btn-secondary">Filtrar</button>
+      <a href="/usuarios" class="btn btn-secondary">Limpiar</a>
+    </form>
+
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th><th>Usuario</th><th>Cargo</th>
+              <th>Rol</th><th>Área</th><th>Estatus</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+          <% if (usuarios.length === 0) { %>
+            <tr><td colspan="7" class="text-center text-gris" style="padding:30px">No hay usuarios registrados</td></tr>
+          <% } %>
+          <% usuarios.forEach(u => { %>
+            <tr style="<%= !u.activo ? 'opacity:.5' : '' %>">
+              <td><strong><%= u.nombre %></strong></td>
+              <td><code style="font-size:12px;background:var(--gris-claro);padding:2px 6px;border-radius:4px"><%= u.username %></code></td>
+              <td class="text-sm text-gris"><%= u.cargo || '—' %></td>
+              <td>
+                <span class="badge" style="background:var(--verde-fondo);color:var(--verde)">
+                  <%= ROLES[u.rol] || u.rol %>
+                </span>
+              </td>
+              <td class="text-sm"><%= u.area_nombre || '—' %></td>
+              <td>
+                <% if (u.activo) { %>
+                  <span class="badge badge-enviado">Activo</span>
+                <% } else { %>
+                  <span class="badge badge-archivado">Inactivo</span>
+                <% } %>
+              </td>
+              <td>
+                <div class="flex gap-8">
+                  <a href="/usuarios/<%= u.id %>/editar" class="btn btn-sm btn-secondary">Editar</a>
+                  <% if (usuario.id !== u.id) { %>
+                    <form method="POST" action="/usuarios/<%= u.id %>/toggle" style="display:inline"
+                          onsubmit="return confirm('<%= u.activo ? '¿Desactivar' : '¿Activar' %> este usuario?')">
+                      <button type="submit" class="btn btn-sm <%= u.activo ? 'btn-danger' : 'btn-secondary' %>">
+                        <%= u.activo ? 'Desactivar' : 'Activar' %>
+                      </button>
+                    </form>
+                  <% } %>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Info de roles -->
+    <div class="card mt-16">
+      <div class="card-header"><h3>Descripción de roles</h3></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;font-size:13px">
+        <div><strong>Administrador</strong><br><span class="text-gris">Acceso total al sistema</span></div>
+        <div><strong>Director</strong><br><span class="text-gris">Ve toda la correspondencia y tickets</span></div>
+        <div><strong>Jefe de Área</strong><br><span class="text-gris">Ve documentos de su área</span></div>
+        <div><strong>Secretaria</strong><br><span class="text-gris">Crea y edita documentos de su área</span></div>
+        <div><strong>Recepción</strong><br><span class="text-gris">Solo registra correspondencia entrante</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+</body></html>
