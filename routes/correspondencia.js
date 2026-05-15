@@ -94,18 +94,21 @@ router.get('/salientes/nuevo', requireAuth, async (req, res) => {
 router.post('/salientes', requireAuth, async (req, res, next) => {
   try {
     const { tipo, fecha_emision, asunto, destinatario, cargo_destinatario,
-            institucion_destinatario, contenido, area_emisora_id } = req.body;
+            institucion_destinatario, contenido, area_emisora_id,
+            firmante_nombre, firmante_cargo } = req.body;
 
     const { consecutivo, anio, numero_folio } = await siguienteFolio(tipo);
 
     const result = await query(
       `INSERT INTO documentos_salientes
        (tipo, numero_folio, consecutivo, anio, fecha_emision, asunto, destinatario,
-        cargo_destinatario, institucion_destinatario, contenido, area_emisora_id, elaborado_por_id, estatus)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'borrador')`,
+        cargo_destinatario, institucion_destinatario, contenido, area_emisora_id,
+        elaborado_por_id, firmante_nombre, firmante_cargo, estatus)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,'borrador')`,
       [tipo, numero_folio, consecutivo, anio, fecha_emision, asunto, destinatario,
        cargo_destinatario || null, institucion_destinatario || null,
-       contenido, area_emisora_id || null, req.session.usuario.id]
+       contenido, area_emisora_id || null, req.session.usuario.id,
+       firmante_nombre || null, firmante_cargo || null]
     );
     const id = result.insertId;
 
@@ -146,6 +149,17 @@ router.post('/salientes/:id/estatus', requireAuth, async (req, res, next) => {
     const { estatus } = req.body;
     await query('UPDATE documentos_salientes SET estatus=? WHERE id=?', [estatus, req.params.id]);
     req.flash('success', 'Estatus actualizado');
+    res.redirect(`/correspondencia/salientes/${req.params.id}`);
+  } catch (err) { next(err); }
+});
+
+router.post('/salientes/:id/leer', requireAuth, async (req, res, next) => {
+  try {
+    await query(
+      `UPDATE documentos_salientes SET leido_en=NOW() WHERE id=? AND tipo='memorandum' AND leido_en IS NULL`,
+      [req.params.id]
+    );
+    req.flash('success', 'Memorándum marcado como leído');
     res.redirect(`/correspondencia/salientes/${req.params.id}`);
   } catch (err) { next(err); }
 });

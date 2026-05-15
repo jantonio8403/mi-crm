@@ -38,6 +38,7 @@ app.use('/', require('./routes/auth'));
 app.use('/correspondencia', require('./routes/correspondencia'));
 app.use('/dashboard', require('./routes/dashboard'));
 app.use('/usuarios', require('./routes/usuarios'));
+app.use('/tickets', require('./routes/tickets'));
 
 app.get('/', (req, res) => {
   if (req.session.usuario) return res.redirect('/dashboard');

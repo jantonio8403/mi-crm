@@ -70,11 +70,17 @@ function generarOficioPDF(documento, ruta) {
 
     // ─── Firma ────────────────────────────────────────────────────
     const firmaX = 300;
+    const firmaNombre = documento.firmante_nombre || 'DIRECTOR DEL HOSPITAL';
+    const firmaCargo  = documento.firmante_cargo  || '';
     doc.moveTo(firmaX, doc.y).lineTo(firmaX + 200, doc.y).stroke();
     doc.moveDown(0.3);
     doc.fontSize(9).font('Helvetica-Bold')
-      .text('DIRECTOR DEL HOSPITAL', firmaX, doc.y, { width: 200, align: 'center' })
-      .font('Helvetica')
+      .text(firmaNombre.toUpperCase(), firmaX, doc.y, { width: 200, align: 'center' });
+    if (firmaCargo) {
+      doc.font('Helvetica')
+        .text(firmaCargo, firmaX, doc.y, { width: 200, align: 'center' });
+    }
+    doc.font('Helvetica')
       .text('HOSPITAL BÁSICO COMUNITARIO', firmaX, doc.y, { width: 200, align: 'center' })
       .text('12 CAMAS, BERRIOZABAL, CHIS.', firmaX, doc.y, { width: 200, align: 'center' });
 

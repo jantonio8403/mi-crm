@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <style>
+    .comentario { background:#f9fafb;border:1px solid var(--borde);border-radius:8px;padding:12px 14px;margin-bottom:10px; }
+    .comentario.cambio_estado { background:#eff6ff;border-color:#bfdbfe; }
+    .comentario.asignacion { background:#f0fdf4;border-color:#bbf7d0; }
+    .comentario-meta { font-size:11px;color:var(--gris);margin-bottom:4px; }
+    .comentario-body { font-size:13px; }
+  </style>
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1>Ticket <%= ticket.folio %></h1>
+    <div class="topbar-user">
+      <span><%= usuario.nombre %></span>
+      <a href="/logout">Cerrar sesión</a>
+    </div>
+  </div>
+  <div class="page-content">
+    <% if (success && success.length) { %><div class="alert alert-success">✓ <%= success[0] %></div><% } %>
+    <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+
+    <div class="flex items-center mb-16">
+      <a href="/tickets" class="btn btn-secondary">← Regresar</a>
+    </div>
+
+    <div class="two-col" style="align-items:start">
+      <!-- Detalle principal -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <div class="card-header">
+            <h3><%= ticket.titulo %></h3>
+            <span class="badge" style="background:<%=PRIORIDADES[ticket.prioridad].color%>20;color:<%=PRIORIDADES[ticket.prioridad].color%>">
+              <%= PRIORIDADES[ticket.prioridad].label %>
+            </span>
+          </div>
+          <div class="detalle-grid">
+            <div class="detalle-item">
+              <label>Folio</label>
+              <p><strong><%= ticket.folio %></strong></p>
+            </div>
+            <div class="detalle-item">
+              <label>Categoría</label>
+              <p><%= CATEGORIAS[ticket.categoria] %></p>
+            </div>
+            <div class="detalle-item">
+              <label>Área solicitante</label>
+              <p><%= ticket.area_sol_nombre || '—' %></p>
+            </div>
+            <div class="detalle-item">
+              <label>Área asignada</label>
+              <p><%= ticket.area_asig_nombre || '—' %></p>
+            </div>
+            <div class="detalle-item">
+              <label>Solicitó</label>
+              <p><%= ticket.solicitante_nombre || '—' %></p>
+            </div>
+            <div class="detalle-item">
+              <label>Responsable</label>
+              <p><%= ticket.asignado_nombre || '—' %></p>
+            </div>
+            <div class="detalle-item">
+              <label>Creado</label>
+              <p><%= ticket.creado_en %></p>
+            </div>
+            <div class="detalle-item">
+              <label>Fecha límite</label>
+              <p class="<%= ticket.fecha_limite && ticket.fecha_limite <= new Date().toISOString().split('T')[0] && !['resuelto','cerrado'].includes(ticket.estatus) ? 'text-rojo' : '' %>">
+                <%= ticket.fecha_limite || '—' %>
+              </p>
+            </div>
+          </div>
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--borde)">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gris)">Descripción</label>
+            <p style="font-size:13px;margin-top:6px;line-height:1.7;white-space:pre-wrap"><%= ticket.descripcion %></p>
+          </div>
+        </div>
+
+        <!-- Comentarios e historial -->
+        <div class="card" id="comentarios">
+          <div class="card-header"><h3>Historial y comentarios (<%= comentarios.length %>)</h3></div>
+
+          <% if (comentarios.length === 0) { %>
+            <p class="text-gris text-sm">Sin actividad aún.</p>
+          <% } %>
+
+          <% comentarios.forEach(c => { %>
+            <div class="comentario <%= c.tipo %>">
+              <div class="comentario-meta">
+                <strong><%= c.usuario_nombre %></strong> ·
+                <%= c.tipo === 'cambio_estado' ? '🔄 Cambio de estatus' : c.tipo === 'asignacion' ? '📌 Asignación' : '💬 Comentario' %> ·
+                <%= c.creado_en %>
+              </div>
+              <div class="comentario-body"><%= c.comentario %></div>
+            </div>
+          <% }) %>
+
+          <% if (!['resuelto','cerrado'].includes(ticket.estatus)) { %>
+          <form method="POST" action="/tickets/<%= ticket.id %>/comentar" style="margin-top:14px">
+            <div class="form-group">
+              <label>Agregar comentario</label>
+              <textarea name="comentario" rows="3" placeholder="Escribe tu comentario..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-secondary btn-sm" style="margin-top:8px">Enviar comentario</button>
+          </form>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Panel lateral -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <!-- Cambiar estatus -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Estatus</h3>
+            <span class="badge badge-<%= ticket.estatus==='en_proceso'?'en_proceso':ticket.estatus==='abierto'?'recibido':ticket.estatus==='resuelto'?'enviado':'archivado' %>">
+              <%= ticket.estatus.replace('_',' ') %>
+            </span>
+          </div>
+          <form method="POST" action="/tickets/<%= ticket.id %>/estatus">
+            <div class="form-group" style="margin-bottom:10px">
+              <label>Cambiar a</label>
+              <select name="estatus">
+                <option value="abierto"    <%= ticket.estatus==='abierto'?'selected':'' %>>Abierto</option>
+                <option value="en_proceso" <%= ticket.estatus==='en_proceso'?'selected':'' %>>En proceso</option>
+                <option value="resuelto"   <%= ticket.estatus==='resuelto'?'selected':'' %>>Resuelto</option>
+                <option value="cerrado"    <%= ticket.estatus==='cerrado'?'selected':'' %>>Cerrado</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-secondary btn-sm">Actualizar</button>
+          </form>
+        </div>
+
+        <!-- Asignar -->
+        <div class="card">
+          <div class="card-header"><h3>Asignación</h3></div>
+          <form method="POST" action="/tickets/<%= ticket.id %>/asignar">
+            <div class="form-group" style="margin-bottom:10px">
+              <label>Área responsable</label>
+              <select name="area_asignada_id">
+                <option value="">— Sin asignar —</option>
+                <% areas.forEach(a => { %>
+                  <option value="<%= a.id %>" <%= ticket.area_asignada_id==a.id?'selected':'' %>><%= a.nombre %></option>
+                <% }) %>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:10px">
+              <label>Responsable</label>
+              <select name="usuario_asignado_id">
+                <option value="">— Sin responsable —</option>
+                <% usuarios.forEach(u => { %>
+                  <option value="<%= u.id %>" <%= ticket.usuario_asignado_id==u.id?'selected':'' %>><%= u.nombre %></option>
+                <% }) %>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-secondary btn-sm">Guardar asignación</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+</body></html>

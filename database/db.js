@@ -93,6 +93,53 @@ async function initDB() {
     await query(`ALTER TABLE usuarios MODIFY COLUMN rol ENUM('admin','director','jefe_area','secretaria','recepcion') NOT NULL DEFAULT 'secretaria'`);
   }
 
+  // Migrar: agregar campos firmante y leido_en a documentos_salientes
+  const [firmantCol] = await query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='documentos_salientes' AND COLUMN_NAME='firmante_nombre'`
+  );
+  if (!firmantCol) {
+    await query(`ALTER TABLE documentos_salientes
+      ADD COLUMN firmante_nombre VARCHAR(150) NULL AFTER contenido,
+      ADD COLUMN firmante_cargo  VARCHAR(150) NULL AFTER firmante_nombre,
+      ADD COLUMN leido_en        DATETIME     NULL AFTER firmante_cargo`);
+  }
+
+  // Tablas de tickets
+  await query(`CREATE TABLE IF NOT EXISTS tickets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    folio VARCHAR(20) NOT NULL UNIQUE,
+    consecutivo INT NOT NULL,
+    anio INT NOT NULL,
+    titulo VARCHAR(200) NOT NULL,
+    descripcion TEXT NOT NULL,
+    categoria ENUM('informatica','servicios_generales','recursos_materiales','mantenimiento','otro') NOT NULL,
+    prioridad ENUM('baja','media','alta','urgente') NOT NULL DEFAULT 'media',
+    estatus ENUM('abierto','en_proceso','resuelto','cerrado') NOT NULL DEFAULT 'abierto',
+    area_solicitante_id INT,
+    area_asignada_id INT,
+    usuario_solicitante_id INT,
+    usuario_asignado_id INT,
+    fecha_limite DATE,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    actualizado_en DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (area_solicitante_id) REFERENCES areas(id),
+    FOREIGN KEY (area_asignada_id) REFERENCES areas(id),
+    FOREIGN KEY (usuario_solicitante_id) REFERENCES usuarios(id),
+    FOREIGN KEY (usuario_asignado_id) REFERENCES usuarios(id)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+  await query(`CREATE TABLE IF NOT EXISTS ticket_comentarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ticket_id INT NOT NULL,
+    usuario_id INT NOT NULL,
+    comentario TEXT NOT NULL,
+    tipo ENUM('comentario','cambio_estado','asignacion') NOT NULL DEFAULT 'comentario',
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
   // Datos iniciales solo si las tablas están vacías
   const [countRow] = await query('SELECT COUNT(*) as c FROM areas');
   if (countRow.c === 0) {

@@ -73,9 +73,19 @@
             <p><%= doc.elaborado_nombre || '—' %></p>
           </div>
           <div class="detalle-item">
+            <label>Firmante</label>
+            <p><strong><%= doc.firmante_nombre || '—' %></strong><% if(doc.firmante_cargo){ %><br><span class="text-gris text-sm"><%= doc.firmante_cargo %></span><% } %></p>
+          </div>
+          <div class="detalle-item">
             <label>Registrado</label>
             <p><%= doc.creado_en %></p>
           </div>
+          <% if (doc.tipo === 'memorandum') { %>
+          <div class="detalle-item">
+            <label>Leído</label>
+            <p><%= doc.leido_en ? doc.leido_en : '<span class="badge badge-recibido">Pendiente</span>' %></p>
+          </div>
+          <% } %>
         </div>
 
         <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--borde)">
@@ -85,6 +95,17 @@
       </div>
 
       <div style="display:flex;flex-direction:column;gap:16px">
+        <!-- Marcar como leído (solo memorandums no leídos) -->
+        <% if (doc.tipo === 'memorandum' && !doc.leido_en) { %>
+        <div class="card" style="border-color:var(--naranja)">
+          <div class="card-header"><h3>Acuse de recibo</h3></div>
+          <p class="text-sm text-gris" style="margin-bottom:12px">Este memorándum aún no ha sido marcado como leído por el área destinataria.</p>
+          <form method="POST" action="/correspondencia/salientes/<%= doc.id %>/leer">
+            <button type="submit" class="btn btn-primary btn-sm">Marcar como leído</button>
+          </form>
+        </div>
+        <% } %>
+
         <!-- Estatus -->
         <div class="card">
           <div class="card-header">
