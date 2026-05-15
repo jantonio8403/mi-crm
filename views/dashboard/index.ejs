@@ -1,0 +1,185 @@
+<%
+  const layout = require('fs').readFileSync(require('path').join(__dirname, '../layout/base.ejs'), 'utf8');
+  const body = `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="num">${stats.oficios_emitidos}</div>
+        <div class="label">Oficios emitidos este año</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">${stats.memorandums_emitidos}</div>
+        <div class="label">Memorándums emitidos</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">${stats.entrante_recibidos}</div>
+        <div class="label">Correspondencia recibida</div>
+      </div>
+      <div class="stat-card pendiente">
+        <div class="num">${stats.entrante_pendientes}</div>
+        <div class="label">Documentos pendientes</div>
+      </div>
+      <div class="stat-card alerta">
+        <div class="num">${stats.entrante_urgentes}</div>
+        <div class="label">Próximos a vencer</div>
+      </div>
+    </div>
+  `;
+%>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h2>Hospital Básico Comunitario</h2>
+    <p>12 Camas — Berriozabal, Chis.</p>
+  </div>
+  <div class="sidebar-section">
+    <p class="sidebar-label">General</p>
+    <a href="/dashboard" class="activo"><span class="icon">⊞</span> Dashboard</a>
+  </div>
+  <div class="sidebar-section">
+    <p class="sidebar-label">Correspondencia</p>
+    <a href="/correspondencia/salientes/nuevo?tipo=oficio"><span class="icon">✉</span> Nuevo Oficio</a>
+    <a href="/correspondencia/salientes/nuevo?tipo=memorandum"><span class="icon">📝</span> Nuevo Memorándum</a>
+    <a href="/correspondencia/salientes"><span class="icon">📤</span> Emitidos</a>
+    <a href="/correspondencia/entrante/nuevo"><span class="icon">➕</span> Registrar Recibido</a>
+    <a href="/correspondencia/entrante"><span class="icon">📥</span> Recibidos</a>
+  </div>
+  <div class="sidebar-footer">
+    <div><strong><%= usuario.nombre %></strong></div>
+    <div><%= usuario.area_nombre %></div>
+  </div>
+</div>
+
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1>Dashboard</h1>
+    <div class="topbar-user">
+      <span><%= usuario.nombre %> · <%= usuario.cargo %></span>
+      <a href="/logout">Cerrar sesión</a>
+    </div>
+  </div>
+  <div class="page-content">
+    <% if (success && success.length > 0) { %><div class="alert alert-success">✓ <%= success[0] %></div><% } %>
+    <% if (error && error.length > 0) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="num"><%= stats.oficios_emitidos %></div>
+        <div class="label">Oficios emitidos este año</div>
+      </div>
+      <div class="stat-card">
+        <div class="num"><%= stats.memorandums_emitidos %></div>
+        <div class="label">Memorándums emitidos</div>
+      </div>
+      <div class="stat-card">
+        <div class="num"><%= stats.entrante_recibidos %></div>
+        <div class="label">Correspondencia recibida</div>
+      </div>
+      <div class="stat-card pendiente">
+        <div class="num"><%= stats.entrante_pendientes %></div>
+        <div class="label">Pendientes de atención</div>
+      </div>
+      <div class="stat-card alerta">
+        <div class="num"><%= stats.entrante_urgentes %></div>
+        <div class="label">Próximos a vencer (3 días)</div>
+      </div>
+    </div>
+
+    <div class="flex" style="gap:16px;margin-bottom:16px">
+      <a href="/correspondencia/salientes/nuevo?tipo=oficio" class="btn btn-primary">+ Nuevo Oficio</a>
+      <a href="/correspondencia/salientes/nuevo?tipo=memorandum" class="btn btn-secondary">+ Nuevo Memorándum</a>
+      <a href="/correspondencia/entrante/nuevo" class="btn btn-secondary">+ Registrar Recibido</a>
+    </div>
+
+    <% if (urgentes.length > 0) { %>
+    <div class="card mb-16">
+      <div class="card-header">
+        <h3>⚠ Documentos próximos a vencer</h3>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Asunto</th><th>Remitente</th><th>Área</th><th>Vence</th><th></th>
+          </tr></thead>
+          <tbody>
+          <% urgentes.forEach(d => { %>
+            <tr>
+              <td class="truncate"><%= d.asunto %></td>
+              <td><%= d.remitente_nombre %></td>
+              <td><%= d.area_nombre || '—' %></td>
+              <td class="text-rojo"><strong><%= d.fecha_limite_respuesta %></strong></td>
+              <td><a href="/correspondencia/entrante/<%= d.id %>" class="btn btn-sm btn-secondary">Ver</a></td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <% } %>
+
+    <div class="two-col">
+      <!-- Últimos salientes -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Últimos documentos emitidos</h3>
+          <a href="/correspondencia/salientes" class="text-sm text-verde">Ver todos</a>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Folio</th><th>Tipo</th><th>Asunto</th><th>Estatus</th></tr></thead>
+            <tbody>
+            <% if (recientes_salientes.length === 0) { %>
+              <tr><td colspan="4" class="text-center text-gris" style="padding:20px">Sin documentos aún</td></tr>
+            <% } %>
+            <% recientes_salientes.forEach(d => { %>
+              <tr>
+                <td><a href="/correspondencia/salientes/<%= d.id %>"><%= d.numero_folio %></a></td>
+                <td><span class="badge badge-<%= d.tipo %>"><%= d.tipo %></span></td>
+                <td class="truncate"><%= d.asunto %></td>
+                <td><span class="badge badge-<%= d.estatus %>"><%= d.estatus %></span></td>
+              </tr>
+            <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Últimos entrantes -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Últimos recibidos</h3>
+          <a href="/correspondencia/entrante" class="text-sm text-verde">Ver todos</a>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Folio ext.</th><th>Remitente</th><th>Estatus</th></tr></thead>
+            <tbody>
+            <% if (recientes_entrantes.length === 0) { %>
+              <tr><td colspan="3" class="text-center text-gris" style="padding:20px">Sin documentos aún</td></tr>
+            <% } %>
+            <% recientes_entrantes.forEach(d => { %>
+              <tr>
+                <td><a href="/correspondencia/entrante/<%= d.id %>"><%= d.folio_externo || '—' %></a></td>
+                <td class="truncate"><%= d.remitente_nombre %></td>
+                <td><span class="badge badge-<%= d.estatus %>"><%= d.estatus %></span></td>
+              </tr>
+            <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h2>Hospital Básico Comunitario</h2>
+    <p>12 Camas — Berriozabal, Chis.</p>
+  </div>
+
+  <div class="sidebar-section">
+    <p class="sidebar-label">General</p>
+    <a href="/dashboard" class="<%= typeof titulo !== 'undefined' && titulo === 'Dashboard' ? 'activo' : '' %>">
+      <span class="icon">⊞</span> Dashboard
+    </a>
+  </div>
+
+  <div class="sidebar-section">
+    <p class="sidebar-label">Correspondencia</p>
+    <a href="/correspondencia/salientes/nuevo?tipo=oficio">
+      <span class="icon">✉</span> Nuevo Oficio
+    </a>
+    <a href="/correspondencia/salientes/nuevo?tipo=memorandum">
+      <span class="icon">📝</span> Nuevo Memorándum
+    </a>
+    <a href="/correspondencia/salientes">
+      <span class="icon">📤</span> Emitidos
+    </a>
+    <a href="/correspondencia/entrante/nuevo">
+      <span class="icon">➕</span> Registrar Recibido
+    </a>
+    <a href="/correspondencia/entrante">
+      <span class="icon">📥</span> Recibidos
+    </a>
+  </div>
+
+  <div class="sidebar-footer">
+    <div><strong><%= usuario ? usuario.nombre : '' %></strong></div>
+    <div><%= usuario ? usuario.area_nombre : '' %></div>
+  </div>
+</div>
+
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1><%= titulo %></h1>
+    <div class="topbar-user">
+      <span><%= usuario ? usuario.nombre : '' %> · <%= usuario ? usuario.cargo : '' %></span>
+      <a href="/logout">Cerrar sesión</a>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <% if (success && success.length > 0) { %>
+      <div class="alert alert-success">✓ <%= success[0] %></div>
+    <% } %>
+    <% if (error && error.length > 0) { %>
+      <div class="alert alert-error">✕ <%= error[0] %></div>
+    <% } %>
+
+    <%- body %>
+  </div>
+</div>
+
+</body>
+</html>

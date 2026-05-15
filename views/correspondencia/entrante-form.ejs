@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1><%= titulo %></h1>
+    <div class="topbar-user">
+      <span><%= usuario.nombre %></span>
+      <a href="/logout">Cerrar sesión</a>
+    </div>
+  </div>
+  <div class="page-content">
+
+    <div class="flex items-center mb-16">
+      <a href="/correspondencia/entrante" class="btn btn-secondary">← Regresar</a>
+    </div>
+
+    <div class="card">
+      <form method="POST" action="<%= accion %>" enctype="multipart/form-data">
+
+        <h4 style="margin-bottom:16px;color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em">
+          Datos del documento recibido
+        </h4>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Folio / Número externo</label>
+            <input type="text" name="folio_externo" placeholder="Ej. OFICIO-234/2026">
+          </div>
+          <div class="form-group">
+            <label>Tipo de documento *</label>
+            <select name="tipo" required>
+              <option value="oficio">Oficio</option>
+              <option value="memorandum">Memorándum</option>
+              <option value="circular">Circular</option>
+              <option value="oficio-circular">Oficio-Circular</option>
+              <option value="dictamen">Dictamen</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Fecha de recepción *</label>
+            <input type="date" name="fecha_recepcion" required value="<%= hoy %>">
+          </div>
+          <div class="form-group">
+            <label>Fecha del documento</label>
+            <input type="date" name="fecha_documento">
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--borde);margin:20px 0">
+        <h4 style="margin-bottom:16px;color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em">
+          Remitente
+        </h4>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nombre del remitente *</label>
+            <input type="text" name="remitente_nombre" required placeholder="Nombre completo">
+          </div>
+          <div class="form-group">
+            <label>Cargo del remitente</label>
+            <input type="text" name="remitente_cargo" placeholder="Ej. Director de Salud Municipal">
+          </div>
+          <div class="form-group form-full">
+            <label>Institución / Dependencia *</label>
+            <input type="text" name="remitente_institucion" required placeholder="Ej. Secretaría de Salud de Chiapas">
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--borde);margin:20px 0">
+        <h4 style="margin-bottom:16px;color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em">
+          Contenido y destino
+        </h4>
+
+        <div class="form-grid">
+          <div class="form-group form-full">
+            <label>Asunto *</label>
+            <input type="text" name="asunto" required placeholder="Asunto del documento">
+          </div>
+          <div class="form-group form-full">
+            <label>Descripción / Resumen</label>
+            <textarea name="descripcion" rows="3" placeholder="Breve descripción del contenido..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Área destinataria</label>
+            <select name="area_destinataria_id">
+              <option value="">— Seleccionar área —</option>
+              <% areas.forEach(a => { %>
+                <option value="<%= a.id %>"><%= a.nombre %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Archivo escaneado (PDF/imagen)</label>
+            <input type="file" name="archivo" accept=".pdf,.jpg,.jpeg,.png">
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--borde);margin:20px 0">
+        <h4 style="margin-bottom:16px;color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em">
+          Seguimiento
+        </h4>
+
+        <div class="form-grid">
+          <div class="form-group checkbox">
+            <input type="checkbox" name="requiere_respuesta" id="resp" value="on">
+            <label for="resp">Requiere respuesta</label>
+          </div>
+          <div class="form-group" id="campo-fecha-limite">
+            <label>Fecha límite de respuesta</label>
+            <input type="date" name="fecha_limite_respuesta">
+          </div>
+          <div class="form-group form-full">
+            <label>Notas internas</label>
+            <textarea name="notas" rows="2" placeholder="Instrucciones o notas de seguimiento..."></textarea>
+          </div>
+        </div>
+
+        <div class="flex gap-8 mt-16">
+          <button type="submit" class="btn btn-primary">Registrar correspondencia</button>
+          <a href="/correspondencia/entrante" class="btn btn-secondary">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+  const chk = document.getElementById('resp');
+  const campo = document.getElementById('campo-fecha-limite');
+  campo.style.opacity = chk.checked ? '1' : '0.4';
+  chk.addEventListener('change', () => {
+    campo.style.opacity = chk.checked ? '1' : '0.4';
+    campo.querySelector('input').disabled = !chk.checked;
+  });
+  campo.querySelector('input').disabled = true;
+</script>
+</body></html>

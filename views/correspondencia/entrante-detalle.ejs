@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1>Correspondencia Recibida</h1>
+    <div class="topbar-user">
+      <span><%= usuario.nombre %></span>
+      <a href="/logout">Cerrar sesión</a>
+    </div>
+  </div>
+  <div class="page-content">
+    <% if (success && success.length) { %><div class="alert alert-success">✓ <%= success[0] %></div><% } %>
+    <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+
+    <div class="flex items-center justify-between mb-16">
+      <a href="/correspondencia/entrante" class="btn btn-secondary">← Regresar</a>
+      <% if (doc.ruta_archivo) { %>
+        <a href="<%= doc.ruta_archivo %>" target="_blank" class="btn btn-primary">Ver archivo adjunto</a>
+      <% } %>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header">
+          <h3>Datos del documento</h3>
+          <span class="badge badge-oficio"><%= doc.tipo %></span>
+        </div>
+        <div class="detalle-grid">
+          <div class="detalle-item">
+            <label>Folio externo</label>
+            <p><strong><%= doc.folio_externo || '—' %></strong></p>
+          </div>
+          <div class="detalle-item">
+            <label>Fecha de recepción</label>
+            <p><%= doc.fecha_recepcion %></p>
+          </div>
+          <% if (doc.fecha_documento) { %>
+          <div class="detalle-item">
+            <label>Fecha del documento</label>
+            <p><%= doc.fecha_documento %></p>
+          </div>
+          <% } %>
+          <div class="detalle-item full">
+            <label>Asunto</label>
+            <p><strong><%= doc.asunto %></strong></p>
+          </div>
+          <% if (doc.descripcion) { %>
+          <div class="detalle-item full">
+            <label>Descripción</label>
+            <p><%= doc.descripcion %></p>
+          </div>
+          <% } %>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--borde);margin:16px 0">
+        <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gris);margin-bottom:10px">Remitente</p>
+        <div class="detalle-grid">
+          <div class="detalle-item">
+            <label>Nombre</label>
+            <p><%= doc.remitente_nombre %></p>
+          </div>
+          <div class="detalle-item">
+            <label>Cargo</label>
+            <p><%= doc.remitente_cargo || '—' %></p>
+          </div>
+          <div class="detalle-item full">
+            <label>Institución</label>
+            <p><%= doc.remitente_institucion %></p>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--borde);margin:16px 0">
+        <div class="detalle-grid">
+          <div class="detalle-item">
+            <label>Área destinataria</label>
+            <p><%= doc.area_nombre || '—' %></p>
+          </div>
+          <div class="detalle-item">
+            <label>Registrado por</label>
+            <p><%= doc.registrado_nombre || '—' %></p>
+          </div>
+          <div class="detalle-item">
+            <label>Fecha de registro</label>
+            <p><%= doc.creado_en %></p>
+          </div>
+          <% if (doc.notas) { %>
+          <div class="detalle-item full">
+            <label>Notas</label>
+            <p><%= doc.notas %></p>
+          </div>
+          <% } %>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <!-- Estatus -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Estatus</h3>
+            <span class="badge badge-<%= doc.estatus %>"><%= doc.estatus %></span>
+          </div>
+          <form method="POST" action="/correspondencia/entrante/<%= doc.id %>/estatus">
+            <div class="form-group" style="margin-bottom:12px">
+              <label>Cambiar estatus</label>
+              <select name="estatus">
+                <option value="recibido" <%= doc.estatus==='recibido'?'selected':'' %>>Recibido</option>
+                <option value="en_proceso" <%= doc.estatus==='en_proceso'?'selected':'' %>>En proceso</option>
+                <option value="atendido" <%= doc.estatus==='atendido'?'selected':'' %>>Atendido</option>
+                <option value="archivado" <%= doc.estatus==='archivado'?'selected':'' %>>Archivado</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:12px">
+              <label>Notas de seguimiento</label>
+              <textarea name="notas" rows="3" placeholder="Actualizar notas..."><%= doc.notas || '' %></textarea>
+            </div>
+            <button type="submit" class="btn btn-secondary btn-sm">Guardar cambios</button>
+          </form>
+        </div>
+
+        <!-- Respuesta requerida -->
+        <% if (doc.requiere_respuesta) { %>
+        <div class="card" style="border-color: <%= doc.fecha_limite_respuesta && doc.fecha_limite_respuesta <= new Date().toISOString().split('T')[0] ? '#dc2626' : 'var(--borde)' %>">
+          <div class="card-header">
+            <h3>Requiere respuesta</h3>
+            <span class="badge badge-urgente">!</span>
+          </div>
+          <% if (doc.fecha_limite_respuesta) { %>
+            <p class="text-sm" style="margin-bottom:8px">
+              <strong>Fecha límite:</strong>
+              <span style="color:<%= doc.fecha_limite_respuesta <= new Date().toISOString().split('T')[0] ? '#dc2626' : 'var(--texto)' %>">
+                <%= doc.fecha_limite_respuesta %>
+              </span>
+            </p>
+          <% } %>
+          <a href="/correspondencia/salientes/nuevo?tipo=oficio" class="btn btn-primary btn-sm">
+            Generar oficio de respuesta
+          </a>
+        </div>
+        <% } %>
+
+        <!-- Archivo adjunto -->
+        <% if (doc.ruta_archivo) { %>
+        <div class="card">
+          <div class="card-header"><h3>Archivo adjunto</h3></div>
+          <a href="<%= doc.ruta_archivo %>" target="_blank" class="btn btn-secondary" style="width:100%;justify-content:center">
+            Ver archivo
+          </a>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>

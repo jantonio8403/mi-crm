@@ -1,1 +1,10 @@
 node_modules/
+database/hospital.db
+database/hospital.db-shm
+database/hospital.db-wal
+uploads/*
+!uploads/.gitkeep
+pdfs/*
+!pdfs/.gitkeep
+.DS_Store
+*.env

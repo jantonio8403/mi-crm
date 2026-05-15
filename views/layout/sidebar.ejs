@@ -1,0 +1,22 @@
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h2>Hospital Básico Comunitario</h2>
+    <p>12 Camas — Berriozabal, Chis.</p>
+  </div>
+  <div class="sidebar-section">
+    <p class="sidebar-label">General</p>
+    <a href="/dashboard"><span class="icon">⊞</span> Dashboard</a>
+  </div>
+  <div class="sidebar-section">
+    <p class="sidebar-label">Correspondencia</p>
+    <a href="/correspondencia/salientes/nuevo?tipo=oficio"><span class="icon">✉</span> Nuevo Oficio</a>
+    <a href="/correspondencia/salientes/nuevo?tipo=memorandum"><span class="icon">📝</span> Nuevo Memorándum</a>
+    <a href="/correspondencia/salientes"><span class="icon">📤</span> Emitidos</a>
+    <a href="/correspondencia/entrante/nuevo"><span class="icon">➕</span> Registrar Recibido</a>
+    <a href="/correspondencia/entrante"><span class="icon">📥</span> Recibidos</a>
+  </div>
+  <div class="sidebar-footer">
+    <div><strong><%= usuario ? usuario.nombre : '' %></strong></div>
+    <div><%= usuario ? usuario.area_nombre : '' %></div>
+  </div>
+</div>

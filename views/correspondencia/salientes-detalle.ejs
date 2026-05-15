@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1><%= titulo %></h1>
+    <div class="topbar-user">
+      <span><%= usuario.nombre %></span>
+      <a href="/logout">Cerrar sesión</a>
+    </div>
+  </div>
+  <div class="page-content">
+    <% if (success && success.length) { %><div class="alert alert-success">✓ <%= success[0] %></div><% } %>
+    <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+
+    <div class="flex items-center justify-between mb-16">
+      <a href="/correspondencia/salientes" class="btn btn-secondary">← Regresar</a>
+      <div class="flex gap-8">
+        <% if (doc.ruta_pdf) { %>
+          <a href="<%= doc.ruta_pdf %>" target="_blank" class="btn btn-primary">Abrir PDF</a>
+        <% } %>
+        <form method="POST" action="/correspondencia/salientes/<%= doc.id %>/regenerar-pdf" style="display:inline">
+          <button type="submit" class="btn btn-secondary">Regenerar PDF</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header">
+          <h3>Datos del documento</h3>
+          <span class="badge badge-<%= doc.tipo %>"><%= doc.tipo %></span>
+        </div>
+        <div class="detalle-grid">
+          <div class="detalle-item">
+            <label>Folio</label>
+            <p><strong style="font-size:16px;color:var(--verde)"><%= doc.numero_folio %></strong></p>
+          </div>
+          <div class="detalle-item">
+            <label>Fecha de emisión</label>
+            <p><%= doc.fecha_emision %></p>
+          </div>
+          <div class="detalle-item full">
+            <label>Asunto</label>
+            <p><%= doc.asunto %></p>
+          </div>
+          <div class="detalle-item">
+            <label>Destinatario</label>
+            <p><%= doc.destinatario %></p>
+          </div>
+          <div class="detalle-item">
+            <label>Cargo</label>
+            <p><%= doc.cargo_destinatario || '—' %></p>
+          </div>
+          <% if (doc.institucion_destinatario) { %>
+          <div class="detalle-item full">
+            <label>Institución</label>
+            <p><%= doc.institucion_destinatario %></p>
+          </div>
+          <% } %>
+          <div class="detalle-item">
+            <label>Área emisora</label>
+            <p><%= doc.area_nombre || '—' %></p>
+          </div>
+          <div class="detalle-item">
+            <label>Elaboró</label>
+            <p><%= doc.elaborado_nombre || '—' %></p>
+          </div>
+          <div class="detalle-item">
+            <label>Registrado</label>
+            <p><%= doc.creado_en %></p>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--borde)">
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gris)">Contenido</label>
+          <div style="margin-top:8px;font-size:13px;line-height:1.7;white-space:pre-wrap"><%= doc.contenido %></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <!-- Estatus -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Estatus</h3>
+            <span class="badge badge-<%= doc.estatus %>"><%= doc.estatus %></span>
+          </div>
+          <form method="POST" action="/correspondencia/salientes/<%= doc.id %>/estatus">
+            <div class="form-group" style="margin-bottom:12px">
+              <label>Cambiar estatus</label>
+              <select name="estatus">
+                <option value="borrador" <%= doc.estatus==='borrador'?'selected':'' %>>Borrador</option>
+                <option value="firmado" <%= doc.estatus==='firmado'?'selected':'' %>>Firmado</option>
+                <option value="enviado" <%= doc.estatus==='enviado'?'selected':'' %>>Enviado</option>
+                <option value="archivado" <%= doc.estatus==='archivado'?'selected':'' %>>Archivado</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-secondary btn-sm">Actualizar estatus</button>
+          </form>
+        </div>
+
+        <% if (doc.ruta_pdf) { %>
+        <div class="card">
+          <div class="card-header"><h3>Documento PDF</h3></div>
+          <p class="text-sm text-gris" style="margin-bottom:12px">El PDF está listo para imprimir o enviar.</p>
+          <a href="<%= doc.ruta_pdf %>" target="_blank" class="btn btn-primary" style="width:100%;justify-content:center">
+            Ver / Imprimir PDF
+          </a>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>

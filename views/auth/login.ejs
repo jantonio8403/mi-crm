@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar Sesión — HBC Berriozabal</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<div class="login-page">
+  <div class="login-card">
+    <h1>Sistema CRM</h1>
+    <p>Hospital Básico Comunitario 12 Camas<br>Berriozabal, Chiapas</p>
+
+    <% if (error && error.length > 0) { %>
+      <div class="alert alert-error" style="margin-bottom:16px">✕ <%= error[0] %></div>
+    <% } %>
+
+    <form method="POST" action="/login">
+      <div class="form-group">
+        <label>Usuario</label>
+        <input type="text" name="username" required autofocus placeholder="Nombre de usuario">
+      </div>
+      <div class="form-group" style="margin-bottom:20px">
+        <label>Contraseña</label>
+        <input type="password" name="password" required placeholder="Contraseña">
+      </div>
+      <button type="submit" class="btn btn-primary">Iniciar sesión</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>
