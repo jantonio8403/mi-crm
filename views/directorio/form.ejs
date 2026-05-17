@@ -71,6 +71,22 @@
               placeholder="Ej. Secretaría de Salud de Chiapas, SSA...">
           </div>
 
+          <!-- Campo interno: cuenta de usuario del sistema -->
+          <div class="form-group form-full" id="campo-usuario" style="display:<%= tipoPreset==='interno'?'flex':'none' %>;flex-direction:column;gap:5px">
+            <label>Cuenta de usuario del sistema
+              <span style="font-weight:400;font-size:11px;color:var(--gris)"> — vincula al funcionario con su acceso al CRM</span>
+            </label>
+            <select name="usuario_id">
+              <option value="">— Sin cuenta vinculada —</option>
+              <% usuariosDisp.forEach(u => { %>
+                <option value="<%= u.id %>"
+                  <%= funcionario && funcionario.usuario_id == u.id ? 'selected' : '' %>>
+                  <%= u.nombre %><% if (u.cargo) { %> — <%= u.cargo %><% } %>
+                </option>
+              <% }) %>
+            </select>
+          </div>
+
           <!-- Campo interno: área + designar jefe -->
           <div class="form-group form-full" id="campo-area" style="display:<%= tipoPreset==='interno'?'flex':'none' %>;flex-direction:column;gap:5px">
             <label>Área del hospital</label>
@@ -122,8 +138,9 @@
   const radioInterno = document.getElementById('tipo-interno');
   const tabExt = document.getElementById('tab-externo');
   const tabInt = document.getElementById('tab-interno');
-  const campoInst = document.getElementById('campo-institucion');
-  const campoArea = document.getElementById('campo-area');
+  const campoInst    = document.getElementById('campo-institucion');
+  const campoArea    = document.getElementById('campo-area');
+  const campoUsuario = document.getElementById('campo-usuario');
 
   const campoEsJefe = document.getElementById('campo-es-jefe');
 
@@ -133,8 +150,9 @@
     tabExt.style.color      = esExterno ? '#fff' : 'var(--texto)';
     tabInt.style.background = esExterno ? '#fff' : 'var(--verde)';
     tabInt.style.color      = esExterno ? 'var(--texto)' : '#fff';
-    campoInst.style.display = esExterno ? 'flex' : 'none';
-    campoArea.style.display = esExterno ? 'none' : 'flex';
+    campoInst.style.display    = esExterno ? 'flex' : 'none';
+    campoArea.style.display    = esExterno ? 'none' : 'flex';
+    campoUsuario.style.display = esExterno ? 'none' : 'flex';
     if (campoEsJefe) campoEsJefe.style.display = esExterno ? 'none' : 'flex';
   }
 

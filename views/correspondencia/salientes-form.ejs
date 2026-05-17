@@ -101,15 +101,17 @@
           </div>
 
           <div class="form-group">
-            <label>Nombre del firmante *</label>
+            <label>Nombre del firmante *
+              <% if (firmante) { %><span style="font-weight:400;font-size:11px;color:var(--verde)"> — tomado del directorio interno</span><% } %>
+            </label>
             <input type="text" name="firmante_nombre" required
-                   value="<%= usuario.nombre %>"
+                   value="<%= firmante ? firmante.nombre : usuario.nombre %>"
                    placeholder="Nombre completo del firmante">
           </div>
           <div class="form-group">
             <label>Cargo del firmante</label>
             <input type="text" name="firmante_cargo"
-                   value="<%= usuario.cargo || '' %>"
+                   value="<%= firmante ? (firmante.cargo || '') : (usuario.cargo || '') %>"
                    placeholder="Ej. Director del Hospital">
           </div>
         </div>

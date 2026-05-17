@@ -78,9 +78,15 @@ router.get('/', requireAuth, async (req, res, next) => {
 router.get('/nuevo', requireAuth, puedeEditar, async (req, res, next) => {
   try {
     const areas = await query('SELECT * FROM areas WHERE activa=1 ORDER BY nombre');
+    const usuariosDisp = await query(
+      `SELECT u.id, u.nombre, u.cargo, u.rol FROM usuarios u
+       WHERE u.activo=1
+         AND u.id NOT IN (SELECT usuario_id FROM funcionarios WHERE usuario_id IS NOT NULL)
+       ORDER BY u.nombre`
+    );
     res.render('directorio/form', {
       titulo: 'Nuevo Funcionario',
-      funcionario: null, areas,
+      funcionario: null, areas, usuariosDisp,
       accion: '/directorio',
       tipoPreset: req.query.tipo || 'externo',
       esJefeActual: false,
@@ -90,18 +96,19 @@ router.get('/nuevo', requireAuth, puedeEditar, async (req, res, next) => {
 
 router.post('/', requireAuth, puedeEditar, async (req, res, next) => {
   try {
-    const { nombre, cargo, tipo, institucion, area_id, email, telefono, es_jefe } = req.body;
+    const { nombre, cargo, tipo, institucion, area_id, email, telefono, es_jefe, usuario_id } = req.body;
     if (!nombre || !nombre.trim()) {
       req.flash('error', 'El nombre es requerido');
       return res.redirect('/directorio/nuevo');
     }
-    const areaIdVal = tipo === 'interno' && area_id ? parseInt(area_id) : null;
+    const areaIdVal    = tipo === 'interno' && area_id    ? parseInt(area_id)    : null;
+    const usuarioIdVal = tipo === 'interno' && usuario_id ? parseInt(usuario_id) : null;
     const result = await query(
-      `INSERT INTO funcionarios (nombre, cargo, tipo, institucion, area_id, email, telefono)
-       VALUES (?,?,?,?,?,?,?)`,
+      `INSERT INTO funcionarios (nombre, cargo, tipo, institucion, area_id, usuario_id, email, telefono)
+       VALUES (?,?,?,?,?,?,?,?)`,
       [nombre.trim(), cargo || null, tipo || 'externo',
        tipo === 'externo' ? (institucion || null) : null,
-       areaIdVal,
+       areaIdVal, usuarioIdVal,
        email || null, telefono || null]
     );
     if (tipo === 'interno' && areaIdVal && es_jefe === '1') {
@@ -118,6 +125,15 @@ router.get('/:id/editar', requireAuth, puedeEditar, async (req, res, next) => {
     const [funcionario] = await query('SELECT * FROM funcionarios WHERE id=?', [req.params.id]);
     if (!funcionario) { req.flash('error', 'Funcionario no encontrado'); return res.redirect('/directorio'); }
     const areas = await query('SELECT * FROM areas WHERE activa=1 ORDER BY nombre');
+    // Usuarios disponibles: los no vinculados + el que ya tiene este funcionario
+    const usuariosDisp = await query(
+      `SELECT u.id, u.nombre, u.cargo, u.rol FROM usuarios u
+       WHERE u.activo=1
+         AND (u.id NOT IN (SELECT usuario_id FROM funcionarios WHERE usuario_id IS NOT NULL)
+              OR u.id = ?)
+       ORDER BY u.nombre`,
+      [funcionario.usuario_id || 0]
+    );
     let esJefeActual = false;
     if (funcionario.tipo === 'interno' && funcionario.area_id) {
       const [area] = await query('SELECT responsable_id FROM areas WHERE id=?', [funcionario.area_id]);
@@ -125,7 +141,7 @@ router.get('/:id/editar', requireAuth, puedeEditar, async (req, res, next) => {
     }
     res.render('directorio/form', {
       titulo: 'Editar Funcionario',
-      funcionario, areas,
+      funcionario, areas, usuariosDisp,
       accion: `/directorio/${funcionario.id}`,
       tipoPreset: funcionario.tipo,
       esJefeActual,
@@ -135,18 +151,19 @@ router.get('/:id/editar', requireAuth, puedeEditar, async (req, res, next) => {
 
 router.post('/:id', requireAuth, puedeEditar, async (req, res, next) => {
   try {
-    const { nombre, cargo, tipo, institucion, area_id, email, telefono, es_jefe } = req.body;
+    const { nombre, cargo, tipo, institucion, area_id, email, telefono, es_jefe, usuario_id } = req.body;
     if (!nombre || !nombre.trim()) {
       req.flash('error', 'El nombre es requerido');
       return res.redirect(`/directorio/${req.params.id}/editar`);
     }
-    const areaIdVal = tipo === 'interno' && area_id ? parseInt(area_id) : null;
+    const areaIdVal    = tipo === 'interno' && area_id    ? parseInt(area_id)    : null;
+    const usuarioIdVal = tipo === 'interno' && usuario_id ? parseInt(usuario_id) : null;
     await query(
-      `UPDATE funcionarios SET nombre=?, cargo=?, tipo=?, institucion=?, area_id=?, email=?, telefono=?
+      `UPDATE funcionarios SET nombre=?, cargo=?, tipo=?, institucion=?, area_id=?, usuario_id=?, email=?, telefono=?
        WHERE id=?`,
       [nombre.trim(), cargo || null, tipo || 'externo',
        tipo === 'externo' ? (institucion || null) : null,
-       areaIdVal,
+       areaIdVal, usuarioIdVal,
        email || null, telefono || null, req.params.id]
     );
     if (tipo === 'interno' && areaIdVal && es_jefe === '1') {

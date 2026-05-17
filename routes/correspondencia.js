@@ -97,9 +97,14 @@ router.get('/salientes/nuevo', requireAuth, async (req, res, next) => {
     const u = req.session.usuario;
     const folio = await siguienteFolio(tipo, u.area_id || null);
     const areas = await query('SELECT * FROM areas WHERE activa=1 ORDER BY nombre');
+    const [firmante] = await query(
+      `SELECT nombre, cargo FROM funcionarios WHERE usuario_id=? AND tipo='interno' AND activo=1 LIMIT 1`,
+      [u.id]
+    );
     res.render('correspondencia/salientes-form', {
       titulo: tipo === 'oficio' ? 'Nuevo Oficio' : 'Nuevo Memorándum',
       documento: null, folio, tipo, areas,
+      firmante: firmante || null,
       accion: '/correspondencia/salientes',
     });
   } catch (err) { next(err); }
