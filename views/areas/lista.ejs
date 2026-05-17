@@ -30,7 +30,7 @@
           <thead>
             <tr>
               <th>Nombre</th>
-              <th>Descripción</th>
+              <th>Código</th>
               <th>Responsable</th>
               <th>Estatus</th>
               <th style="width:160px">Acciones</th>
@@ -42,8 +42,17 @@
           <% } %>
           <% areas.forEach(a => { %>
             <tr>
-              <td><strong><%= a.nombre %></strong></td>
-              <td class="text-gris text-sm"><%= a.descripcion || '—' %></td>
+              <td>
+                <strong><%= a.nombre %></strong>
+                <% if (a.descripcion) { %><br><span class="text-sm text-gris"><%= a.descripcion %></span><% } %>
+              </td>
+              <td>
+                <% if (a.codigo) { %>
+                  <code style="background:var(--verde-fondo);color:var(--verde);padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700;letter-spacing:.08em"><%= a.codigo %></code>
+                <% } else { %>
+                  <span class="text-gris text-sm">—</span>
+                <% } %>
+              </td>
               <td class="text-sm"><%= a.responsable || '—' %></td>
               <td>
                 <span class="badge" style="background:<%= a.activa ? '#d1fae5' : '#f3f4f6' %>;color:<%= a.activa ? '#065f46' : '#6b7280' %>">

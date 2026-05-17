@@ -92,6 +92,29 @@ async function initDB() {
     await query(`ALTER TABLE areas ADD COLUMN descripcion VARCHAR(255) NULL AFTER nombre`);
   }
 
+  // Migrar: agregar columna codigo a areas
+  const [codigoCol] = await query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='areas' AND COLUMN_NAME='codigo'`
+  );
+  if (!codigoCol) {
+    await query(`ALTER TABLE areas ADD COLUMN codigo VARCHAR(10) NULL AFTER nombre`);
+    // Asignar códigos predeterminados a las áreas del hospital
+    const codigosDefault = {
+      'Dirección':        'DIR',
+      'Administración':   'ADM',
+      'Enfermería':       'ENF',
+      'Consulta Externa': 'COE',
+      'Urgencias':        'URG',
+      'Laboratorio':      'LAB',
+      'Trabajo Social':   'TRS',
+      'Farmacia':         'FAR',
+    };
+    for (const [nombre, codigo] of Object.entries(codigosDefault)) {
+      await query('UPDATE areas SET codigo=? WHERE nombre=? AND codigo IS NULL', [codigo, nombre]);
+    }
+  }
+
   // Migrar columna rol si aún tiene valores viejos
   const [colInfo] = await query(
     `SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS

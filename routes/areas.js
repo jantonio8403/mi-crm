@@ -20,20 +20,24 @@ router.get('/nueva', async (req, res) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const { nombre, descripcion, responsable } = req.body;
+    const { nombre, codigo, descripcion, responsable } = req.body;
     if (!nombre || !nombre.trim()) {
       req.flash('error', 'El nombre del área es requerido');
       return res.redirect('/areas/nueva');
     }
+    if (!codigo || !codigo.trim()) {
+      req.flash('error', 'El código del área es requerido');
+      return res.redirect('/areas/nueva');
+    }
     await query(
-      'INSERT INTO areas (nombre, descripcion, responsable) VALUES (?,?,?)',
-      [nombre.trim(), descripcion || null, responsable || null]
+      'INSERT INTO areas (nombre, codigo, descripcion, responsable) VALUES (?,?,?,?)',
+      [nombre.trim(), codigo.trim().toUpperCase(), descripcion || null, responsable || null]
     );
     req.flash('success', `Área "${nombre.trim()}" creada correctamente`);
     res.redirect('/areas');
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') {
-      req.flash('error', 'Ya existe un área con ese nombre');
+      req.flash('error', 'Ya existe un área con ese nombre o código');
       return res.redirect('/areas/nueva');
     }
     next(err);
@@ -51,20 +55,24 @@ router.get('/:id/editar', async (req, res, next) => {
 
 router.post('/:id', async (req, res, next) => {
   try {
-    const { nombre, descripcion, responsable } = req.body;
+    const { nombre, codigo, descripcion, responsable } = req.body;
     if (!nombre || !nombre.trim()) {
       req.flash('error', 'El nombre del área es requerido');
       return res.redirect(`/areas/${req.params.id}/editar`);
     }
+    if (!codigo || !codigo.trim()) {
+      req.flash('error', 'El código del área es requerido');
+      return res.redirect(`/areas/${req.params.id}/editar`);
+    }
     await query(
-      'UPDATE areas SET nombre=?, descripcion=?, responsable=? WHERE id=?',
-      [nombre.trim(), descripcion || null, responsable || null, req.params.id]
+      'UPDATE areas SET nombre=?, codigo=?, descripcion=?, responsable=? WHERE id=?',
+      [nombre.trim(), codigo.trim().toUpperCase(), descripcion || null, responsable || null, req.params.id]
     );
     req.flash('success', 'Área actualizada correctamente');
     res.redirect('/areas');
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') {
-      req.flash('error', 'Ya existe un área con ese nombre');
+      req.flash('error', 'Ya existe un área con ese nombre o código');
       return res.redirect(`/areas/${req.params.id}/editar`);
     }
     next(err);

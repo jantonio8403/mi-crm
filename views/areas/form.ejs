@@ -24,23 +24,33 @@
 
     <div class="card" style="max-width:560px">
       <form method="POST" action="<%= accion %>">
-        <div class="form-grid" style="grid-template-columns:1fr">
-          <div class="form-group">
+        <div class="form-grid">
+          <div class="form-group" style="grid-column:1/-1">
             <label>Nombre del área *</label>
             <input type="text" name="nombre" required maxlength="100"
               value="<%= area ? area.nombre : '' %>" placeholder="Ej. Dirección, Enfermería...">
           </div>
           <div class="form-group">
-            <label>Descripción</label>
-            <input type="text" name="descripcion" maxlength="255"
-              value="<%= area && area.descripcion ? area.descripcion : '' %>"
-              placeholder="Breve descripción del área (opcional)">
+            <label>Código de área *
+              <span style="font-weight:400;font-size:11px;color:var(--gris)"> — aparece en el folio: OFI/<strong>DIR</strong>/0001/2026</span>
+            </label>
+            <input type="text" name="codigo" required maxlength="10"
+              style="text-transform:uppercase;letter-spacing:.1em;font-weight:700;max-width:140px"
+              value="<%= area && area.codigo ? area.codigo : '' %>"
+              placeholder="DIR, ADM, ENF..."
+              oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
           </div>
           <div class="form-group">
             <label>Responsable</label>
             <input type="text" name="responsable" maxlength="100"
               value="<%= area && area.responsable ? area.responsable : '' %>"
               placeholder="Nombre del responsable del área (opcional)">
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Descripción</label>
+            <input type="text" name="descripcion" maxlength="255"
+              value="<%= area && area.descripcion ? area.descripcion : '' %>"
+              placeholder="Breve descripción del área (opcional)">
           </div>
         </div>
         <div class="flex gap-8 mt-16">

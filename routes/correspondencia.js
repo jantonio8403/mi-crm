@@ -24,19 +24,32 @@ const upload = multer({
 });
 
 // ─── Helper folio ─────────────────────────────────────────────────
-async function siguienteFolio(tipo) {
+async function siguienteFolio(tipo, area_id) {
   const anio = new Date().getFullYear();
-  const prefijo = tipo === 'oficio' ? 'OF' : 'MEM';
+  const prefijo = tipo === 'oficio' ? 'OFI' : 'MEM';
+
+  // Obtener código del área
+  let codigoArea = 'GEN';
+  if (area_id) {
+    const [area] = await query('SELECT codigo FROM areas WHERE id=?', [area_id]);
+    if (area && area.codigo) codigoArea = area.codigo.toUpperCase();
+  }
+
+  // Consecutivo por área + tipo + año
   const [row] = await query(
-    'SELECT MAX(consecutivo) as max FROM documentos_salientes WHERE tipo=? AND anio=?',
-    [tipo, anio]
+    'SELECT MAX(consecutivo) as max FROM documentos_salientes WHERE tipo=? AND anio=? AND area_emisora_id<=>?',
+    [tipo, anio, area_id || null]
   );
   const siguiente = (row.max || 0) + 1;
   return {
     consecutivo: siguiente,
     anio,
-    numero_folio: `${prefijo}-${String(siguiente).padStart(3, '0')}/${anio}`,
+    numero_folio: `${prefijo}/${codigoArea}/${String(siguiente).padStart(4, '0')}/${anio}`,
   };
+}
+
+function folioToFilename(folio) {
+  return folio.replace(/\//g, '-');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -78,10 +91,11 @@ router.get('/salientes', requireAuth, async (req, res) => {
   } catch (err) { next(err); }
 });
 
-router.get('/salientes/nuevo', requireAuth, async (req, res) => {
+router.get('/salientes/nuevo', requireAuth, async (req, res, next) => {
   try {
     const tipo = req.query.tipo || 'oficio';
-    const folio = await siguienteFolio(tipo);
+    const u = req.session.usuario;
+    const folio = await siguienteFolio(tipo, u.area_id || null);
     const areas = await query('SELECT * FROM areas WHERE activa=1 ORDER BY nombre');
     res.render('correspondencia/salientes-form', {
       titulo: tipo === 'oficio' ? 'Nuevo Oficio' : 'Nuevo Memorándum',
@@ -97,7 +111,9 @@ router.post('/salientes', requireAuth, async (req, res, next) => {
             institucion_destinatario, contenido, area_emisora_id,
             firmante_nombre, firmante_cargo } = req.body;
 
-    const { consecutivo, anio, numero_folio } = await siguienteFolio(tipo);
+    // Folio se genera con el área real que se seleccionó en el formulario
+    const areaId = area_emisora_id ? parseInt(area_emisora_id) : (req.session.usuario.area_id || null);
+    const { consecutivo, anio, numero_folio } = await siguienteFolio(tipo, areaId);
 
     const result = await query(
       `INSERT INTO documentos_salientes
@@ -107,17 +123,18 @@ router.post('/salientes', requireAuth, async (req, res, next) => {
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,'borrador')`,
       [tipo, numero_folio, consecutivo, anio, fecha_emision, asunto, destinatario,
        cargo_destinatario || null, institucion_destinatario || null,
-       contenido, area_emisora_id || null, req.session.usuario.id,
+       contenido, areaId, req.session.usuario.id,
        firmante_nombre || null, firmante_cargo || null]
     );
     const id = result.insertId;
 
     try {
-      const rutaPdf = path.join(__dirname, `../pdfs/${numero_folio.replace('/', '-')}.pdf`);
+      const nombreArchivo = folioToFilename(numero_folio);
+      const rutaPdf = path.join(__dirname, `../pdfs/${nombreArchivo}.pdf`);
       const [doc] = await query('SELECT * FROM documentos_salientes WHERE id=?', [id]);
       await generarOficioPDF(doc, rutaPdf);
       await query('UPDATE documentos_salientes SET ruta_pdf=? WHERE id=?',
-        [`/pdfs/${numero_folio.replace('/', '-')}.pdf`, id]);
+        [`/pdfs/${nombreArchivo}.pdf`, id]);
     } catch (e) {
       console.error('Error al generar PDF:', e.message);
     }
@@ -168,10 +185,11 @@ router.post('/salientes/:id/regenerar-pdf', requireAuth, async (req, res, next) 
   try {
     const [doc] = await query('SELECT * FROM documentos_salientes WHERE id=?', [req.params.id]);
     if (!doc) return res.redirect('/correspondencia/salientes');
-    const rutaPdf = path.join(__dirname, `../pdfs/${doc.numero_folio.replace('/', '-')}.pdf`);
+    const nombreArchivo = folioToFilename(doc.numero_folio);
+    const rutaPdf = path.join(__dirname, `../pdfs/${nombreArchivo}.pdf`);
     await generarOficioPDF(doc, rutaPdf);
     await query('UPDATE documentos_salientes SET ruta_pdf=? WHERE id=?',
-      [`/pdfs/${doc.numero_folio.replace('/', '-')}.pdf`, doc.id]);
+      [`/pdfs/${nombreArchivo}.pdf`, doc.id]);
     req.flash('success', 'PDF regenerado correctamente');
     res.redirect(`/correspondencia/salientes/${doc.id}`);
   } catch (err) { next(err); }
