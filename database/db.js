@@ -172,6 +172,21 @@ async function initDB() {
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
 
+  // Tabla de funcionarios (internos y externos)
+  await query(`CREATE TABLE IF NOT EXISTS funcionarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(150) NOT NULL,
+    cargo VARCHAR(150),
+    tipo ENUM('interno','externo') NOT NULL DEFAULT 'externo',
+    institucion VARCHAR(200),
+    area_id INT,
+    email VARCHAR(100),
+    telefono VARCHAR(30),
+    activo TINYINT(1) DEFAULT 1,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (area_id) REFERENCES areas(id)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
   // Datos iniciales solo si las tablas están vacías
   const [countRow] = await query('SELECT COUNT(*) as c FROM areas');
   if (countRow.c === 0) {

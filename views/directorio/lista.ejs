@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1>Directorio de Funcionarios</h1>
+    <div class="topbar-user">
+      <span><%= usuario.nombre %></span>
+      <a href="/logout">Cerrar sesión</a>
+    </div>
+  </div>
+  <div class="page-content">
+    <% if (success && success.length) { %><div class="alert alert-success">✓ <%= success[0] %></div><% } %>
+    <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+
+    <!-- Contadores -->
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
+      <div class="stat-card">
+        <div class="num"><%= totales.total %></div>
+        <div class="label">Funcionarios activos</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="color:var(--azul)"><%= totales.internos || 0 %></div>
+        <div class="label">Internos (HBC)</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="color:var(--naranja)"><%= totales.externos || 0 %></div>
+        <div class="label">Externos</div>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between mb-16" style="flex-wrap:wrap;gap:10px">
+      <form method="GET" class="filtros-bar" style="flex:1;margin:0">
+        <input type="search" name="buscar" placeholder="Buscar por nombre, cargo o institución..."
+          value="<%= filtros.buscar %>">
+        <select name="tipo">
+          <option value="">Todos</option>
+          <option value="interno"  <%= filtros.tipo==='interno'?'selected':'' %>>Internos</option>
+          <option value="externo"  <%= filtros.tipo==='externo'?'selected':'' %>>Externos</option>
+        </select>
+        <button type="submit" class="btn btn-secondary">Filtrar</button>
+        <a href="/directorio" class="btn btn-secondary">Limpiar</a>
+      </form>
+      <% if (puedeEditar) { %>
+      <div class="flex gap-8">
+        <a href="/directorio/nuevo?tipo=interno" class="btn btn-secondary">+ Interno</a>
+        <a href="/directorio/nuevo?tipo=externo" class="btn btn-primary">+ Externo</a>
+      </div>
+      <% } %>
+    </div>
+
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Cargo</th>
+              <th>Tipo</th>
+              <th>Institución / Área</th>
+              <th>Contacto</th>
+              <th>Estatus</th>
+              <% if (puedeEditar) { %><th style="width:140px">Acciones</th><% } %>
+            </tr>
+          </thead>
+          <tbody>
+          <% if (funcionarios.length === 0) { %>
+            <tr><td colspan="7" class="text-center text-gris" style="padding:30px">No hay funcionarios registrados</td></tr>
+          <% } %>
+          <% funcionarios.forEach(f => { %>
+            <tr class="<%= !f.activo ? 'fila-inactiva' : '' %>">
+              <td><strong><%= f.nombre %></strong></td>
+              <td class="text-sm"><%= f.cargo || '—' %></td>
+              <td>
+                <% if (f.tipo === 'interno') { %>
+                  <span class="badge" style="background:#dbeafe;color:#1d4ed8">Interno</span>
+                <% } else { %>
+                  <span class="badge" style="background:#fef3c7;color:#92400e">Externo</span>
+                <% } %>
+              </td>
+              <td class="text-sm"><%= f.tipo==='interno' ? (f.area_nombre||'—') : (f.institucion||'—') %></td>
+              <td class="text-sm text-gris">
+                <% if (f.email) { %><div><%= f.email %></div><% } %>
+                <% if (f.telefono) { %><div><%= f.telefono %></div><% } %>
+                <% if (!f.email && !f.telefono) { %>—<% } %>
+              </td>
+              <td>
+                <span class="badge" style="background:<%= f.activo?'#d1fae5':'#f3f4f6' %>;color:<%= f.activo?'#065f46':'#6b7280' %>">
+                  <%= f.activo ? 'Activo' : 'Inactivo' %>
+                </span>
+              </td>
+              <% if (puedeEditar) { %>
+              <td>
+                <div class="flex gap-8">
+                  <a href="/directorio/<%= f.id %>/editar" class="btn btn-sm btn-secondary">Editar</a>
+                  <form method="POST" action="/directorio/<%= f.id %>/toggle" style="display:inline">
+                    <button type="submit" class="btn btn-sm <%= f.activo?'btn-danger':'btn-secondary' %>"
+                      onclick="return confirm('<%= f.activo?'¿Desactivar':'¿Activar' %> a \"<%= f.nombre %>\"?')">
+                      <%= f.activo ? 'Desactivar' : 'Activar' %>
+                    </button>
+                  </form>
+                </div>
+              </td>
+              <% } %>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+</body></html>

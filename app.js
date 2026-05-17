@@ -58,6 +58,7 @@ app.use('/usuarios', require('./routes/usuarios'));
 app.use('/tickets', require('./routes/tickets'));
 app.use('/areas', require('./routes/areas'));
 app.use('/perfil', require('./routes/perfil'));
+app.use('/directorio', require('./routes/directorio'));
 
 app.get('/', (req, res) => {
   if (req.session.usuario) return res.redirect('/dashboard');

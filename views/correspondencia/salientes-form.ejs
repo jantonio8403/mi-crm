@@ -64,23 +64,26 @@
             <input type="text" name="asunto" required placeholder="Descripción breve del asunto">
           </div>
 
-          <div class="form-group">
-            <label>Destinatario *</label>
-            <input type="text" name="destinatario" required
-                   placeholder="<%= tipo==='memorandum' ? 'Nombre completo' : 'Nombre del funcionario o institución' %>">
+          <!-- Destinatario con búsqueda en directorio -->
+          <div class="form-group form-full">
+            <label>Destinatario *
+              <span style="font-weight:400;font-size:11px;color:var(--gris)"> — escribe para buscar en el directorio o captura manualmente</span>
+            </label>
+            <div style="position:relative">
+              <input type="text" name="destinatario" id="inp-destinatario" required autocomplete="off"
+                     placeholder="Buscar en directorio o escribir nombre...">
+              <div id="dir-dropdown" class="dir-dropdown" style="display:none"></div>
+            </div>
           </div>
           <div class="form-group">
             <label>Cargo del destinatario</label>
-            <input type="text" name="cargo_destinatario" placeholder="Ej. Director de Área">
+            <input type="text" name="cargo_destinatario" id="inp-cargo-dest" placeholder="Ej. Director General">
           </div>
-
-          <% if (tipo === 'oficio') { %>
-          <div class="form-group form-full">
-            <label>Institución destinataria</label>
-            <input type="text" name="institucion_destinatario"
-                   placeholder="Ej. Secretaría de Salud de Chiapas">
+          <div class="form-group">
+            <label><%= tipo==='oficio' ? 'Institución destinataria' : 'Área / Institución' %></label>
+            <input type="text" name="institucion_destinatario" id="inp-institucion-dest"
+                   placeholder="<%= tipo==='oficio' ? 'Ej. Secretaría de Salud de Chiapas' : 'Ej. Enfermería' %>">
           </div>
-          <% } %>
 
           <div class="form-group form-full">
             <label>Contenido / Cuerpo del documento *</label>

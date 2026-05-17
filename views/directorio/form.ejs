@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1><%= titulo %></h1>
+    <div class="topbar-user">
+      <span><%= usuario.nombre %></span>
+      <a href="/logout">Cerrar sesión</a>
+    </div>
+  </div>
+  <div class="page-content">
+    <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+
+    <div class="flex items-center mb-16">
+      <a href="/directorio" class="btn btn-secondary">← Regresar</a>
+    </div>
+
+    <div class="card" style="max-width:640px">
+      <form method="POST" action="<%= accion %>">
+
+        <!-- Selector de tipo -->
+        <div style="display:flex;gap:0;margin-bottom:20px;border:1px solid var(--borde);border-radius:6px;overflow:hidden">
+          <label style="flex:1;cursor:pointer">
+            <input type="radio" name="tipo" value="externo" id="tipo-externo"
+              <%= tipoPreset==='externo'?'checked':'' %> style="display:none">
+            <div class="tipo-tab" id="tab-externo"
+              style="padding:10px 0;text-align:center;font-size:13px;font-weight:600;
+              background:<%= tipoPreset==='externo'?'var(--verde)':'#fff' %>;
+              color:<%= tipoPreset==='externo'?'#fff':'var(--texto)' %>">
+              🏛 Externo
+            </div>
+          </label>
+          <label style="flex:1;cursor:pointer;border-left:1px solid var(--borde)">
+            <input type="radio" name="tipo" value="interno" id="tipo-interno"
+              <%= tipoPreset==='interno'?'checked':'' %> style="display:none">
+            <div class="tipo-tab" id="tab-interno"
+              style="padding:10px 0;text-align:center;font-size:13px;font-weight:600;
+              background:<%= tipoPreset==='interno'?'var(--verde)':'#fff' %>;
+              color:<%= tipoPreset==='interno'?'#fff':'var(--texto)' %>">
+              🏥 Interno HBC
+            </div>
+          </label>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group form-full">
+            <label>Nombre completo *</label>
+            <input type="text" name="nombre" required maxlength="150"
+              value="<%= funcionario ? funcionario.nombre : '' %>"
+              placeholder="Nombre del funcionario">
+          </div>
+          <div class="form-group form-full">
+            <label>Cargo / Puesto</label>
+            <input type="text" name="cargo" maxlength="150"
+              value="<%= funcionario && funcionario.cargo ? funcionario.cargo : '' %>"
+              placeholder="Ej. Director General, Jefe de Área...">
+          </div>
+
+          <!-- Campos externos -->
+          <div class="form-group form-full" id="campo-institucion" style="display:<%= tipoPreset==='externo'?'flex':'none' %>;flex-direction:column;gap:5px">
+            <label>Institución / Dependencia</label>
+            <input type="text" name="institucion" maxlength="200"
+              value="<%= funcionario && funcionario.institucion ? funcionario.institucion : '' %>"
+              placeholder="Ej. Secretaría de Salud de Chiapas, SSA...">
+          </div>
+
+          <!-- Campo interno: área -->
+          <div class="form-group form-full" id="campo-area" style="display:<%= tipoPreset==='interno'?'flex':'none' %>;flex-direction:column;gap:5px">
+            <label>Área del hospital</label>
+            <select name="area_id">
+              <option value="">— Seleccionar área —</option>
+              <% areas.forEach(a => { %>
+                <option value="<%= a.id %>"
+                  <%= funcionario && funcionario.area_id==a.id ? 'selected' : '' %>><%= a.nombre %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Correo electrónico</label>
+            <input type="email" name="email" maxlength="100"
+              value="<%= funcionario && funcionario.email ? funcionario.email : '' %>"
+              placeholder="correo@ejemplo.gob.mx">
+          </div>
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input type="text" name="telefono" maxlength="30"
+              value="<%= funcionario && funcionario.telefono ? funcionario.telefono : '' %>"
+              placeholder="Ej. 961 123 4567">
+          </div>
+        </div>
+
+        <div class="flex gap-8 mt-16">
+          <button type="submit" class="btn btn-primary"><%= funcionario ? 'Guardar cambios' : 'Agregar al directorio' %></button>
+          <a href="/directorio" class="btn btn-secondary">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+(function () {
+  const radioExterno = document.getElementById('tipo-externo');
+  const radioInterno = document.getElementById('tipo-interno');
+  const tabExt = document.getElementById('tab-externo');
+  const tabInt = document.getElementById('tab-interno');
+  const campoInst = document.getElementById('campo-institucion');
+  const campoArea = document.getElementById('campo-area');
+
+  function actualizarVista() {
+    const esExterno = radioExterno.checked;
+    tabExt.style.background = esExterno ? 'var(--verde)' : '#fff';
+    tabExt.style.color      = esExterno ? '#fff' : 'var(--texto)';
+    tabInt.style.background = esExterno ? '#fff' : 'var(--verde)';
+    tabInt.style.color      = esExterno ? 'var(--texto)' : '#fff';
+    campoInst.style.display = esExterno ? 'flex' : 'none';
+    campoArea.style.display = esExterno ? 'none' : 'flex';
+  }
+
+  radioExterno.addEventListener('change', actualizarVista);
+  radioInterno.addEventListener('change', actualizarVista);
+})();
+</script>
+</body></html>

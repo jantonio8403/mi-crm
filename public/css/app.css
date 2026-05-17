@@ -246,6 +246,36 @@ tr:hover td { background: var(--verde-fondo); }
 a { color: var(--verde); }
 .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
 
+/* ── Filas inactivas ────────────────────────────────────────── */
+.fila-inactiva td { opacity: .5; }
+
+/* ── Autocomplete directorio ────────────────────────────────── */
+.dir-dropdown {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 300;
+  background: #fff; border: 1px solid var(--borde); border-top: none;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  max-height: 280px; overflow-y: auto;
+}
+.dir-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; cursor: pointer;
+  border-bottom: 1px solid var(--borde); transition: background .1s;
+}
+.dir-item:last-child { border-bottom: none; }
+.dir-item:hover, .dir-item.activo { background: var(--verde-fondo); }
+.dir-item-tipo {
+  flex-shrink: 0; width: 22px; height: 22px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+}
+.dir-item-tipo.ext { background: #fef3c7; color: #92400e; }
+.dir-item-tipo.int { background: #dbeafe; color: #1d4ed8; }
+.dir-item-info { flex: 1; min-width: 0; }
+.dir-item-nombre { font-size: 13px; font-weight: 600; }
+.dir-item-sub { font-size: 11px; color: var(--gris); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dir-no-results { padding: 12px 14px; font-size: 13px; color: var(--gris); text-align: center; }
+
 /* ══ RESPONSIVE ═══════════════════════════════════════════════ */
 
 /* ── Botón hamburguesa ─────────────────────────────────────── */
