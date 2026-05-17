@@ -1,11 +1,11 @@
+// ── Sidebar hamburger ───────────────────────────────────────────────
 (function () {
-  // ── Sidebar hamburger ───────────────────────────────────────────
   const overlay = document.createElement('div');
   overlay.className = 'overlay';
   document.body.appendChild(overlay);
 
   const sidebar = document.querySelector('.sidebar');
-  const topbar = document.querySelector('.topbar');
+  const topbar  = document.querySelector('.topbar');
   if (!sidebar || !topbar) return;
 
   const btn = document.createElement('button');
@@ -17,50 +17,62 @@
   function openSidebar()  { sidebar.classList.add('open');    overlay.classList.add('visible'); }
   function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('visible'); }
 
-  btn.addEventListener('click', () => sidebar.classList.contains('open') ? closeSidebar() : openSidebar());
+  btn.addEventListener('click', function () {
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
   overlay.addEventListener('click', closeSidebar);
-  sidebar.querySelectorAll('a').forEach(a => a.addEventListener('click', closeSidebar));
+  sidebar.querySelectorAll('a').forEach(function (a) {
+    a.addEventListener('click', closeSidebar);
+  });
+}());
 
-  // ── Autocomplete de directorio de funcionarios ──────────────────
-  const inpDest    = document.getElementById('inp-destinatario');
-  const inpCargo   = document.getElementById('inp-cargo-dest');
-  const inpInstit  = document.getElementById('inp-institucion-dest');
-  const dropdown   = document.getElementById('dir-dropdown');
+// ── Autocomplete — Directorio de funcionarios ───────────────────────
+(function () {
+  var inpDest   = document.getElementById('inp-destinatario');
+  var inpCargo  = document.getElementById('inp-cargo-dest');
+  var inpInstit = document.getElementById('inp-institucion-dest');
+  var dropdown  = document.getElementById('dir-dropdown');
 
+  // Solo inicializar en páginas que tengan el campo destinatario
   if (!inpDest || !dropdown) return;
 
-  let debounceTimer = null;
-  let currentFocus  = -1;
-  let ultimaQuery   = '';
+  var timer       = null;
+  var foco        = -1;
+  var ultimaQuery = '';
 
-  function mostrarDropdown(items) {
+  function mostrar(items) {
     dropdown.innerHTML = '';
-    currentFocus = -1;
+    foco = -1;
 
-    if (items.length === 0) {
+    if (!items || items.length === 0) {
       dropdown.innerHTML = '<div class="dir-no-results">Sin resultados en el directorio</div>';
       dropdown.style.display = 'block';
       return;
     }
 
     items.forEach(function (f) {
-      const esInterno = f.tipo === 'interno';
-      const subtitulo = (f.cargo || '') + (f.cargo && (esInterno ? f.area_nombre : f.institucion) ? ' · ' : '') + (esInterno ? (f.area_nombre || '') : (f.institucion || ''));
+      var esInt   = f.tipo === 'interno';
+      var segunda = '';
+      if (f.cargo) segunda += f.cargo;
+      var org = esInt ? (f.area_nombre || '') : (f.institucion || '');
+      if (org) segunda += (segunda ? ' · ' : '') + org;
 
-      const el = document.createElement('div');
+      var el = document.createElement('div');
       el.className = 'dir-item';
       el.innerHTML =
-        '<div class="dir-item-tipo ' + (esInterno ? 'int' : 'ext') + '">' +
-          (esInterno ? 'I' : 'E') +
-        '</div>' +
+        '<div class="dir-item-tipo ' + (esInt ? 'int' : 'ext') + '">' + (esInt ? 'I' : 'E') + '</div>' +
         '<div class="dir-item-info">' +
-          '<div class="dir-item-nombre">' + f.nombre + '</div>' +
-          '<div class="dir-item-sub">' + (subtitulo || '—') + '</div>' +
+          '<div class="dir-item-nombre">' + escHtml(f.nombre) + '</div>' +
+          '<div class="dir-item-sub">'   + escHtml(segunda || '—') + '</div>' +
         '</div>';
 
       el.addEventListener('mousedown', function (e) {
         e.preventDefault();
-        seleccionar(f);
+        inpDest.value  = f.nombre;
+        if (inpCargo)  inpCargo.value  = f.cargo || '';
+        if (inpInstit) inpInstit.value = esInt ? (f.area_nombre || '') : (f.institucion || '');
+        ocultar();
+        inpDest.focus();
       });
 
       dropdown.appendChild(el);
@@ -69,64 +81,84 @@
     dropdown.style.display = 'block';
   }
 
-  function ocultarDropdown() {
+  function ocultar() {
     dropdown.style.display = 'none';
-    currentFocus = -1;
-  }
-
-  function seleccionar(f) {
-    inpDest.value = f.nombre;
-    if (inpCargo)  inpCargo.value  = f.cargo  || '';
-    if (inpInstit) inpInstit.value = f.tipo === 'interno' ? (f.area_nombre || '') : (f.institucion || '');
-    ocultarDropdown();
+    foco = -1;
   }
 
   function buscar(q) {
-    if (!q.trim()) { ocultarDropdown(); return; }
+    if (!q || !q.trim()) { ocultar(); return; }
     ultimaQuery = q;
-    fetch('/directorio/buscar?q=' + encodeURIComponent(q))
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        if (ultimaQuery === q) mostrarDropdown(data);
-      })
-      .catch(function () { ocultarDropdown(); });
+
+    fetch('/directorio/buscar?q=' + encodeURIComponent(q.trim()), {
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json' }
+    })
+    .then(function (r) {
+      if (!r.ok) {
+        console.warn('Directorio /buscar respondió con', r.status);
+        ocultar();
+        return null;
+      }
+      return r.json();
+    })
+    .then(function (data) {
+      if (data && ultimaQuery === q) mostrar(data);
+    })
+    .catch(function (err) {
+      console.warn('Error en búsqueda de directorio:', err);
+      ocultar();
+    });
   }
 
+  // Escapar HTML para evitar XSS en el dropdown
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // Evento: escribir en el campo
   inpDest.addEventListener('input', function () {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(function () { buscar(inpDest.value); }, 260);
+    clearTimeout(timer);
+    timer = setTimeout(function () { buscar(inpDest.value); }, 250);
   });
 
+  // Evento: recuperar foco con texto existente
   inpDest.addEventListener('focus', function () {
-    if (inpDest.value.trim().length > 0) buscar(inpDest.value);
+    if (inpDest.value.trim().length >= 1) buscar(inpDest.value);
   });
 
+  // Navegación con teclado
   inpDest.addEventListener('keydown', function (e) {
-    const items = dropdown.querySelectorAll('.dir-item');
-    if (!items.length) return;
+    var items = dropdown.querySelectorAll('.dir-item');
+    if (dropdown.style.display === 'none' || !items.length) return;
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      currentFocus = Math.min(currentFocus + 1, items.length - 1);
+      foco = Math.min(foco + 1, items.length - 1);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      currentFocus = Math.max(currentFocus - 1, 0);
-    } else if (e.key === 'Enter' && currentFocus >= 0) {
+      foco = Math.max(foco - 1, 0);
+    } else if (e.key === 'Enter' && foco >= 0) {
       e.preventDefault();
-      items[currentFocus].dispatchEvent(new Event('mousedown'));
+      items[foco].dispatchEvent(new MouseEvent('mousedown'));
       return;
     } else if (e.key === 'Escape') {
-      ocultarDropdown();
+      ocultar();
+      return;
+    } else {
       return;
     }
 
-    items.forEach(function (it, i) {
-      it.classList.toggle('activo', i === currentFocus);
-    });
-    if (currentFocus >= 0) items[currentFocus].scrollIntoView({ block: 'nearest' });
+    items.forEach(function (it, i) { it.classList.toggle('activo', i === foco); });
+    if (foco >= 0) items[foco].scrollIntoView({ block: 'nearest' });
   });
 
+  // Cerrar al hacer clic fuera
   document.addEventListener('click', function (e) {
-    if (!inpDest.contains(e.target) && !dropdown.contains(e.target)) ocultarDropdown();
+    if (!inpDest.contains(e.target) && !dropdown.contains(e.target)) ocultar();
   });
-})();
+}());
