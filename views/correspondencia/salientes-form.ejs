@@ -70,12 +70,12 @@
               <% if (tipo === 'memorandum') { %>
                 <span style="font-weight:400;font-size:11px;color:var(--azul)"> — solo funcionarios internos del hospital</span>
               <% } else { %>
-                <span style="font-weight:400;font-size:11px;color:var(--gris)"> — busca en el directorio o captura manualmente</span>
+                <span style="font-weight:400;font-size:11px;color:var(--gris)"> — solo destinatarios externos (instituciones u organismos)</span>
               <% } %>
             </label>
             <div style="position:relative">
               <input type="text" name="destinatario" id="inp-destinatario" required autocomplete="off"
-                     placeholder="<%= tipo === 'memorandum' ? 'Buscar personal interno del hospital...' : 'Buscar en directorio o escribir nombre...' %>">
+                     placeholder="<%= tipo === 'memorandum' ? 'Buscar personal interno del hospital...' : 'Buscar en directorio externo o escribir nombre...' %>">
               <div id="dir-dropdown" class="dir-dropdown" style="display:none"></div>
             </div>
           </div>
@@ -186,7 +186,7 @@
     drop.innerHTML = '<div class="dir-no-results">Buscando...</div>';
     drop.style.display = 'block';
 
-    var filtroTipo = '<%= tipo %>' === 'memorandum' ? '&tipo=interno' : '';
+    var filtroTipo = '<%= tipo %>' === 'memorandum' ? '&tipo=interno' : '&tipo=externo';
     fetch('/directorio/buscar?q=' + encodeURIComponent(q) + filtroTipo, {
       credentials: 'include',
       headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
