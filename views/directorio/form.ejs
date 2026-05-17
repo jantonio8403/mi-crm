@@ -71,16 +71,26 @@
               placeholder="Ej. Secretaría de Salud de Chiapas, SSA...">
           </div>
 
-          <!-- Campo interno: área -->
+          <!-- Campo interno: área + designar jefe -->
           <div class="form-group form-full" id="campo-area" style="display:<%= tipoPreset==='interno'?'flex':'none' %>;flex-direction:column;gap:5px">
             <label>Área del hospital</label>
-            <select name="area_id">
+            <select name="area_id" id="sel-area">
               <option value="">— Seleccionar área —</option>
               <% areas.forEach(a => { %>
                 <option value="<%= a.id %>"
                   <%= funcionario && funcionario.area_id==a.id ? 'selected' : '' %>><%= a.nombre %></option>
               <% }) %>
             </select>
+          </div>
+          <div class="form-group form-full" id="campo-es-jefe"
+               style="display:<%= tipoPreset==='interno'?'flex':'none' %>;align-items:center;gap:10px;padding:10px 14px;background:var(--verde-fondo);border:1px solid var(--borde);border-radius:6px">
+            <input type="checkbox" name="es_jefe" id="chk-es-jefe" value="1"
+              style="width:16px;height:16px;accent-color:var(--verde);cursor:pointer"
+              <%= esJefeActual ? 'checked' : '' %>>
+            <label for="chk-es-jefe" style="margin:0;cursor:pointer;font-size:13px">
+              Designar como <strong>jefe de este área</strong>
+              <span style="font-weight:400;color:var(--gris)"> — se asignará automáticamente al área seleccionada</span>
+            </label>
           </div>
 
           <div class="form-group">
@@ -115,6 +125,8 @@
   const campoInst = document.getElementById('campo-institucion');
   const campoArea = document.getElementById('campo-area');
 
+  const campoEsJefe = document.getElementById('campo-es-jefe');
+
   function actualizarVista() {
     const esExterno = radioExterno.checked;
     tabExt.style.background = esExterno ? 'var(--verde)' : '#fff';
@@ -123,6 +135,7 @@
     tabInt.style.color      = esExterno ? 'var(--texto)' : '#fff';
     campoInst.style.display = esExterno ? 'flex' : 'none';
     campoArea.style.display = esExterno ? 'none' : 'flex';
+    if (campoEsJefe) campoEsJefe.style.display = esExterno ? 'none' : 'flex';
   }
 
   radioExterno.addEventListener('change', actualizarVista);

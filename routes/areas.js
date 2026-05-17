@@ -8,19 +8,26 @@ router.use(requireAdmin);
 // ── Lista ────────────────────────────────────────────────────────
 router.get('/', async (req, res, next) => {
   try {
-    const areas = await query('SELECT * FROM areas ORDER BY nombre');
+    const areas = await query(
+      `SELECT a.*, f.nombre as jefe_nombre, f.cargo as jefe_cargo
+       FROM areas a
+       LEFT JOIN funcionarios f ON a.responsable_id = f.id
+       ORDER BY a.nombre`
+    );
     res.render('areas/lista', { titulo: 'Gestión de Áreas', areas });
   } catch (err) { next(err); }
 });
 
 // ── Nueva ────────────────────────────────────────────────────────
-router.get('/nueva', async (req, res) => {
-  res.render('areas/form', { titulo: 'Nueva Área', area: null, accion: '/areas' });
+router.get('/nueva', async (req, res, next) => {
+  try {
+    res.render('areas/form', { titulo: 'Nueva Área', area: null, accion: '/areas' });
+  } catch (err) { next(err); }
 });
 
 router.post('/', async (req, res, next) => {
   try {
-    const { nombre, codigo, descripcion, responsable } = req.body;
+    const { nombre, codigo, descripcion, responsable_id } = req.body;
     if (!nombre || !nombre.trim()) {
       req.flash('error', 'El nombre del área es requerido');
       return res.redirect('/areas/nueva');
@@ -29,9 +36,10 @@ router.post('/', async (req, res, next) => {
       req.flash('error', 'El código del área es requerido');
       return res.redirect('/areas/nueva');
     }
+    const respId = responsable_id && responsable_id.trim() ? parseInt(responsable_id) : null;
     await query(
-      'INSERT INTO areas (nombre, codigo, descripcion, responsable) VALUES (?,?,?,?)',
-      [nombre.trim(), codigo.trim().toUpperCase(), descripcion || null, responsable || null]
+      'INSERT INTO areas (nombre, codigo, descripcion, responsable_id) VALUES (?,?,?,?)',
+      [nombre.trim(), codigo.trim().toUpperCase(), descripcion || null, respId]
     );
     req.flash('success', `Área "${nombre.trim()}" creada correctamente`);
     res.redirect('/areas');
@@ -47,7 +55,12 @@ router.post('/', async (req, res, next) => {
 // ── Editar ───────────────────────────────────────────────────────
 router.get('/:id/editar', async (req, res, next) => {
   try {
-    const [area] = await query('SELECT * FROM areas WHERE id=?', [req.params.id]);
+    const [area] = await query(
+      `SELECT a.*, f.nombre as jefe_nombre, f.cargo as jefe_cargo
+       FROM areas a
+       LEFT JOIN funcionarios f ON a.responsable_id = f.id
+       WHERE a.id=?`, [req.params.id]
+    );
     if (!area) { req.flash('error', 'Área no encontrada'); return res.redirect('/areas'); }
     res.render('areas/form', { titulo: 'Editar Área', area, accion: `/areas/${area.id}` });
   } catch (err) { next(err); }
@@ -55,7 +68,7 @@ router.get('/:id/editar', async (req, res, next) => {
 
 router.post('/:id', async (req, res, next) => {
   try {
-    const { nombre, codigo, descripcion, responsable } = req.body;
+    const { nombre, codigo, descripcion, responsable_id } = req.body;
     if (!nombre || !nombre.trim()) {
       req.flash('error', 'El nombre del área es requerido');
       return res.redirect(`/areas/${req.params.id}/editar`);
@@ -64,9 +77,10 @@ router.post('/:id', async (req, res, next) => {
       req.flash('error', 'El código del área es requerido');
       return res.redirect(`/areas/${req.params.id}/editar`);
     }
+    const respId = responsable_id && responsable_id.trim() ? parseInt(responsable_id) : null;
     await query(
-      'UPDATE areas SET nombre=?, codigo=?, descripcion=?, responsable=? WHERE id=?',
-      [nombre.trim(), codigo.trim().toUpperCase(), descripcion || null, responsable || null, req.params.id]
+      'UPDATE areas SET nombre=?, codigo=?, descripcion=?, responsable_id=? WHERE id=?',
+      [nombre.trim(), codigo.trim().toUpperCase(), descripcion || null, respId, req.params.id]
     );
     req.flash('success', 'Área actualizada correctamente');
     res.redirect('/areas');

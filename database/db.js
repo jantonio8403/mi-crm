@@ -187,6 +187,16 @@ async function initDB() {
     FOREIGN KEY (area_id) REFERENCES areas(id)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
 
+  // Migrar: agregar responsable_id (FK a funcionarios) en areas
+  const [respIdCol] = await query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='areas' AND COLUMN_NAME='responsable_id'`
+  );
+  if (!respIdCol) {
+    await query(`ALTER TABLE areas ADD COLUMN responsable_id INT NULL AFTER responsable`);
+    await query(`ALTER TABLE areas ADD CONSTRAINT fk_areas_responsable_id FOREIGN KEY (responsable_id) REFERENCES funcionarios(id) ON DELETE SET NULL`);
+  }
+
   // Datos iniciales solo si las tablas están vacías
   const [countRow] = await query('SELECT COUNT(*) as c FROM areas');
   if (countRow.c === 0) {

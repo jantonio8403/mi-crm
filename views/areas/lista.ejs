@@ -53,7 +53,16 @@
                   <span class="text-gris text-sm">—</span>
                 <% } %>
               </td>
-              <td class="text-sm"><%= a.responsable || '—' %></td>
+              <td class="text-sm">
+                <% if (a.jefe_nombre) { %>
+                  <strong><%= a.jefe_nombre %></strong>
+                  <% if (a.jefe_cargo) { %><br><span class="text-gris" style="font-size:11px"><%= a.jefe_cargo %></span><% } %>
+                <% } else if (a.responsable) { %>
+                  <span class="text-gris"><%= a.responsable %></span>
+                <% } else { %>
+                  <span class="text-gris">—</span>
+                <% } %>
+              </td>
               <td>
                 <span class="badge" style="background:<%= a.activa ? '#d1fae5' : '#f3f4f6' %>;color:<%= a.activa ? '#065f46' : '#6b7280' %>">
                   <%= a.activa ? 'Activa' : 'Inactiva' %>

@@ -41,16 +41,24 @@
               oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
           </div>
           <div class="form-group">
-            <label>Responsable
+            <label>Jefe de área
               <span style="font-weight:400;font-size:11px;color:var(--gris)"> — busca en el directorio interno</span>
             </label>
             <div style="position:relative">
-              <input type="text" name="responsable" id="inp-responsable" maxlength="100"
+              <input type="hidden" name="responsable_id" id="hid-responsable-id"
+                value="<%= area && area.responsable_id ? area.responsable_id : '' %>">
+              <input type="text" id="inp-responsable" maxlength="100"
                 autocomplete="off"
-                value="<%= area && area.responsable ? area.responsable : '' %>"
+                value="<%= area && area.jefe_nombre ? area.jefe_nombre : '' %>"
                 placeholder="Buscar personal interno...">
               <div id="drop-responsable" class="dir-dropdown" style="display:none"></div>
             </div>
+            <% if (area && area.jefe_nombre) { %>
+              <div style="margin-top:4px;font-size:11px;color:var(--gris)">
+                Actual: <strong><%= area.jefe_nombre %></strong><% if (area.jefe_cargo) { %> — <%= area.jefe_cargo %><% } %>
+                &nbsp;<a href="#" id="lnk-quitar-jefe" style="color:var(--rojo);text-decoration:none;font-size:11px">✕ quitar</a>
+              </div>
+            <% } %>
           </div>
           <div class="form-group" style="grid-column:1/-1">
             <label>Descripción</label>
@@ -72,7 +80,18 @@
 (function () {
   var inp  = document.getElementById('inp-responsable');
   var drop = document.getElementById('drop-responsable');
+  var hid  = document.getElementById('hid-responsable-id');
+  var lnkQuitar = document.getElementById('lnk-quitar-jefe');
   if (!inp || !drop) return;
+
+  if (lnkQuitar) {
+    lnkQuitar.addEventListener('click', function (e) {
+      e.preventDefault();
+      inp.value = '';
+      if (hid) hid.value = '';
+      lnkQuitar.parentElement.style.display = 'none';
+    });
+  }
 
   var timer = null;
   var ultima = '';
@@ -103,6 +122,7 @@
       el.addEventListener('mousedown', function (e) {
         e.preventDefault();
         inp.value = f.nombre;
+        if (hid) hid.value = f.id;
         ocultar();
       });
       drop.appendChild(el);

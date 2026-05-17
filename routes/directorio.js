@@ -83,25 +83,30 @@ router.get('/nuevo', requireAuth, puedeEditar, async (req, res, next) => {
       funcionario: null, areas,
       accion: '/directorio',
       tipoPreset: req.query.tipo || 'externo',
+      esJefeActual: false,
     });
   } catch (err) { next(err); }
 });
 
 router.post('/', requireAuth, puedeEditar, async (req, res, next) => {
   try {
-    const { nombre, cargo, tipo, institucion, area_id, email, telefono } = req.body;
+    const { nombre, cargo, tipo, institucion, area_id, email, telefono, es_jefe } = req.body;
     if (!nombre || !nombre.trim()) {
       req.flash('error', 'El nombre es requerido');
       return res.redirect('/directorio/nuevo');
     }
-    await query(
+    const areaIdVal = tipo === 'interno' && area_id ? parseInt(area_id) : null;
+    const result = await query(
       `INSERT INTO funcionarios (nombre, cargo, tipo, institucion, area_id, email, telefono)
        VALUES (?,?,?,?,?,?,?)`,
       [nombre.trim(), cargo || null, tipo || 'externo',
        tipo === 'externo' ? (institucion || null) : null,
-       tipo === 'interno' ? (area_id || null) : null,
+       areaIdVal,
        email || null, telefono || null]
     );
+    if (tipo === 'interno' && areaIdVal && es_jefe === '1') {
+      await query('UPDATE areas SET responsable_id=? WHERE id=?', [result.insertId, areaIdVal]);
+    }
     req.flash('success', `Funcionario "${nombre.trim()}" agregado al directorio`);
     res.redirect('/directorio');
   } catch (err) { next(err); }
@@ -113,30 +118,43 @@ router.get('/:id/editar', requireAuth, puedeEditar, async (req, res, next) => {
     const [funcionario] = await query('SELECT * FROM funcionarios WHERE id=?', [req.params.id]);
     if (!funcionario) { req.flash('error', 'Funcionario no encontrado'); return res.redirect('/directorio'); }
     const areas = await query('SELECT * FROM areas WHERE activa=1 ORDER BY nombre');
+    let esJefeActual = false;
+    if (funcionario.tipo === 'interno' && funcionario.area_id) {
+      const [area] = await query('SELECT responsable_id FROM areas WHERE id=?', [funcionario.area_id]);
+      esJefeActual = area && area.responsable_id == funcionario.id;
+    }
     res.render('directorio/form', {
       titulo: 'Editar Funcionario',
       funcionario, areas,
       accion: `/directorio/${funcionario.id}`,
       tipoPreset: funcionario.tipo,
+      esJefeActual,
     });
   } catch (err) { next(err); }
 });
 
 router.post('/:id', requireAuth, puedeEditar, async (req, res, next) => {
   try {
-    const { nombre, cargo, tipo, institucion, area_id, email, telefono } = req.body;
+    const { nombre, cargo, tipo, institucion, area_id, email, telefono, es_jefe } = req.body;
     if (!nombre || !nombre.trim()) {
       req.flash('error', 'El nombre es requerido');
       return res.redirect(`/directorio/${req.params.id}/editar`);
     }
+    const areaIdVal = tipo === 'interno' && area_id ? parseInt(area_id) : null;
     await query(
       `UPDATE funcionarios SET nombre=?, cargo=?, tipo=?, institucion=?, area_id=?, email=?, telefono=?
        WHERE id=?`,
       [nombre.trim(), cargo || null, tipo || 'externo',
        tipo === 'externo' ? (institucion || null) : null,
-       tipo === 'interno' ? (area_id || null) : null,
+       areaIdVal,
        email || null, telefono || null, req.params.id]
     );
+    if (tipo === 'interno' && areaIdVal && es_jefe === '1') {
+      await query('UPDATE areas SET responsable_id=? WHERE id=?', [req.params.id, areaIdVal]);
+    } else if (es_jefe !== '1') {
+      // si se desmarca, quitar como jefe solo si aún figura en esa área
+      await query('UPDATE areas SET responsable_id=NULL WHERE responsable_id=?', [req.params.id]);
+    }
     req.flash('success', 'Funcionario actualizado correctamente');
     res.redirect('/directorio');
   } catch (err) { next(err); }
