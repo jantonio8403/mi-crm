@@ -41,10 +41,16 @@
               oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
           </div>
           <div class="form-group">
-            <label>Responsable</label>
-            <input type="text" name="responsable" maxlength="100"
-              value="<%= area && area.responsable ? area.responsable : '' %>"
-              placeholder="Nombre del responsable del área (opcional)">
+            <label>Responsable
+              <span style="font-weight:400;font-size:11px;color:var(--gris)"> — busca en el directorio interno</span>
+            </label>
+            <div style="position:relative">
+              <input type="text" name="responsable" id="inp-responsable" maxlength="100"
+                autocomplete="off"
+                value="<%= area && area.responsable ? area.responsable : '' %>"
+                placeholder="Buscar personal interno...">
+              <div id="drop-responsable" class="dir-dropdown" style="display:none"></div>
+            </div>
           </div>
           <div class="form-group" style="grid-column:1/-1">
             <label>Descripción</label>
@@ -62,4 +68,85 @@
   </div>
 </div>
 <script src="/js/app.js"></script>
+<script>
+(function () {
+  var inp  = document.getElementById('inp-responsable');
+  var drop = document.getElementById('drop-responsable');
+  if (!inp || !drop) return;
+
+  var timer = null;
+  var ultima = '';
+
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function ocultar() { drop.style.display = 'none'; }
+
+  function mostrar(lista) {
+    drop.innerHTML = '';
+    if (!lista || lista.length === 0) {
+      drop.innerHTML = '<div class="dir-no-results">Sin resultados en el directorio interno.</div>';
+      drop.style.display = 'block';
+      return;
+    }
+    lista.forEach(function (f) {
+      var linea2 = [f.cargo, f.area_nombre].filter(Boolean).join(' · ');
+      var el = document.createElement('div');
+      el.className = 'dir-item';
+      el.innerHTML =
+        '<div class="dir-item-tipo int">I</div>' +
+        '<div class="dir-item-info">' +
+          '<div class="dir-item-nombre">' + esc(f.nombre) + '</div>' +
+          '<div class="dir-item-sub">'   + esc(linea2 || '—') + '</div>' +
+        '</div>';
+      el.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        inp.value = f.nombre;
+        ocultar();
+      });
+      drop.appendChild(el);
+    });
+    drop.style.display = 'block';
+  }
+
+  function buscar(q) {
+    q = (q || '').trim();
+    if (!q) { ocultar(); return; }
+    ultima = q;
+    drop.innerHTML = '<div class="dir-no-results">Buscando...</div>';
+    drop.style.display = 'block';
+
+    fetch('/directorio/buscar?q=' + encodeURIComponent(q) + '&tipo=interno', {
+      credentials: 'include',
+      headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function (data) {
+      if (ultima === q) mostrar(data);
+    })
+    .catch(function (err) {
+      console.error('Autocomplete responsable:', err);
+      drop.innerHTML = '<div class="dir-no-results" style="color:var(--rojo)">Error al buscar.</div>';
+      drop.style.display = 'block';
+    });
+  }
+
+  inp.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(function () { buscar(inp.value); }, 280);
+  });
+
+  inp.addEventListener('focus', function () {
+    if (inp.value.trim()) buscar(inp.value);
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!inp.contains(e.target) && !drop.contains(e.target)) ocultar();
+  });
+}());
+</script>
 </body></html>
