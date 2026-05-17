@@ -67,6 +67,8 @@ app.get('/', (req, res) => {
 
 app.use((err, req, res, next) => {
   console.error(err);
+  const esAjax = req.xhr || (req.headers.accept || '').includes('application/json');
+  if (esAjax) return res.status(500).json({ error: err.message });
   res.status(500).send('Error interno del servidor: ' + err.message);
 });
 

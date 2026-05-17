@@ -119,4 +119,99 @@
   </div>
 </div>
 <script src="/js/app.js"></script>
+<script>
+/* Autocomplete destinatario — directorio de funcionarios */
+(function () {
+  var inp    = document.getElementById('inp-destinatario');
+  var drop   = document.getElementById('dir-dropdown');
+  var cargo  = document.getElementById('inp-cargo-dest');
+  var inst   = document.getElementById('inp-institucion-dest');
+
+  if (!inp || !drop) {
+    console.error('Autocomplete: no se encontraron los elementos del DOM');
+    return;
+  }
+
+  var timer = null;
+  var ultima = '';
+
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function ocultar() {
+    drop.style.display = 'none';
+  }
+
+  function mostrar(lista) {
+    drop.innerHTML = '';
+    if (!lista || lista.length === 0) {
+      drop.innerHTML = '<div class="dir-no-results">Sin resultados. Agrega funcionarios en el Directorio.</div>';
+      drop.style.display = 'block';
+      return;
+    }
+    lista.forEach(function (f) {
+      var esInt  = f.tipo === 'interno';
+      var org    = esInt ? (f.area_nombre || '') : (f.institucion || '');
+      var linea2 = [f.cargo, org].filter(Boolean).join(' · ');
+      var el = document.createElement('div');
+      el.className = 'dir-item';
+      el.innerHTML =
+        '<div class="dir-item-tipo ' + (esInt ? 'int' : 'ext') + '">' + (esInt ? 'I' : 'E') + '</div>' +
+        '<div class="dir-item-info">' +
+          '<div class="dir-item-nombre">' + esc(f.nombre) + '</div>' +
+          '<div class="dir-item-sub">'   + esc(linea2 || '—') + '</div>' +
+        '</div>';
+      el.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        inp.value   = f.nombre;
+        if (cargo) cargo.value = f.cargo || '';
+        if (inst)  inst.value  = esInt ? (f.area_nombre || '') : (f.institucion || '');
+        ocultar();
+      });
+      drop.appendChild(el);
+    });
+    drop.style.display = 'block';
+  }
+
+  function buscar(q) {
+    q = (q || '').trim();
+    if (!q) { ocultar(); return; }
+    ultima = q;
+    /* indicador visual */
+    drop.innerHTML = '<div class="dir-no-results">Buscando...</div>';
+    drop.style.display = 'block';
+
+    fetch('/directorio/buscar?q=' + encodeURIComponent(q), {
+      credentials: 'include',
+      headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function (data) {
+      if (ultima === q) mostrar(data);
+    })
+    .catch(function (err) {
+      console.error('Error autocomplete:', err);
+      drop.innerHTML = '<div class="dir-no-results" style="color:var(--rojo)">Error al buscar. Revisa la consola.</div>';
+      drop.style.display = 'block';
+    });
+  }
+
+  inp.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(function () { buscar(inp.value); }, 280);
+  });
+
+  inp.addEventListener('focus', function () {
+    if (inp.value.trim()) buscar(inp.value);
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!inp.contains(e.target) && !drop.contains(e.target)) ocultar();
+  });
+}());
+</script>
 </body></html>
