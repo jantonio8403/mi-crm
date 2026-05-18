@@ -81,12 +81,15 @@
           </div>
           <div class="form-group">
             <label>Cargo del destinatario</label>
-            <input type="text" name="cargo_destinatario" id="inp-cargo-dest" placeholder="Ej. Director General">
+            <input type="text" name="cargo_destinatario" id="inp-cargo-dest" readonly
+                   placeholder="Se llena al seleccionar del directorio"
+                   style="background:var(--verde-fondo);color:var(--gris);cursor:default">
           </div>
           <div class="form-group">
             <label><%= tipo==='oficio' ? 'Institución destinataria' : 'Área / Institución' %></label>
-            <input type="text" name="institucion_destinatario" id="inp-institucion-dest"
-                   placeholder="<%= tipo==='oficio' ? 'Ej. Secretaría de Salud de Chiapas' : 'Ej. Enfermería' %>">
+            <input type="text" name="institucion_destinatario" id="inp-institucion-dest" readonly
+                   placeholder="Se llena al seleccionar del directorio"
+                   style="background:var(--verde-fondo);color:var(--gris);cursor:default">
           </div>
 
           <div class="form-group form-full">
