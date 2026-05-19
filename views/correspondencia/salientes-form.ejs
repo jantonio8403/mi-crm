@@ -551,7 +551,7 @@
       ultima = q;
       drop.innerHTML = '<div class="dir-no-results">Buscando...</div>';
       drop.style.display = 'block';
-      fetch('/directorio/buscar?q=' + encodeURIComponent(q), {
+      fetch('/directorio/buscar?q=' + encodeURIComponent(q) + '&tipo=externo', {
         credentials: 'include',
         headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
       })

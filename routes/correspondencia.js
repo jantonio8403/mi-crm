@@ -168,7 +168,7 @@ router.post('/salientes', requireAuth, async (req, res, next) => {
       for (const c of copiasRaw) {
         if (!c || !c.nombre || !c.nombre.trim()) continue;
         const [copiaOk] = await query(
-          'SELECT id FROM funcionarios WHERE nombre=? AND activo=1 LIMIT 1',
+          "SELECT id FROM funcionarios WHERE nombre=? AND tipo='externo' AND activo=1 LIMIT 1",
           [c.nombre.trim()]
         );
         if (!copiaOk) {
