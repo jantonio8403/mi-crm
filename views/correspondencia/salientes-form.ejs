@@ -161,36 +161,54 @@
 <script>
 /* ── Editor de texto (Quill + tablas) ────────────────────────── */
 (function () {
-  Quill.register({ 'modules/better-table': quillBetterTable }, true);
+  var BetterTable = window.quillBetterTable || window.QuillBetterTable;
+
+  if (BetterTable) {
+    Quill.register({ 'modules/better-table': BetterTable }, true);
+  }
+
+  var modulos = {
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ align: [] }],
+      [{ indent: '-1' }, { indent: '+1' }],
+      ['clean']
+    ],
+    table: false
+  };
+
+  if (BetterTable) {
+    modulos['better-table'] = {
+      operationMenu: { items: { unmergeCells: { text: 'Separar celdas' } } }
+    };
+    modulos.keyboard = { bindings: BetterTable.keyboardBindings };
+  }
 
   var quill = new Quill('#quill-editor', {
     theme: 'snow',
     placeholder: 'Redacte aquí el cuerpo del documento...',
-    modules: {
-      toolbar: {
-        container: [
-          [{ header: [1, 2, 3, false] }],
-          ['bold', 'italic', 'underline'],
-          [{ list: 'ordered' }, { list: 'bullet' }],
-          [{ align: [] }],
-          [{ indent: '-1' }, { indent: '+1' }],
-          [{ 'table-btn': 'Insertar tabla' }],
-          ['clean']
-        ]
-      },
-      table: false,
-      'better-table': {
-        operationMenu: {
-          items: { unmergeCells: { text: 'Separar celdas' } }
-        }
-      },
-      keyboard: { bindings: quillBetterTable.keyboardBindings }
-    }
+    modules: modulos
   });
 
-  quill.getModule('toolbar').addHandler('table-btn', function () {
-    quill.getModule('better-table').insertTable(3, 3);
-  });
+  /* Botón "Insertar tabla" inyectado directamente en la toolbar */
+  if (BetterTable) {
+    var toolbar = document.querySelector('.ql-toolbar');
+    var span = document.createElement('span');
+    span.className = 'ql-formats';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.title = 'Insertar tabla';
+    btn.style.cssText = 'width:auto;padding:2px 8px;font-size:12px;font-weight:600';
+    btn.textContent = '⊞ Tabla';
+    btn.addEventListener('mousedown', function (e) {
+      e.preventDefault();
+      quill.getModule('better-table').insertTable(3, 3);
+    });
+    span.appendChild(btn);
+    toolbar.appendChild(span);
+  }
 
   var form   = document.querySelector('form');
   var hidden = document.getElementById('contenido-hidden');
