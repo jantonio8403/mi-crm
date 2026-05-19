@@ -89,6 +89,32 @@ function generarOficioPDF(documento, ruta, copias = []) {
       .text('HOSPITAL BÁSICO COMUNITARIO', firmaX, doc.y, { width: 200, align: 'center' })
       .text('12 CAMAS, BERRIOZABAL, CHIS.', firmaX, doc.y, { width: 200, align: 'center' });
 
+    // ─── Vo. Bo. y Elaboró ───────────────────────────────────────
+    const tieneVobo    = !!documento.vobo_nombre;
+    const tieneElabora = !!documento.elaboro_nombre;
+    if (tieneVobo || tieneElabora) {
+      doc.moveDown(1.5);
+      const rowY = doc.y;
+      const lh = 11;
+
+      if (tieneVobo) {
+        doc.moveTo(60, rowY).lineTo(230, rowY).stroke();
+        doc.fontSize(8).font('Helvetica-Bold').text('Vo. Bo.', 60, rowY + 4, { width: 170, align: 'center' });
+        doc.font('Helvetica').text(documento.vobo_nombre.toUpperCase(), 60, rowY + 4 + lh, { width: 170, align: 'center' });
+        if (documento.vobo_cargo) doc.text(documento.vobo_cargo, 60, rowY + 4 + lh * 2, { width: 170, align: 'center' });
+      }
+
+      if (tieneElabora) {
+        doc.moveTo(330, rowY).lineTo(500, rowY).stroke();
+        doc.fontSize(8).font('Helvetica-Bold').text('Elaboró', 330, rowY + 4, { width: 170, align: 'center' });
+        doc.font('Helvetica').text(documento.elaboro_nombre.toUpperCase(), 330, rowY + 4 + lh, { width: 170, align: 'center' });
+        if (documento.elaboro_cargo) doc.text(documento.elaboro_cargo, 330, rowY + 4 + lh * 2, { width: 170, align: 'center' });
+      }
+
+      doc.x = 60;
+      doc.y = rowY + 4 + lh * 3 + 8;
+    }
+
     // ─── C.c.p. ───────────────────────────────────────────────────
     if (copias && copias.length > 0) {
       doc.moveDown(1.5);

@@ -203,6 +203,19 @@ async function initDB() {
     await query(`ALTER TABLE documentos_salientes ADD COLUMN atencion_a_cargo VARCHAR(200) NULL AFTER atencion_a`);
   }
 
+  // Migrar: agregar Vo. Bo. y Elaboró en documentos_salientes
+  const [vbCol] = await query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='documentos_salientes' AND COLUMN_NAME='vobo_nombre'`
+  );
+  if (!vbCol) {
+    await query(`ALTER TABLE documentos_salientes
+      ADD COLUMN vobo_nombre   VARCHAR(150) NULL AFTER firmante_cargo,
+      ADD COLUMN vobo_cargo    VARCHAR(150) NULL AFTER vobo_nombre,
+      ADD COLUMN elaboro_nombre VARCHAR(150) NULL AFTER vobo_cargo,
+      ADD COLUMN elaboro_cargo  VARCHAR(150) NULL AFTER elaboro_nombre`);
+  }
+
   // Tabla copias de documento (C.c.p.)
   await query(`CREATE TABLE IF NOT EXISTS documento_copias (
     id INT AUTO_INCREMENT PRIMARY KEY,

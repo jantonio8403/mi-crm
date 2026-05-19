@@ -130,7 +130,9 @@ router.post('/salientes', requireAuth, async (req, res, next) => {
   try {
     const { tipo, fecha_emision, asunto, destinatario, cargo_destinatario,
             atencion_a, atencion_a_cargo, contenido, area_emisora_id,
-            firmante_nombre, firmante_cargo } = req.body;
+            firmante_nombre, firmante_cargo,
+            vobo_nombre, vobo_cargo,
+            elaboro_nombre, elaboro_cargo } = req.body;
 
     const redir = `/correspondencia/salientes/nuevo?tipo=${tipo}`;
 
@@ -169,6 +171,28 @@ router.post('/salientes', requireAuth, async (req, res, next) => {
       return res.redirect(redir);
     }
 
+    if (vobo_nombre && vobo_nombre.trim()) {
+      const [voboOk] = await query(
+        "SELECT id FROM funcionarios WHERE nombre=? AND tipo='interno' AND activo=1 LIMIT 1",
+        [vobo_nombre.trim()]
+      );
+      if (!voboOk) {
+        req.flash('error', 'El Vo. Bo. no existe en el directorio interno. Selecciónalo del autocomplete.');
+        return res.redirect(redir);
+      }
+    }
+
+    if (elaboro_nombre && elaboro_nombre.trim()) {
+      const [elaboroOk] = await query(
+        "SELECT id FROM funcionarios WHERE nombre=? AND tipo='interno' AND activo=1 LIMIT 1",
+        [elaboro_nombre.trim()]
+      );
+      if (!elaboroOk) {
+        req.flash('error', 'Quien elaboró el oficio no existe en el directorio interno. Selecciónalo del autocomplete.');
+        return res.redirect(redir);
+      }
+    }
+
     if (tipo === 'oficio' && req.body.copias) {
       const copiasRaw = Array.isArray(req.body.copias)
         ? req.body.copias : Object.values(req.body.copias);
@@ -197,14 +221,17 @@ router.post('/salientes', requireAuth, async (req, res, next) => {
       `INSERT INTO documentos_salientes
        (tipo, numero_folio, consecutivo, anio, fecha_emision, asunto, destinatario,
         cargo_destinatario, atencion_a, atencion_a_cargo, contenido, area_emisora_id,
-        elaborado_por_id, firmante_nombre, firmante_cargo, estatus)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'borrador')`,
+        elaborado_por_id, firmante_nombre, firmante_cargo,
+        vobo_nombre, vobo_cargo, elaboro_nombre, elaboro_cargo, estatus)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'borrador')`,
       [tipo, numero_folio, consecutivo, anio, fecha_emision, asunto, destinatario,
        cargo_destinatario || null,
        tipo === 'oficio' ? (atencion_a || null) : null,
        tipo === 'oficio' ? (atencion_a_cargo || null) : null,
        contenido, areaId, req.session.usuario.id,
-       firmante_nombre || null, firmante_cargo || null]
+       firmante_nombre || null, firmante_cargo || null,
+       vobo_nombre   ? vobo_nombre.trim()   : null,  vobo_cargo    ? vobo_cargo.trim()    : null,
+       elaboro_nombre ? elaboro_nombre.trim() : null, elaboro_cargo ? elaboro_cargo.trim() : null]
     );
     const id = result.insertId;
 

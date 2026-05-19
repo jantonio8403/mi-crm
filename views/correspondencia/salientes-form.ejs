@@ -151,6 +151,49 @@
                    style="background:var(--verde-fondo);color:var(--gris);cursor:default">
           </div>
 
+          <!-- Vo. Bo. + Elaboró (misma fila) -->
+          <div class="form-full" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;align-items:start">
+              <div class="form-group">
+                <label>Vo. Bo.
+                  <span style="font-weight:400;font-size:11px;color:var(--gris)"> — funcionario interno (opcional)</span>
+                </label>
+                <div style="position:relative">
+                  <input type="text" name="vobo_nombre" id="inp-vobo" autocomplete="off"
+                         placeholder="Buscar funcionario interno...">
+                  <div id="drop-vobo" class="dir-dropdown" style="display:none"></div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Cargo</label>
+                <input type="text" name="vobo_cargo" id="inp-vobo-cargo" readonly
+                       placeholder="Se llena al seleccionar"
+                       style="background:var(--verde-fondo);color:var(--gris);cursor:default">
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;align-items:start">
+              <div class="form-group">
+                <label>Elaboró
+                  <span style="font-weight:400;font-size:11px;color:var(--gris)"> — funcionario interno (opcional)</span>
+                </label>
+                <div style="position:relative">
+                  <input type="text" name="elaboro_nombre" id="inp-elaboro" autocomplete="off"
+                         placeholder="Buscar funcionario interno...">
+                  <div id="drop-elaboro" class="dir-dropdown" style="display:none"></div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Cargo</label>
+                <input type="text" name="elaboro_cargo" id="inp-elaboro-cargo" readonly
+                       placeholder="Se llena al seleccionar"
+                       style="background:var(--verde-fondo);color:var(--gris);cursor:default">
+              </div>
+            </div>
+
+          </div>
+
           <!-- Con copia para (solo oficio) -->
           <% if (tipo === 'oficio') { %>
           <div class="form-full" style="margin-top:8px">
@@ -211,6 +254,8 @@
       { id: 'inp-destinatario',  label: 'Destinatario' },
       { id: 'inp-atencion-a',    label: 'Con atención a', opcional: true },
       { id: 'inp-firmante',      label: 'Firmante' },
+      { id: 'inp-vobo',          label: 'Vo. Bo.',        opcional: true },
+      { id: 'inp-elaboro',       label: 'Elaboró',        opcional: true },
     ];
     for (var i = 0; i < camposDir.length; i++) {
       var cd = camposDir[i];
@@ -414,6 +459,154 @@
   var inp   = document.getElementById('inp-firmante');
   var drop  = document.getElementById('drop-firmante');
   var cargo = document.getElementById('inp-firmante-cargo');
+  if (!inp || !drop) return;
+
+  var timer = null;
+  var ultima = '';
+
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function ocultar() { drop.style.display = 'none'; }
+
+  function mostrar(lista) {
+    drop.innerHTML = '';
+    if (!lista || lista.length === 0) {
+      drop.innerHTML = '<div class="dir-no-results">Sin resultados en directorio interno.</div>';
+      drop.style.display = 'block';
+      return;
+    }
+    lista.forEach(function (f) {
+      var linea2 = [f.cargo, f.area_nombre].filter(Boolean).join(' · ');
+      var el = document.createElement('div');
+      el.className = 'dir-item';
+      el.innerHTML =
+        '<div class="dir-item-tipo int">I</div>' +
+        '<div class="dir-item-info">' +
+          '<div class="dir-item-nombre">' + esc(f.nombre) + '</div>' +
+          '<div class="dir-item-sub">'   + esc(linea2 || '—') + '</div>' +
+        '</div>';
+      el.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        inp.value = f.nombre;
+        inp.dataset.dbSelected = '1';
+        inp.style.borderColor = '';
+        if (cargo) cargo.value = f.cargo || '';
+        ocultar();
+      });
+      drop.appendChild(el);
+    });
+    drop.style.display = 'block';
+  }
+
+  function buscar(q) {
+    q = (q || '').trim();
+    if (!q) { ocultar(); return; }
+    ultima = q;
+    drop.innerHTML = '<div class="dir-no-results">Buscando...</div>';
+    drop.style.display = 'block';
+    fetch('/directorio/buscar?q=' + encodeURIComponent(q) + '&tipo=interno', {
+      credentials: 'include',
+      headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (data) { if (ultima === q) mostrar(data); })
+    .catch(function () {
+      drop.innerHTML = '<div class="dir-no-results" style="color:var(--rojo)">Error al buscar.</div>';
+      drop.style.display = 'block';
+    });
+  }
+
+  inp.addEventListener('input', function () {
+    delete inp.dataset.dbSelected;
+    if (cargo) cargo.value = '';
+    clearTimeout(timer);
+    timer = setTimeout(function () { buscar(inp.value); }, 280);
+  });
+  inp.addEventListener('focus', function () { if (inp.value.trim()) buscar(inp.value); });
+  document.addEventListener('click', function (e) {
+    if (!inp.contains(e.target) && !drop.contains(e.target)) ocultar();
+  });
+}());
+</script>
+<script>
+/* Autocomplete Vo. Bo. — solo funcionarios internos */
+(function () {
+  var inp   = document.getElementById('inp-vobo');
+  var drop  = document.getElementById('drop-vobo');
+  var cargo = document.getElementById('inp-vobo-cargo');
+  if (!inp || !drop) return;
+
+  var timer = null;
+  var ultima = '';
+
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function ocultar() { drop.style.display = 'none'; }
+
+  function mostrar(lista) {
+    drop.innerHTML = '';
+    if (!lista || lista.length === 0) {
+      drop.innerHTML = '<div class="dir-no-results">Sin resultados en directorio interno.</div>';
+      drop.style.display = 'block';
+      return;
+    }
+    lista.forEach(function (f) {
+      var linea2 = [f.cargo, f.area_nombre].filter(Boolean).join(' · ');
+      var el = document.createElement('div');
+      el.className = 'dir-item';
+      el.innerHTML =
+        '<div class="dir-item-tipo int">I</div>' +
+        '<div class="dir-item-info">' +
+          '<div class="dir-item-nombre">' + esc(f.nombre) + '</div>' +
+          '<div class="dir-item-sub">'   + esc(linea2 || '—') + '</div>' +
+        '</div>';
+      el.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        inp.value = f.nombre;
+        inp.dataset.dbSelected = '1';
+        inp.style.borderColor = '';
+        if (cargo) cargo.value = f.cargo || '';
+        ocultar();
+      });
+      drop.appendChild(el);
+    });
+    drop.style.display = 'block';
+  }
+
+  function buscar(q) {
+    q = (q || '').trim();
+    if (!q) { ocultar(); return; }
+    ultima = q;
+    drop.innerHTML = '<div class="dir-no-results">Buscando...</div>';
+    drop.style.display = 'block';
+    fetch('/directorio/buscar?q=' + encodeURIComponent(q) + '&tipo=interno', {
+      credentials: 'include',
+      headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (data) { if (ultima === q) mostrar(data); })
+    .catch(function () {
+      drop.innerHTML = '<div class="dir-no-results" style="color:var(--rojo)">Error al buscar.</div>';
+      drop.style.display = 'block';
+    });
+  }
+
+  inp.addEventListener('input', function () {
+    delete inp.dataset.dbSelected;
+    if (cargo) cargo.value = '';
+    clearTimeout(timer);
+    timer = setTimeout(function () { buscar(inp.value); }, 280);
+  });
+  inp.addEventListener('focus', function () { if (inp.value.trim()) buscar(inp.value); });
+  document.addEventListener('click', function (e) {
+    if (!inp.contains(e.target) && !drop.contains(e.target)) ocultar();
+  });
+}());
+</script>
+<script>
+/* Autocomplete Elaboró — solo funcionarios internos */
+(function () {
+  var inp   = document.getElementById('inp-elaboro');
+  var drop  = document.getElementById('drop-elaboro');
+  var cargo = document.getElementById('inp-elaboro-cargo');
   if (!inp || !drop) return;
 
   var timer = null;

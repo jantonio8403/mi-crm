@@ -79,13 +79,21 @@
             <p><%= doc.area_nombre || '—' %></p>
           </div>
           <div class="detalle-item">
-            <label>Elaboró</label>
-            <p><%= doc.elaborado_nombre || '—' %></p>
-          </div>
-          <div class="detalle-item">
             <label>Firmante</label>
             <p><strong><%= doc.firmante_nombre || '—' %></strong><% if(doc.firmante_cargo){ %><br><span class="text-gris text-sm"><%= doc.firmante_cargo %></span><% } %></p>
           </div>
+          <% if (doc.vobo_nombre) { %>
+          <div class="detalle-item">
+            <label>Vo. Bo.</label>
+            <p><%= doc.vobo_nombre %><% if(doc.vobo_cargo){ %><br><span class="text-gris text-sm"><%= doc.vobo_cargo %></span><% } %></p>
+          </div>
+          <% } %>
+          <% if (doc.elaboro_nombre) { %>
+          <div class="detalle-item">
+            <label>Elaboró</label>
+            <p><%= doc.elaboro_nombre %><% if(doc.elaboro_cargo){ %><br><span class="text-gris text-sm"><%= doc.elaboro_cargo %></span><% } %></p>
+          </div>
+          <% } %>
           <div class="detalle-item">
             <label>Registrado</label>
             <p><%= doc.creado_en %></p>
