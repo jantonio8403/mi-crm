@@ -64,45 +64,49 @@
             <input type="text" name="asunto" required placeholder="Descripción breve del asunto">
           </div>
 
-          <!-- Destinatario -->
-          <div class="form-group">
-            <label>Destinatario *
-              <% if (tipo === 'memorandum') { %>
-                <span style="font-weight:400;font-size:11px;color:var(--azul)"> — solo funcionarios internos</span>
-              <% } else { %>
-                <span style="font-weight:400;font-size:11px;color:var(--gris)"> — solo externos</span>
-              <% } %>
-            </label>
-            <div style="position:relative">
-              <input type="text" name="destinatario" id="inp-destinatario" required autocomplete="off"
-                     placeholder="<%= tipo === 'memorandum' ? 'Buscar personal interno...' : 'Buscar en directorio externo...' %>">
-              <div id="dir-dropdown" class="dir-dropdown" style="display:none"></div>
+          <!-- Destinatario + Cargo (misma fila) -->
+          <div class="form-full" style="display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:start">
+            <div class="form-group">
+              <label>Destinatario *
+                <% if (tipo === 'memorandum') { %>
+                  <span style="font-weight:400;font-size:11px;color:var(--azul)"> — solo funcionarios internos</span>
+                <% } else { %>
+                  <span style="font-weight:400;font-size:11px;color:var(--gris)"> — solo externos</span>
+                <% } %>
+              </label>
+              <div style="position:relative">
+                <input type="text" name="destinatario" id="inp-destinatario" required autocomplete="off"
+                       placeholder="<%= tipo === 'memorandum' ? 'Buscar personal interno...' : 'Buscar en directorio externo...' %>">
+                <div id="dir-dropdown" class="dir-dropdown" style="display:none"></div>
+              </div>
             </div>
-          </div>
-          <div class="form-group">
-            <label>Cargo del destinatario</label>
-            <input type="text" name="cargo_destinatario" id="inp-cargo-dest" readonly
-                   placeholder="Se llena al seleccionar"
-                   style="background:var(--verde-fondo);color:var(--gris);cursor:default">
+            <div class="form-group">
+              <label>Cargo del destinatario</label>
+              <input type="text" name="cargo_destinatario" id="inp-cargo-dest" readonly
+                     placeholder="Se llena al seleccionar"
+                     style="background:var(--verde-fondo);color:var(--gris);cursor:default">
+            </div>
           </div>
 
-          <!-- Con atención a (solo oficio) -->
+          <!-- Con atención a + Cargo (misma fila, solo oficio) -->
           <% if (tipo === 'oficio') { %>
-          <div class="form-group">
-            <label>Con atención a
-              <span style="font-weight:400;font-size:11px;color:var(--gris)"> — funcionario externo (opcional)</span>
-            </label>
-            <div style="position:relative">
-              <input type="text" name="atencion_a" id="inp-atencion-a" autocomplete="off"
-                     placeholder="Buscar en directorio externo...">
-              <div id="drop-atencion-a" class="dir-dropdown" style="display:none"></div>
+          <div class="form-full" style="display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:start">
+            <div class="form-group">
+              <label>Con atención a
+                <span style="font-weight:400;font-size:11px;color:var(--gris)"> — funcionario externo (opcional)</span>
+              </label>
+              <div style="position:relative">
+                <input type="text" name="atencion_a" id="inp-atencion-a" autocomplete="off"
+                       placeholder="Buscar en directorio externo...">
+                <div id="drop-atencion-a" class="dir-dropdown" style="display:none"></div>
+              </div>
             </div>
-          </div>
-          <div class="form-group">
-            <label>Cargo</label>
-            <input type="text" name="atencion_a_cargo" id="inp-atencion-a-cargo" readonly
-                   placeholder="Se llena al seleccionar"
-                   style="background:var(--verde-fondo);color:var(--gris);cursor:default">
+            <div class="form-group">
+              <label>Cargo</label>
+              <input type="text" name="atencion_a_cargo" id="inp-atencion-a-cargo" readonly
+                     placeholder="Se llena al seleccionar"
+                     style="background:var(--verde-fondo);color:var(--gris);cursor:default">
+            </div>
           </div>
           <% } %>
 
