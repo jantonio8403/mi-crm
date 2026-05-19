@@ -113,7 +113,7 @@ router.get('/salientes/nuevo', requireAuth, async (req, res, next) => {
 router.post('/salientes', requireAuth, async (req, res, next) => {
   try {
     const { tipo, fecha_emision, asunto, destinatario, cargo_destinatario,
-            institucion_destinatario, atencion_a, contenido, area_emisora_id,
+            atencion_a, contenido, area_emisora_id,
             firmante_nombre, firmante_cargo } = req.body;
 
     // Folio se genera con el área real que se seleccionó en el formulario
@@ -123,11 +123,11 @@ router.post('/salientes', requireAuth, async (req, res, next) => {
     const result = await query(
       `INSERT INTO documentos_salientes
        (tipo, numero_folio, consecutivo, anio, fecha_emision, asunto, destinatario,
-        cargo_destinatario, institucion_destinatario, atencion_a, contenido, area_emisora_id,
+        cargo_destinatario, atencion_a, contenido, area_emisora_id,
         elaborado_por_id, firmante_nombre, firmante_cargo, estatus)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'borrador')`,
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,'borrador')`,
       [tipo, numero_folio, consecutivo, anio, fecha_emision, asunto, destinatario,
-       cargo_destinatario || null, institucion_destinatario || null,
+       cargo_destinatario || null,
        tipo === 'oficio' ? (atencion_a || null) : null,
        contenido, areaId, req.session.usuario.id,
        firmante_nombre || null, firmante_cargo || null]

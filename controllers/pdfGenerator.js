@@ -50,7 +50,6 @@ function generarOficioPDF(documento, ruta) {
 
       doc.font('Helvetica-Bold').text(documento.destinatario);
       if (documento.cargo_destinatario) doc.font('Helvetica').text(documento.cargo_destinatario);
-      if (documento.institucion_destinatario) doc.font('Helvetica').text(documento.institucion_destinatario);
       if (documento.atencion_a) {
         doc.moveDown(0.3);
         doc.font('Helvetica-Bold').text('ATN: ', { continued: true })
