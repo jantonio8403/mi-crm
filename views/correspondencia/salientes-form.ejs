@@ -194,8 +194,17 @@
 
             <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;align-items:start">
               <div class="form-group">
-                <label>Elaboró
-                  <span style="font-weight:400;font-size:11px;color:var(--gris)"> — funcionario interno (opcional)</span>
+                <label style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+                  <span>Elaboró
+                    <span style="font-weight:400;font-size:11px;color:var(--gris)"> — funcionario interno (opcional)</span>
+                  </span>
+                  <% if (firmante) { %>
+                  <button type="button" id="btn-elaboro-yo"
+                    data-nombre="<%= firmante.nombre %>" data-cargo="<%= firmante.cargo || '' %>"
+                    class="btn btn-secondary btn-sm" style="font-size:11px;padding:2px 8px;margin-bottom:2px">
+                    + Mi nombre
+                  </button>
+                  <% } %>
                 </label>
                 <div style="position:relative">
                   <input type="text" name="elaboro_nombre" id="inp-elaboro" autocomplete="off"
@@ -626,10 +635,21 @@
 <script>
 /* Autocomplete Elaboró — solo funcionarios internos */
 (function () {
-  var inp   = document.getElementById('inp-elaboro');
-  var drop  = document.getElementById('drop-elaboro');
-  var cargo = document.getElementById('inp-elaboro-cargo');
+  var inp    = document.getElementById('inp-elaboro');
+  var drop   = document.getElementById('drop-elaboro');
+  var cargo  = document.getElementById('inp-elaboro-cargo');
+  var btnYo  = document.getElementById('btn-elaboro-yo');
   if (!inp || !drop) return;
+
+  if (btnYo) {
+    btnYo.addEventListener('click', function () {
+      inp.value = btnYo.dataset.nombre || '';
+      if (cargo) cargo.value = btnYo.dataset.cargo || '';
+      inp.dataset.dbSelected = '1';
+      inp.style.borderColor = '';
+      drop.style.display = 'none';
+    });
+  }
 
   var timer = null;
   var ultima = '';
