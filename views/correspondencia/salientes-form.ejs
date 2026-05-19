@@ -4,15 +4,10 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= titulo %> — HBC Berriozabal</title>
   <link rel="stylesheet" href="/css/app.css">
-  <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
-  <link href="https://unpkg.com/quill-better-table@1.2.10/dist/quill-better-table.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jodit@3/build/jodit.min.css">
   <style>
-    .ql-container { font-family: inherit; font-size: 13px; }
-    .ql-editor    { min-height: 220px; line-height: 1.7; }
-    .ql-toolbar.ql-snow { border-color: var(--borde); border-radius: 6px 6px 0 0; background: var(--verde-fondo); }
-    .ql-container.ql-snow { border-color: var(--borde); border-radius: 0 0 6px 6px; background: #fff; }
-    .ql-editor.ql-blank::before { color: var(--gris); font-style: normal; }
-    .ql-table-btn::before { content: '⊞'; font-size: 15px; line-height: 1; }
+    .jodit-container { border-color: var(--borde) !important; border-radius: 6px !important; }
+    .jodit-toolbar__box { border-radius: 6px 6px 0 0 !important; background: var(--verde-fondo) !important; }
   </style>
 </head>
 <body>
@@ -122,8 +117,7 @@
 
           <div class="form-group form-full">
             <label>Contenido / Cuerpo del documento *</label>
-            <textarea name="contenido" id="contenido-hidden" style="display:none"></textarea>
-            <div id="quill-editor"></div>
+            <textarea name="contenido" id="editor-contenido"></textarea>
           </div>
 
           <hr style="grid-column:1/-1;border:none;border-top:1px solid var(--borde)">
@@ -155,83 +149,38 @@
     </div>
   </div>
 </div>
-<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-<script src="https://unpkg.com/quill-better-table@1.2.10/dist/quill-better-table.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jodit@3/build/jodit.min.js"></script>
 <script src="/js/app.js"></script>
 <script>
-/* ── Editor de texto (Quill + tablas) ────────────────────────── */
+/* ── Editor Jodit ────────────────────────────────────────────── */
 (function () {
-  /* Detectar el módulo con todos los nombres posibles del UMD */
-  var BetterTable = window.quillBetterTable
-    || window.QuillBetterTable
-    || window['quill-better-table'];
-
-  if (BetterTable) {
-    Quill.register({ 'modules/better-table': BetterTable }, true);
-  }
-
-  var quill = new Quill('#quill-editor', {
-    theme: 'snow',
+  var editor = Jodit.make('#editor-contenido', {
+    language: 'es',
+    height: 380,
     placeholder: 'Redacte aquí el cuerpo del documento...',
-    modules: Object.assign(
-      {
-        toolbar: [
-          [{ header: [1, 2, 3, false] }],
-          ['bold', 'italic', 'underline'],
-          [{ list: 'ordered' }, { list: 'bullet' }],
-          [{ align: [] }],
-          [{ indent: '-1' }, { indent: '+1' }],
-          ['clean']
-        ],
-        table: false
-      },
-      BetterTable ? {
-        'better-table': { operationMenu: { items: { unmergeCells: { text: 'Separar celdas' } } } },
-        keyboard: { bindings: BetterTable.keyboardBindings }
-      } : {}
-    )
+    buttons: [
+      'bold', 'italic', 'underline', 'strikethrough', '|',
+      'ul', 'ol', '|',
+      'outdent', 'indent', '|',
+      'font', 'fontsize', '|',
+      'left', 'center', 'right', 'justify', '|',
+      'table', '|',
+      'undo', 'redo', '|',
+      'eraser', 'fullsize'
+    ],
+    uploader: { insertImageAsBase64URI: false },
+    showCharsCounter: false,
+    showWordsCounter: false,
+    showXPathInStatusbar: false
   });
 
-  /* ── Botón "Insertar tabla" — siempre visible ── */
-  var toolbar = document.querySelector('.ql-toolbar');
-  if (toolbar) {
-    var span = document.createElement('span');
-    span.className = 'ql-formats';
-
-    var btn = document.createElement('button');
-    btn.type  = 'button';
-    btn.title = 'Insertar tabla 3×3';
-    btn.style.cssText = 'width:auto;padding:2px 8px;font-size:12px;font-weight:600;letter-spacing:.02em';
-    btn.innerHTML = '&#9783; Tabla';
-
-    btn.addEventListener('mousedown', function (e) {
-      e.preventDefault();
-      var mod = quill.getModule('better-table');
-      if (mod) {
-        mod.insertTable(3, 3);
-      } else {
-        /* fallback: insertar HTML de tabla básica */
-        var idx = (quill.getSelection(true) || { index: quill.getLength() }).index;
-        quill.clipboard.dangerouslyPasteHTML(idx,
-          '<table><tr><td> </td><td> </td><td> </td></tr>' +
-          '<tr><td> </td><td> </td><td> </td></tr>' +
-          '<tr><td> </td><td> </td><td> </td></tr></table>');
-      }
-    });
-
-    span.appendChild(btn);
-    toolbar.appendChild(span);
-  }
-
-  /* ── Submit ── */
   document.querySelector('form').addEventListener('submit', function (e) {
-    if (quill.getText().trim() === '') {
+    var contenido = editor.value || '';
+    if (contenido.replace(/<[^>]*>/g, '').trim() === '') {
       e.preventDefault();
-      quill.root.style.borderColor = 'var(--rojo)';
-      quill.focus();
-      return;
+      editor.container.style.borderColor = 'var(--rojo)';
+      editor.focus();
     }
-    document.getElementById('contenido-hidden').value = quill.root.innerHTML;
   });
 }());
 </script>
