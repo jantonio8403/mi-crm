@@ -131,7 +131,8 @@
             Firmante del documento
           </div>
 
-          <% if (areaFija && (firmante || director)) { %>
+          <% var _director = locals.director || null; %>
+          <% if (areaFija && (firmante || _director)) { %>
           <div class="form-full" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px">
             <% if (firmante) { %>
             <button type="button" id="btn-firma-yo" class="btn btn-secondary btn-sm"
@@ -140,11 +141,11 @@
               👤 Mi nombre — <em style="font-weight:400"><%= firmante.nombre %></em>
             </button>
             <% } %>
-            <% if (director) { %>
+            <% if (_director) { %>
             <button type="button" id="btn-firma-dir" class="btn btn-secondary btn-sm"
-              data-nombre="<%= director.nombre %>" data-cargo="<%= director.cargo || '' %>"
+              data-nombre="<%= _director.nombre %>" data-cargo="<%= _director.cargo || '' %>"
               style="font-size:12px">
-              🏛 Dirección — <em style="font-weight:400"><%= director.nombre %></em>
+              🏛 Dirección — <em style="font-weight:400"><%= _director.nombre %></em>
             </button>
             <% } %>
           </div>
