@@ -102,6 +102,25 @@ router.get('/salientes/nuevo', requireAuth, async (req, res, next) => {
       `SELECT nombre, cargo FROM funcionarios WHERE usuario_id=? AND tipo='interno' AND activo=1 LIMIT 1`,
       [u.id]
     );
+    // Director del hospital — para jefe_area que quiera firmar en nombre de la dirección
+    let director = null;
+    if (areaFija) {
+      const [dirPorRol] = await query(
+        `SELECT f.nombre, f.cargo FROM funcionarios f
+         INNER JOIN usuarios u2 ON f.usuario_id = u2.id
+         WHERE u2.rol='director' AND f.tipo='interno' AND f.activo=1 LIMIT 1`
+      );
+      if (dirPorRol) {
+        director = dirPorRol;
+      } else {
+        const [dirPorArea] = await query(
+          `SELECT f.nombre, f.cargo FROM funcionarios f
+           INNER JOIN areas a ON a.responsable_id = f.id
+           WHERE a.nombre='Dirección' AND f.activo=1 LIMIT 1`
+        );
+        director = dirPorArea || null;
+      }
+    }
     let areaNombre = '';
     if (areaFija && u.area_id) {
       const [a] = await query('SELECT nombre FROM areas WHERE id=?', [u.area_id]);
@@ -111,6 +130,7 @@ router.get('/salientes/nuevo', requireAuth, async (req, res, next) => {
       titulo: tipo === 'oficio' ? 'Nuevo Oficio' : 'Nuevo Memorándum',
       documento: null, folio, tipo, areas,
       firmante: firmante || null,
+      director,
       areaFija, areaNombre,
       accion: '/correspondencia/salientes',
     });

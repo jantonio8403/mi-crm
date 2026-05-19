@@ -131,6 +131,25 @@
             Firmante del documento
           </div>
 
+          <% if (areaFija && (firmante || director)) { %>
+          <div class="form-full" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px">
+            <% if (firmante) { %>
+            <button type="button" id="btn-firma-yo" class="btn btn-secondary btn-sm"
+              data-nombre="<%= firmante.nombre %>" data-cargo="<%= firmante.cargo || '' %>"
+              style="font-size:12px">
+              👤 Mi nombre — <em style="font-weight:400"><%= firmante.nombre %></em>
+            </button>
+            <% } %>
+            <% if (director) { %>
+            <button type="button" id="btn-firma-dir" class="btn btn-secondary btn-sm"
+              data-nombre="<%= director.nombre %>" data-cargo="<%= director.cargo || '' %>"
+              style="font-size:12px">
+              🏛 Dirección — <em style="font-weight:400"><%= director.nombre %></em>
+            </button>
+            <% } %>
+          </div>
+          <% } %>
+
           <div class="form-group">
             <label>Nombre del firmante *
               <span style="font-weight:400;font-size:11px;color:var(--gris)"> — funcionario interno</span>
@@ -592,6 +611,9 @@
   inp.addEventListener('input', function () {
     delete inp.dataset.dbSelected;
     if (cargo) cargo.value = '';
+    document.querySelectorAll('#btn-firma-yo, #btn-firma-dir').forEach(function (b) {
+      b.style.borderColor = ''; b.style.background = ''; b.style.color = '';
+    });
     clearTimeout(timer);
     timer = setTimeout(function () { buscar(inp.value); }, 280);
   });
@@ -673,6 +695,44 @@
   document.addEventListener('click', function (e) {
     if (!inp.contains(e.target) && !drop.contains(e.target)) ocultar();
   });
+}());
+</script>
+<script>
+/* Presets firmante (jefe_area) */
+(function () {
+  var inpNombre = document.getElementById('inp-firmante');
+  var inpCargo  = document.getElementById('inp-firmante-cargo');
+  if (!inpNombre) return;
+
+  function aplicarPreset(btn) {
+    inpNombre.value = btn.dataset.nombre || '';
+    if (inpCargo) inpCargo.value = btn.dataset.cargo || '';
+    inpNombre.dataset.dbSelected = '1';
+    inpNombre.style.borderColor = '';
+    // Resaltar botón activo
+    document.querySelectorAll('#btn-firma-yo, #btn-firma-dir').forEach(function (b) {
+      b.style.borderColor = '';
+      b.style.background  = '';
+      b.style.color       = '';
+    });
+    btn.style.borderColor = 'var(--verde)';
+    btn.style.background  = 'var(--verde-fondo)';
+    btn.style.color       = 'var(--verde)';
+  }
+
+  ['btn-firma-yo', 'btn-firma-dir'].forEach(function (id) {
+    var btn = document.getElementById(id);
+    if (btn) btn.addEventListener('click', function () { aplicarPreset(btn); });
+  });
+
+  // Marcar activo el que coincide con el valor actual al cargar
+  var valorActual = inpNombre.value.trim();
+  if (valorActual) {
+    ['btn-firma-yo', 'btn-firma-dir'].forEach(function (id) {
+      var btn = document.getElementById(id);
+      if (btn && btn.dataset.nombre === valorActual) aplicarPreset(btn);
+    });
+  }
 }());
 </script>
 <script>
