@@ -54,6 +54,7 @@ function generarOficioPDF(documento, ruta) {
         doc.moveDown(0.3);
         doc.font('Helvetica-Bold').text('ATN: ', { continued: true })
           .font('Helvetica').text(documento.atencion_a);
+        if (documento.atencion_a_cargo) doc.font('Helvetica').text(documento.atencion_a_cargo);
       }
       doc.moveDown(0.5);
       doc.font('Helvetica-Bold').text('ASUNTO: ', { continued: true })

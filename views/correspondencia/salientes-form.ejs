@@ -80,7 +80,7 @@
             </div>
           </div>
           <% if (tipo === 'oficio') { %>
-          <div class="form-group form-full">
+          <div class="form-group">
             <label>Con atención a
               <span style="font-weight:400;font-size:11px;color:var(--gris)"> — funcionario externo (opcional)</span>
             </label>
@@ -89,6 +89,12 @@
                      placeholder="Buscar en directorio externo...">
               <div id="drop-atencion-a" class="dir-dropdown" style="display:none"></div>
             </div>
+          </div>
+          <div class="form-group">
+            <label>Cargo</label>
+            <input type="text" name="atencion_a_cargo" id="inp-atencion-a-cargo" readonly
+                   placeholder="Se llena al seleccionar del directorio"
+                   style="background:var(--verde-fondo);color:var(--gris);cursor:default">
           </div>
           <% } %>
 
@@ -234,8 +240,9 @@
 <% if (tipo === 'oficio') { %>
 /* Autocomplete "Con atención a" — solo funcionarios externos */
 (function () {
-  var inp  = document.getElementById('inp-atencion-a');
-  var drop = document.getElementById('drop-atencion-a');
+  var inp   = document.getElementById('inp-atencion-a');
+  var drop  = document.getElementById('drop-atencion-a');
+  var cargo = document.getElementById('inp-atencion-a-cargo');
   if (!inp || !drop) return;
 
   var timer = null;
@@ -264,6 +271,7 @@
       el.addEventListener('mousedown', function (e) {
         e.preventDefault();
         inp.value = f.nombre;
+        if (cargo) cargo.value = f.cargo || '';
         ocultar();
       });
       drop.appendChild(el);

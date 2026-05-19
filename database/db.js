@@ -187,13 +187,20 @@ async function initDB() {
     FOREIGN KEY (area_id) REFERENCES areas(id)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
 
-  // Migrar: agregar atencion_a en documentos_salientes
+  // Migrar: agregar atencion_a y atencion_a_cargo en documentos_salientes
   const [atencionCol] = await query(
     `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='documentos_salientes' AND COLUMN_NAME='atencion_a'`
   );
   if (!atencionCol) {
     await query(`ALTER TABLE documentos_salientes ADD COLUMN atencion_a VARCHAR(200) NULL AFTER institucion_destinatario`);
+  }
+  const [atencionCargoCol] = await query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='documentos_salientes' AND COLUMN_NAME='atencion_a_cargo'`
+  );
+  if (!atencionCargoCol) {
+    await query(`ALTER TABLE documentos_salientes ADD COLUMN atencion_a_cargo VARCHAR(200) NULL AFTER atencion_a`);
   }
 
   // Migrar: agregar usuario_id (FK a usuarios) en funcionarios
