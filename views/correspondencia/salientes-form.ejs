@@ -115,6 +115,17 @@
           </div>
           <% } %>
 
+          <!-- Con copia para (solo oficio) -->
+          <% if (tipo === 'oficio') { %>
+          <div class="form-full">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <label style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--gris);letter-spacing:.05em">Con copia para</label>
+              <button type="button" id="btn-add-copia" class="btn btn-secondary btn-sm">+ Agregar copia</button>
+            </div>
+            <div id="lista-copias"></div>
+          </div>
+          <% } %>
+
           <div class="form-group form-full">
             <label>Contenido / Cuerpo del documento *</label>
             <textarea name="contenido" id="editor-contenido"></textarea>
@@ -132,6 +143,7 @@
             <div style="position:relative">
               <input type="text" name="firmante_nombre" id="inp-firmante" required autocomplete="off"
                      value="<%= firmante ? firmante.nombre : usuario.nombre %>"
+                     data-db-selected="<%= firmante ? '1' : '' %>"
                      placeholder="Buscar funcionario interno...">
               <div id="drop-firmante" class="dir-dropdown" style="display:none"></div>
             </div>
@@ -179,11 +191,42 @@
   });
 
   document.querySelector('form').addEventListener('submit', function (e) {
+    // Validar contenido
     var contenido = editor.value || '';
     if (contenido.replace(/<[^>]*>/g, '').trim() === '') {
       e.preventDefault();
       editor.container.style.borderColor = 'var(--rojo)';
       editor.focus();
+      return;
+    }
+    // Validar campos que deben venir del directorio
+    var camposDir = [
+      { id: 'inp-destinatario',  label: 'Destinatario' },
+      { id: 'inp-atencion-a',    label: 'Con atención a', opcional: true },
+      { id: 'inp-firmante',      label: 'Firmante' },
+    ];
+    for (var i = 0; i < camposDir.length; i++) {
+      var cd = camposDir[i];
+      var el = document.getElementById(cd.id);
+      if (!el) continue;
+      if (cd.opcional && !el.value.trim()) continue;
+      if (el.value.trim() && !el.dataset.dbSelected) {
+        e.preventDefault();
+        el.style.borderColor = 'var(--rojo)';
+        el.focus();
+        return;
+      }
+    }
+    // Validar copias
+    var copiaFilas = document.querySelectorAll('.copia-fila');
+    for (var j = 0; j < copiaFilas.length; j++) {
+      var nombreInp = copiaFilas[j].querySelector('.copia-nombre');
+      if (nombreInp && nombreInp.value.trim() && !nombreInp.dataset.dbSelected) {
+        e.preventDefault();
+        nombreInp.style.borderColor = 'var(--rojo)';
+        nombreInp.focus();
+        return;
+      }
     }
   });
 }());
@@ -233,7 +276,9 @@
         '</div>';
       el.addEventListener('mousedown', function (e) {
         e.preventDefault();
-        inp.value   = f.nombre;
+        inp.value = f.nombre;
+        inp.dataset.dbSelected = '1';
+        inp.style.borderColor = '';
         if (cargo) cargo.value = f.cargo || '';
         if (inst)  inst.value  = esInt ? (f.area_nombre || '') : (f.institucion || '');
         ocultar();
@@ -271,6 +316,8 @@
   }
 
   inp.addEventListener('input', function () {
+    delete inp.dataset.dbSelected;
+    if (cargo) cargo.value = '';
     clearTimeout(timer);
     timer = setTimeout(function () { buscar(inp.value); }, 280);
   });
@@ -318,6 +365,8 @@
       el.addEventListener('mousedown', function (e) {
         e.preventDefault();
         inp.value = f.nombre;
+        inp.dataset.dbSelected = '1';
+        inp.style.borderColor = '';
         if (cargo) cargo.value = f.cargo || '';
         ocultar();
       });
@@ -345,6 +394,8 @@
   }
 
   inp.addEventListener('input', function () {
+    delete inp.dataset.dbSelected;
+    if (cargo) cargo.value = '';
     clearTimeout(timer);
     timer = setTimeout(function () { buscar(inp.value); }, 280);
   });
@@ -389,6 +440,8 @@
       el.addEventListener('mousedown', function (e) {
         e.preventDefault();
         inp.value = f.nombre;
+        inp.dataset.dbSelected = '1';
+        inp.style.borderColor = '';
         if (cargo) cargo.value = f.cargo || '';
         ocultar();
       });
@@ -416,6 +469,8 @@
   }
 
   inp.addEventListener('input', function () {
+    delete inp.dataset.dbSelected;
+    if (cargo) cargo.value = '';
     clearTimeout(timer);
     timer = setTimeout(function () { buscar(inp.value); }, 280);
   });
@@ -425,4 +480,107 @@
   });
 }());
 </script>
+<% if (tipo === 'oficio') { %>
+<script>
+/* Copias dinámicas (C.c.p.) */
+(function () {
+  var lista  = document.getElementById('lista-copias');
+  var btnAdd = document.getElementById('btn-add-copia');
+  if (!lista || !btnAdd) return;
+  var contador = 0;
+
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function attachAutocomplete(fila) {
+    var inp   = fila.querySelector('.copia-nombre');
+    var drop  = fila.querySelector('.copia-drop');
+    var cargo = fila.querySelector('.copia-cargo');
+    var timer = null, ultima = '';
+
+    function ocultar() { drop.style.display = 'none'; }
+
+    function mostrar(lista_res) {
+      drop.innerHTML = '';
+      if (!lista_res || lista_res.length === 0) {
+        drop.innerHTML = '<div class="dir-no-results">Sin resultados en el directorio.</div>';
+        drop.style.display = 'block';
+        return;
+      }
+      lista_res.forEach(function (f) {
+        var esInt  = f.tipo === 'interno';
+        var linea2 = [f.cargo, esInt ? f.area_nombre : f.institucion].filter(Boolean).join(' · ');
+        var el = document.createElement('div');
+        el.className = 'dir-item';
+        el.innerHTML =
+          '<div class="dir-item-tipo ' + (esInt ? 'int' : 'ext') + '">' + (esInt ? 'I' : 'E') + '</div>' +
+          '<div class="dir-item-info">' +
+            '<div class="dir-item-nombre">' + esc(f.nombre) + '</div>' +
+            '<div class="dir-item-sub">'   + esc(linea2 || '—') + '</div>' +
+          '</div>';
+        el.addEventListener('mousedown', function (e) {
+          e.preventDefault();
+          inp.value = f.nombre;
+          inp.dataset.dbSelected = '1';
+          inp.style.borderColor = '';
+          if (cargo) cargo.value = f.cargo || '';
+          ocultar();
+        });
+        drop.appendChild(el);
+      });
+      drop.style.display = 'block';
+    }
+
+    function buscar(q) {
+      q = (q||'').trim();
+      if (!q) { ocultar(); return; }
+      ultima = q;
+      drop.innerHTML = '<div class="dir-no-results">Buscando...</div>';
+      drop.style.display = 'block';
+      fetch('/directorio/buscar?q=' + encodeURIComponent(q), {
+        credentials: 'include',
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(function (r) { if (!r.ok) throw new Error(); return r.json(); })
+      .then(function (data) { if (ultima === q) mostrar(data); })
+      .catch(function () {
+        drop.innerHTML = '<div class="dir-no-results" style="color:var(--rojo)">Error al buscar.</div>';
+        drop.style.display = 'block';
+      });
+    }
+
+    inp.addEventListener('input', function () {
+      delete inp.dataset.dbSelected;
+      if (cargo) cargo.value = '';
+      clearTimeout(timer);
+      timer = setTimeout(function () { buscar(inp.value); }, 280);
+    });
+    inp.addEventListener('focus', function () { if (inp.value.trim()) buscar(inp.value); });
+    document.addEventListener('click', function (e) {
+      if (!inp.contains(e.target) && !drop.contains(e.target)) ocultar();
+    });
+  }
+
+  function agregarFila() {
+    var idx = contador++;
+    var div = document.createElement('div');
+    div.className = 'copia-fila';
+    div.style.cssText = 'display:grid;grid-template-columns:2fr 1fr auto;gap:8px;align-items:center;margin-bottom:8px';
+    div.innerHTML =
+      '<div style="position:relative">' +
+        '<input type="text" name="copias[' + idx + '][nombre]" class="copia-nombre" autocomplete="off" placeholder="Buscar en directorio...">' +
+        '<div class="dir-dropdown copia-drop" style="display:none"></div>' +
+      '</div>' +
+      '<input type="text" name="copias[' + idx + '][cargo]" class="copia-cargo" readonly ' +
+        'placeholder="Se llena al seleccionar" style="background:var(--verde-fondo);color:var(--gris);cursor:default">' +
+      '<button type="button" class="btn btn-secondary btn-sm copia-quitar" style="padding:0 10px;flex-shrink:0">✕</button>';
+    lista.appendChild(div);
+    attachAutocomplete(div);
+    div.querySelector('.copia-quitar').addEventListener('click', function () { div.remove(); });
+    div.querySelector('.copia-nombre').focus();
+  }
+
+  btnAdd.addEventListener('click', agregarFila);
+}());
+</script>
+<% } %>
 </body></html>

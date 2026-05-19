@@ -135,11 +135,27 @@ router.post('/salientes', requireAuth, async (req, res, next) => {
     );
     const id = result.insertId;
 
+    // Guardar copias (C.c.p.) — solo oficio
+    if (tipo === 'oficio' && req.body.copias) {
+      const copiasRaw = Array.isArray(req.body.copias)
+        ? req.body.copias : Object.values(req.body.copias);
+      let orden = 0;
+      for (const c of copiasRaw) {
+        if (c && c.nombre && c.nombre.trim()) {
+          await query(
+            'INSERT INTO documento_copias (documento_id, nombre, cargo, orden) VALUES (?,?,?,?)',
+            [id, c.nombre.trim(), c.cargo ? c.cargo.trim() : null, orden++]
+          );
+        }
+      }
+    }
+
     try {
       const nombreArchivo = folioToFilename(numero_folio);
       const rutaPdf = path.join(__dirname, `../pdfs/${nombreArchivo}.pdf`);
       const [doc] = await query('SELECT * FROM documentos_salientes WHERE id=?', [id]);
-      await generarOficioPDF(doc, rutaPdf);
+      const copias = await query('SELECT * FROM documento_copias WHERE documento_id=? ORDER BY orden', [id]);
+      await generarOficioPDF(doc, rutaPdf, copias);
       await query('UPDATE documentos_salientes SET ruta_pdf=? WHERE id=?',
         [`/pdfs/${nombreArchivo}.pdf`, id]);
     } catch (e) {
@@ -161,9 +177,10 @@ router.get('/salientes/:id', requireAuth, async (req, res, next) => {
        WHERE ds.id=?`, [req.params.id]
     );
     if (!doc) { req.flash('error', 'Documento no encontrado'); return res.redirect('/correspondencia/salientes'); }
+    const copias = await query('SELECT * FROM documento_copias WHERE documento_id=? ORDER BY orden', [doc.id]);
     res.render('correspondencia/salientes-detalle', {
       titulo: `${doc.tipo === 'oficio' ? 'Oficio' : 'Memorándum'} ${doc.numero_folio}`,
-      doc,
+      doc, copias,
     });
   } catch (err) { next(err); }
 });
@@ -194,7 +211,8 @@ router.post('/salientes/:id/regenerar-pdf', requireAuth, async (req, res, next) 
     if (!doc) return res.redirect('/correspondencia/salientes');
     const nombreArchivo = folioToFilename(doc.numero_folio);
     const rutaPdf = path.join(__dirname, `../pdfs/${nombreArchivo}.pdf`);
-    await generarOficioPDF(doc, rutaPdf);
+    const copias = await query('SELECT * FROM documento_copias WHERE documento_id=? ORDER BY orden', [doc.id]);
+    await generarOficioPDF(doc, rutaPdf, copias);
     await query('UPDATE documentos_salientes SET ruta_pdf=? WHERE id=?',
       [`/pdfs/${nombreArchivo}.pdf`, doc.id]);
     req.flash('success', 'PDF regenerado correctamente');

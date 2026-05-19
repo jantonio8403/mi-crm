@@ -2,7 +2,7 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 
-function generarOficioPDF(documento, ruta) {
+function generarOficioPDF(documento, ruta, copias = []) {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 60, size: 'LETTER' });
     const stream = fs.createWriteStream(ruta);
@@ -88,6 +88,16 @@ function generarOficioPDF(documento, ruta) {
     doc.font('Helvetica')
       .text('HOSPITAL BÁSICO COMUNITARIO', firmaX, doc.y, { width: 200, align: 'center' })
       .text('12 CAMAS, BERRIOZABAL, CHIS.', firmaX, doc.y, { width: 200, align: 'center' });
+
+    // ─── C.c.p. ───────────────────────────────────────────────────
+    if (copias && copias.length > 0) {
+      doc.moveDown(1.5);
+      doc.fontSize(9).fillColor('black').font('Helvetica-Bold').text('C.c.p.');
+      copias.forEach(c => {
+        const linea = [c.nombre, c.cargo].filter(Boolean).join(', ');
+        doc.font('Helvetica').text('  ' + linea);
+      });
+    }
 
     // ─── Pie de página ────────────────────────────────────────────
     doc.fontSize(7).fillColor('gray')

@@ -90,6 +90,16 @@
             <label>Registrado</label>
             <p><%= doc.creado_en %></p>
           </div>
+          <% if (copias && copias.length > 0) { %>
+          <div class="detalle-item full">
+            <label>Con copia para (C.c.p.)</label>
+            <ul style="margin:4px 0 0;padding-left:16px;font-size:13px">
+              <% copias.forEach(c => { %>
+                <li><strong><%= c.nombre %></strong><% if(c.cargo){ %> — <%= c.cargo %><% } %></li>
+              <% }) %>
+            </ul>
+          </div>
+          <% } %>
           <% if (doc.tipo === 'memorandum') { %>
           <div class="detalle-item">
             <label>Leído</label>

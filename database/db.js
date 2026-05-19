@@ -203,6 +203,16 @@ async function initDB() {
     await query(`ALTER TABLE documentos_salientes ADD COLUMN atencion_a_cargo VARCHAR(200) NULL AFTER atencion_a`);
   }
 
+  // Tabla copias de documento (C.c.p.)
+  await query(`CREATE TABLE IF NOT EXISTS documento_copias (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    documento_id INT NOT NULL,
+    nombre VARCHAR(150) NOT NULL,
+    cargo VARCHAR(150),
+    orden INT DEFAULT 0,
+    FOREIGN KEY (documento_id) REFERENCES documentos_salientes(id) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
   // Migrar: agregar usuario_id (FK a usuarios) en funcionarios
   const [usuIdCol] = await query(
     `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
