@@ -42,8 +42,12 @@
             <span id="folio-preview" style="font-size:20px;font-weight:700;color:var(--verde);letter-spacing:.04em"><%= folio.numero_folio %></span>
           </div>
           <div style="font-size:11px;color:var(--gris);border-left:1px solid var(--borde);padding-left:16px">
+            <% if (!documento) { %>
             El folio se genera con el área emisora seleccionada.<br>
             Formato: <strong>OFI/[CÓDIGO]/[CONSECUTIVO]/[AÑO]</strong>
+            <% } else { %>
+            Folio fijo — no cambia al editar el borrador.
+            <% } %>
           </div>
         </div>
 
@@ -51,7 +55,7 @@
           <div class="form-group">
             <label>Fecha de emisión *</label>
             <input type="date" name="fecha_emision" required
-                   value="<%= new Date().toISOString().split('T')[0] %>">
+                   value="<%= documento ? documento.fecha_emisionStr : new Date().toISOString().split('T')[0] %>">
           </div>
           <div class="form-group">
             <label>Área emisora</label>
@@ -64,7 +68,7 @@
                 <option value="">— Seleccionar área —</option>
                 <% areas.forEach(a => { %>
                   <option value="<%= a.id %>"
-                    <%= usuario.area_id == a.id ? 'selected' : '' %>><%= a.nombre %></option>
+                    <%= (documento ? documento.area_emisora_id : usuario.area_id) == a.id ? 'selected' : '' %>><%= a.nombre %></option>
                 <% }) %>
               </select>
             <% } %>
@@ -72,7 +76,8 @@
 
           <div class="form-group form-full">
             <label>Asunto *</label>
-            <input type="text" name="asunto" required placeholder="Descripción breve del asunto">
+            <input type="text" name="asunto" required placeholder="Descripción breve del asunto"
+                   value="<%= documento ? documento.asunto : '' %>">
           </div>
 
           <!-- Destinatario + Cargo (misma fila) -->
@@ -87,6 +92,8 @@
               </label>
               <div style="position:relative">
                 <input type="text" name="destinatario" id="inp-destinatario" required autocomplete="off"
+                       value="<%= documento ? documento.destinatario : '' %>"
+                       data-db-selected="<%= documento && documento.destinatario ? '1' : '' %>"
                        placeholder="<%= tipo === 'memorandum' ? 'Buscar personal interno...' : 'Buscar en directorio externo...' %>">
                 <div id="dir-dropdown" class="dir-dropdown" style="display:none"></div>
               </div>
@@ -94,6 +101,7 @@
             <div class="form-group">
               <label>Cargo del destinatario</label>
               <input type="text" name="cargo_destinatario" id="inp-cargo-dest" readonly
+                     value="<%= documento ? (documento.cargo_destinatario || '') : '' %>"
                      placeholder="Se llena al seleccionar"
                      style="background:var(--verde-fondo);color:var(--gris);cursor:default">
             </div>
@@ -108,6 +116,8 @@
               </label>
               <div style="position:relative">
                 <input type="text" name="atencion_a" id="inp-atencion-a" autocomplete="off"
+                       value="<%= documento ? (documento.atencion_a || '') : '' %>"
+                       data-db-selected="<%= documento && documento.atencion_a ? '1' : '' %>"
                        placeholder="Buscar en directorio externo...">
                 <div id="drop-atencion-a" class="dir-dropdown" style="display:none"></div>
               </div>
@@ -115,6 +125,7 @@
             <div class="form-group">
               <label>Cargo</label>
               <input type="text" name="atencion_a_cargo" id="inp-atencion-a-cargo" readonly
+                     value="<%= documento ? (documento.atencion_a_cargo || '') : '' %>"
                      placeholder="Se llena al seleccionar"
                      style="background:var(--verde-fondo);color:var(--gris);cursor:default">
             </div>
@@ -123,7 +134,7 @@
 
           <div class="form-group form-full">
             <label>Contenido / Cuerpo del documento *</label>
-            <textarea name="contenido" id="editor-contenido"></textarea>
+            <textarea name="contenido" id="editor-contenido"><%- documento ? documento.contenido : '' %></textarea>
           </div>
 
           <hr style="grid-column:1/-1;border:none;border-top:1px solid var(--borde)">
@@ -157,8 +168,8 @@
             </label>
             <div style="position:relative">
               <input type="text" name="firmante_nombre" id="inp-firmante" required autocomplete="off"
-                     value="<%= firmante ? firmante.nombre : '' %>"
-                     data-db-selected="<%= firmante ? '1' : '' %>"
+                     value="<%= documento ? (documento.firmante_nombre || '') : (firmante ? firmante.nombre : '') %>"
+                     data-db-selected="<%= (documento && documento.firmante_nombre) || (!documento && firmante) ? '1' : '' %>"
                      placeholder="Buscar funcionario interno...">
               <div id="drop-firmante" class="dir-dropdown" style="display:none"></div>
             </div>
@@ -166,7 +177,7 @@
           <div class="form-group">
             <label>Cargo del firmante</label>
             <input type="text" name="firmante_cargo" id="inp-firmante-cargo" readonly
-                   value="<%= firmante ? (firmante.cargo || '') : '' %>"
+                   value="<%= documento ? (documento.firmante_cargo || '') : (firmante ? (firmante.cargo || '') : '') %>"
                    placeholder="Se llena al seleccionar"
                    style="background:var(--verde-fondo);color:var(--gris);cursor:default">
           </div>
@@ -183,6 +194,8 @@
             </label>
             <div style="position:relative">
               <input type="text" name="vobo_nombre" id="inp-vobo" autocomplete="off"
+                     value="<%= documento ? (documento.vobo_nombre || '') : '' %>"
+                     data-db-selected="<%= documento && documento.vobo_nombre ? '1' : '' %>"
                      placeholder="Buscar funcionario interno...">
               <div id="drop-vobo" class="dir-dropdown" style="display:none"></div>
             </div>
@@ -190,6 +203,7 @@
           <div class="form-group">
             <label>Cargo Vo. Bo.</label>
             <input type="text" name="vobo_cargo" id="inp-vobo-cargo" readonly
+                   value="<%= documento ? (documento.vobo_cargo || '') : '' %>"
                    placeholder="Se llena al seleccionar"
                    style="background:var(--verde-fondo);color:var(--gris);cursor:default">
           </div>
@@ -209,6 +223,8 @@
             </label>
             <div style="position:relative">
               <input type="text" name="elaboro_nombre" id="inp-elaboro" autocomplete="off"
+                     value="<%= documento ? (documento.elaboro_nombre || '') : '' %>"
+                     data-db-selected="<%= documento && documento.elaboro_nombre ? '1' : '' %>"
                      placeholder="Buscar funcionario interno...">
               <div id="drop-elaboro" class="dir-dropdown" style="display:none"></div>
             </div>
@@ -216,6 +232,7 @@
           <div class="form-group">
             <label>Cargo Elaboró</label>
             <input type="text" name="elaboro_cargo" id="inp-elaboro-cargo" readonly
+                   value="<%= documento ? (documento.elaboro_cargo || '') : '' %>"
                    placeholder="Se llena al seleccionar"
                    style="background:var(--verde-fondo);color:var(--gris);cursor:default">
           </div>
@@ -234,7 +251,7 @@
         </div>
 
         <div class="flex gap-8 mt-16">
-          <button type="submit" class="btn btn-primary">Guardar y generar PDF</button>
+          <button type="submit" class="btn btn-primary"><%= documento ? 'Guardar cambios' : 'Guardar y generar PDF' %></button>
           <a href="/correspondencia/salientes" class="btn btn-secondary">Cancelar</a>
         </div>
       </form>
@@ -852,7 +869,7 @@
     });
   }
 
-  function agregarFila() {
+  function agregarFila(preNombre, preCargo) {
     var idx = contador++;
     var div = document.createElement('div');
     div.className = 'copia-fila';
@@ -868,10 +885,22 @@
     lista.appendChild(div);
     attachAutocomplete(div);
     div.querySelector('.copia-quitar').addEventListener('click', function () { div.remove(); });
-    div.querySelector('.copia-nombre').focus();
+    if (preNombre) {
+      var ni = div.querySelector('.copia-nombre');
+      ni.value = preNombre;
+      ni.dataset.dbSelected = '1';
+      var ci = div.querySelector('.copia-cargo');
+      if (ci && preCargo) ci.value = preCargo;
+    } else {
+      div.querySelector('.copia-nombre').focus();
+    }
   }
 
-  btnAdd.addEventListener('click', agregarFila);
+  btnAdd.addEventListener('click', function () { agregarFila(); });
+
+  // Pre-llenar copias en modo edición
+  var copiasIniciales = <%- JSON.stringify(locals.copias || []) %>;
+  copiasIniciales.forEach(function (c) { agregarFila(c.nombre, c.cargo || ''); });
 }());
 </script>
 <% } %>

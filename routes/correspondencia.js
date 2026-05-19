@@ -287,6 +287,173 @@ router.post('/salientes', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ── Editar borrador ───────────────────────────────────────────
+async function cargarDatosEdicion(u, areaFija) {
+  const firmante = (await query(
+    `SELECT nombre, cargo FROM funcionarios WHERE usuario_id=? AND tipo='interno' AND activo=1 LIMIT 1`,
+    [u.id]
+  ))[0] || null;
+  let director = null;
+  if (areaFija) {
+    const [d1] = await query(
+      `SELECT f.nombre, f.cargo FROM funcionarios f
+       INNER JOIN usuarios u2 ON f.usuario_id=u2.id
+       WHERE u2.rol='director' AND f.tipo='interno' AND f.activo=1 LIMIT 1`
+    );
+    if (d1) { director = d1; }
+    else {
+      const [d2] = await query(
+        `SELECT f.nombre, f.cargo FROM funcionarios f
+         INNER JOIN areas a ON a.responsable_id=f.id
+         WHERE a.nombre='Dirección' AND f.activo=1 LIMIT 1`
+      );
+      director = d2 || null;
+    }
+  }
+  return { firmante, director };
+}
+
+router.get('/salientes/:id/editar', requireAuth, async (req, res, next) => {
+  try {
+    const [doc] = await query('SELECT * FROM documentos_salientes WHERE id=?', [req.params.id]);
+    if (!doc) { req.flash('error', 'Documento no encontrado'); return res.redirect('/correspondencia/salientes'); }
+    if (doc.estatus !== 'borrador') {
+      req.flash('error', 'Solo se pueden editar documentos en borrador');
+      return res.redirect(`/correspondencia/salientes/${req.params.id}`);
+    }
+    const u = req.session.usuario;
+    const areaFija = u.rol === 'jefe_area';
+    const areas = await query('SELECT * FROM areas WHERE activa=1 ORDER BY nombre');
+    const copias = await query('SELECT * FROM documento_copias WHERE documento_id=? ORDER BY orden', [doc.id]);
+    const { firmante, director } = await cargarDatosEdicion(u, areaFija);
+    let areaNombre = '';
+    if (areaFija && u.area_id) {
+      const [a] = await query('SELECT nombre FROM areas WHERE id=?', [u.area_id]);
+      if (a) areaNombre = a.nombre;
+    }
+    // Normalizar fecha para input[type=date]
+    doc.fecha_emisionStr = doc.fecha_emision instanceof Date
+      ? doc.fecha_emision.toISOString().split('T')[0]
+      : String(doc.fecha_emision || '').split('T')[0];
+    res.render('correspondencia/salientes-form', {
+      titulo: doc.tipo === 'oficio' ? 'Editar Oficio' : 'Editar Memorándum',
+      documento: doc, folio: { numero_folio: doc.numero_folio },
+      tipo: doc.tipo, areas, copias,
+      firmante, director, areaFija, areaNombre,
+      accion: `/correspondencia/salientes/${doc.id}/editar`,
+    });
+  } catch (err) { next(err); }
+});
+
+router.post('/salientes/:id/editar', requireAuth, async (req, res, next) => {
+  try {
+    const [doc] = await query('SELECT * FROM documentos_salientes WHERE id=?', [req.params.id]);
+    if (!doc) { req.flash('error', 'Documento no encontrado'); return res.redirect('/correspondencia/salientes'); }
+    if (doc.estatus !== 'borrador') {
+      req.flash('error', 'Solo se pueden editar documentos en borrador');
+      return res.redirect(`/correspondencia/salientes/${req.params.id}`);
+    }
+    const redir = `/correspondencia/salientes/${req.params.id}/editar`;
+    const { tipo, fecha_emision, asunto, destinatario, cargo_destinatario,
+            atencion_a, atencion_a_cargo, contenido, area_emisora_id,
+            firmante_nombre, firmante_cargo,
+            vobo_nombre, vobo_cargo, elaboro_nombre, elaboro_cargo } = req.body;
+
+    // ── Validaciones (mismas que en creación) ────────────────────
+    const tipoDestino = tipo === 'memorandum' ? 'interno' : 'externo';
+    const [destOk] = await query(
+      'SELECT id FROM funcionarios WHERE nombre=? AND tipo=? AND activo=1 LIMIT 1',
+      [destinatario, tipoDestino]
+    );
+    if (!destOk) { req.flash('error', 'El destinatario no existe en el directorio.'); return res.redirect(redir); }
+
+    if (tipo === 'oficio' && atencion_a) {
+      const [aOk] = await query(
+        "SELECT id FROM funcionarios WHERE nombre=? AND tipo='externo' AND activo=1 LIMIT 1",
+        [atencion_a]
+      );
+      if (!aOk) { req.flash('error', '"Con atención a" no existe en el directorio externo.'); return res.redirect(redir); }
+    }
+    if (!firmante_nombre) { req.flash('error', 'El firmante es obligatorio.'); return res.redirect(redir); }
+    const [firOk] = await query(
+      "SELECT id FROM funcionarios WHERE nombre=? AND tipo='interno' AND activo=1 LIMIT 1",
+      [firmante_nombre]
+    );
+    if (!firOk) { req.flash('error', 'El firmante no existe en el directorio interno.'); return res.redirect(redir); }
+
+    if (vobo_nombre && vobo_nombre.trim()) {
+      const [vOk] = await query(
+        "SELECT id FROM funcionarios WHERE nombre=? AND tipo='interno' AND activo=1 LIMIT 1",
+        [vobo_nombre.trim()]
+      );
+      if (!vOk) { req.flash('error', 'El Vo. Bo. no existe en el directorio interno.'); return res.redirect(redir); }
+    }
+    if (elaboro_nombre && elaboro_nombre.trim()) {
+      const [eOk] = await query(
+        "SELECT id FROM funcionarios WHERE nombre=? AND tipo='interno' AND activo=1 LIMIT 1",
+        [elaboro_nombre.trim()]
+      );
+      if (!eOk) { req.flash('error', 'Quien elaboró no existe en el directorio interno.'); return res.redirect(redir); }
+    }
+    if (tipo === 'oficio' && req.body.copias) {
+      const cr = Array.isArray(req.body.copias) ? req.body.copias : Object.values(req.body.copias);
+      for (const c of cr) {
+        if (!c || !c.nombre || !c.nombre.trim()) continue;
+        const [cOk] = await query(
+          "SELECT id FROM funcionarios WHERE nombre=? AND tipo='externo' AND activo=1 LIMIT 1",
+          [c.nombre.trim()]
+        );
+        if (!cOk) { req.flash('error', `Copia para "${c.nombre.trim()}" no existe en el directorio.`); return res.redirect(redir); }
+      }
+    }
+    // ── Actualizar ───────────────────────────────────────────────
+    const u = req.session.usuario;
+    const areaId = u.rol === 'jefe_area'
+      ? (u.area_id || null)
+      : (area_emisora_id ? parseInt(area_emisora_id) : (u.area_id || null));
+
+    await query(
+      `UPDATE documentos_salientes SET
+       fecha_emision=?, asunto=?, destinatario=?, cargo_destinatario=?,
+       atencion_a=?, atencion_a_cargo=?, contenido=?, area_emisora_id=?,
+       firmante_nombre=?, firmante_cargo=?,
+       vobo_nombre=?, vobo_cargo=?, elaboro_nombre=?, elaboro_cargo=?
+       WHERE id=?`,
+      [fecha_emision, asunto, destinatario, cargo_destinatario || null,
+       tipo === 'oficio' ? (atencion_a || null) : null,
+       tipo === 'oficio' ? (atencion_a_cargo || null) : null,
+       contenido, areaId,
+       firmante_nombre || null, firmante_cargo || null,
+       vobo_nombre ? vobo_nombre.trim() : null, vobo_cargo ? vobo_cargo.trim() : null,
+       elaboro_nombre ? elaboro_nombre.trim() : null, elaboro_cargo ? elaboro_cargo.trim() : null,
+       req.params.id]
+    );
+    // Copias: borrar y reemplazar
+    await query('DELETE FROM documento_copias WHERE documento_id=?', [req.params.id]);
+    if (tipo === 'oficio' && req.body.copias) {
+      const cr = Array.isArray(req.body.copias) ? req.body.copias : Object.values(req.body.copias);
+      let orden = 0;
+      for (const c of cr) {
+        if (c && c.nombre && c.nombre.trim())
+          await query('INSERT INTO documento_copias (documento_id, nombre, cargo, orden) VALUES (?,?,?,?)',
+            [req.params.id, c.nombre.trim(), c.cargo ? c.cargo.trim() : null, orden++]);
+      }
+    }
+    // Regenerar PDF
+    try {
+      const [docAct] = await query('SELECT * FROM documentos_salientes WHERE id=?', [req.params.id]);
+      const copiasAct = await query('SELECT * FROM documento_copias WHERE documento_id=? ORDER BY orden', [req.params.id]);
+      const nombreArchivo = folioToFilename(docAct.numero_folio);
+      const rutaPdf = path.join(__dirname, `../pdfs/${nombreArchivo}.pdf`);
+      await generarOficioPDF(docAct, rutaPdf, copiasAct);
+      await query('UPDATE documentos_salientes SET ruta_pdf=? WHERE id=?', [`/pdfs/${nombreArchivo}.pdf`, req.params.id]);
+    } catch (e) { console.error('Error PDF edición:', e.message); }
+
+    req.flash('success', 'Documento actualizado correctamente');
+    res.redirect(`/correspondencia/salientes/${req.params.id}`);
+  } catch (err) { next(err); }
+});
+
 router.get('/salientes/:id', requireAuth, async (req, res, next) => {
   try {
     const [doc] = await query(

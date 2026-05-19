@@ -28,8 +28,11 @@
     <div class="flex items-center justify-between mb-16">
       <a href="/correspondencia/salientes" class="btn btn-secondary">← Regresar</a>
       <div class="flex gap-8">
+        <% if (doc.estatus === 'borrador') { %>
+          <a href="/correspondencia/salientes/<%= doc.id %>/editar" class="btn btn-primary">✎ Editar borrador</a>
+        <% } %>
         <% if (doc.ruta_pdf) { %>
-          <a href="<%= doc.ruta_pdf %>" target="_blank" class="btn btn-primary">Abrir PDF</a>
+          <a href="<%= doc.ruta_pdf %>" target="_blank" class="btn btn-secondary">Abrir PDF</a>
         <% } %>
         <form method="POST" action="/correspondencia/salientes/<%= doc.id %>/regenerar-pdf" style="display:inline">
           <button type="submit" class="btn btn-secondary">Regenerar PDF</button>
