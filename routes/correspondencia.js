@@ -125,6 +125,60 @@ router.post('/salientes', requireAuth, async (req, res, next) => {
             atencion_a, atencion_a_cargo, contenido, area_emisora_id,
             firmante_nombre, firmante_cargo } = req.body;
 
+    const redir = `/correspondencia/salientes/nuevo?tipo=${tipo}`;
+
+    // ── Validación servidor: todos los nombres deben existir en funcionarios ──
+    const tipoDestino = tipo === 'memorandum' ? 'interno' : 'externo';
+    const [destOk] = await query(
+      'SELECT id FROM funcionarios WHERE nombre=? AND tipo=? AND activo=1 LIMIT 1',
+      [destinatario, tipoDestino]
+    );
+    if (!destOk) {
+      req.flash('error', 'El destinatario no existe en el directorio. Selecciónalo del autocomplete.');
+      return res.redirect(redir);
+    }
+
+    if (tipo === 'oficio' && atencion_a) {
+      const [atenOk] = await query(
+        "SELECT id FROM funcionarios WHERE nombre=? AND tipo='externo' AND activo=1 LIMIT 1",
+        [atencion_a]
+      );
+      if (!atenOk) {
+        req.flash('error', '"Con atención a" no existe en el directorio externo. Selecciónalo del autocomplete.');
+        return res.redirect(redir);
+      }
+    }
+
+    if (!firmante_nombre) {
+      req.flash('error', 'El firmante es obligatorio. Selecciónalo del directorio interno.');
+      return res.redirect(redir);
+    }
+    const [firmanteOk] = await query(
+      "SELECT id FROM funcionarios WHERE nombre=? AND tipo='interno' AND activo=1 LIMIT 1",
+      [firmante_nombre]
+    );
+    if (!firmanteOk) {
+      req.flash('error', 'El firmante no existe en el directorio interno. Selecciónalo del autocomplete.');
+      return res.redirect(redir);
+    }
+
+    if (tipo === 'oficio' && req.body.copias) {
+      const copiasRaw = Array.isArray(req.body.copias)
+        ? req.body.copias : Object.values(req.body.copias);
+      for (const c of copiasRaw) {
+        if (!c || !c.nombre || !c.nombre.trim()) continue;
+        const [copiaOk] = await query(
+          'SELECT id FROM funcionarios WHERE nombre=? AND activo=1 LIMIT 1',
+          [c.nombre.trim()]
+        );
+        if (!copiaOk) {
+          req.flash('error', `La copia para "${c.nombre.trim()}" no existe en el directorio. Selecciónala del autocomplete.`);
+          return res.redirect(redir);
+        }
+      }
+    }
+    // ── Fin validación ────────────────────────────────────────────────────────
+
     // Folio se genera con el área real que se seleccionó en el formulario
     const areaId = area_emisora_id ? parseInt(area_emisora_id) : (req.session.usuario.area_id || null);
     const { consecutivo, anio, numero_folio } = await siguienteFolio(tipo, areaId);
