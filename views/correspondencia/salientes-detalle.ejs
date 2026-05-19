@@ -22,6 +22,21 @@
     </div>
   </div>
   <div class="page-content">
+    <%
+    function fmtFecha(d) {
+      if (!d) return '—';
+      var meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+      // DATE columns vienen como midnight UTC
+      var s = d instanceof Date ? d.toISOString().split('T')[0] : String(d).split('T')[0];
+      var p = s.split('-');
+      return parseInt(p[2]) + ' de ' + meses[parseInt(p[1])-1] + ' de ' + p[0];
+    }
+    function fmtFechaHora(d) {
+      if (!d) return '—';
+      var dt = d instanceof Date ? d : new Date(d);
+      return dt.toLocaleString('es-MX', { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    }
+    %>
     <% if (success && success.length) { %><div class="alert alert-success">✓ <%= success[0] %></div><% } %>
     <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
 
@@ -53,7 +68,7 @@
           </div>
           <div class="detalle-item">
             <label>Fecha de emisión</label>
-            <p><%= doc.fecha_emision %></p>
+            <p><%= fmtFecha(doc.fecha_emision) %></p>
           </div>
           <div class="detalle-item full">
             <label>Asunto</label>
@@ -99,7 +114,7 @@
           <% } %>
           <div class="detalle-item">
             <label>Registrado</label>
-            <p><%= doc.creado_en %></p>
+            <p><%= fmtFechaHora(doc.creado_en) %></p>
           </div>
           <% if (copias && copias.length > 0) { %>
           <div class="detalle-item full">

@@ -7,6 +7,15 @@
 </head>
 <body>
 <%- include('../layout/sidebar') %>
+<%
+function fmtFecha(d) {
+  if (!d) return '—';
+  var s = d instanceof Date ? d.toISOString().split('T')[0] : String(d).split('T')[0];
+  var p = s.split('-');
+  var meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return parseInt(p[2]) + ' ' + meses[parseInt(p[1])-1] + ' ' + p[0];
+}
+%>
 <div class="main-wrapper">
   <div class="topbar">
     <h1><%= titulo %></h1>
@@ -61,7 +70,7 @@
             <tr>
               <td><strong><%= d.numero_folio %></strong></td>
               <td><span class="badge badge-<%= d.tipo %>"><%= d.tipo %></span></td>
-              <td><%= d.fecha_emision %></td>
+              <td><%= fmtFecha(d.fecha_emision) %></td>
               <td class="truncate"><%= d.destinatario %></td>
               <td class="truncate"><%= d.asunto %></td>
               <td class="text-sm text-gris"><%= d.area_nombre || '—' %></td>
