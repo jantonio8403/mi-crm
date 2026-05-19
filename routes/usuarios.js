@@ -12,6 +12,25 @@ const ROLES = {
   recepcion:  'Recepción',
 };
 
+// Funcionarios internos disponibles para vinculación
+async function funcionariosDisponibles(excluirUsuarioId = null) {
+  const params = [];
+  let condicion = "f.tipo='interno' AND f.activo=1 AND (f.usuario_id IS NULL";
+  if (excluirUsuarioId) {
+    condicion += ' OR f.usuario_id=?';
+    params.push(excluirUsuarioId);
+  }
+  condicion += ')';
+  return query(
+    `SELECT f.id, f.nombre, f.cargo, f.area_id, a.nombre as area_nombre
+     FROM funcionarios f
+     LEFT JOIN areas a ON f.area_id = a.id
+     WHERE ${condicion}
+     ORDER BY f.nombre`,
+    params
+  );
+}
+
 // ── Lista ────────────────────────────────────────────────────────
 router.get('/', requireAuth, requireAdmin, async (req, res, next) => {
   try {
@@ -26,9 +45,11 @@ router.get('/', requireAuth, requireAdmin, async (req, res, next) => {
     if (area_id) { where += ' AND u.area_id=?'; params.push(area_id); }
 
     const usuarios = await query(`
-      SELECT u.*, a.nombre as area_nombre
+      SELECT u.*, a.nombre as area_nombre,
+             f.id as funcionario_id, f.nombre as funcionario_nombre
       FROM usuarios u
       LEFT JOIN areas a ON u.area_id = a.id
+      LEFT JOIN funcionarios f ON f.usuario_id = u.id
       WHERE ${where}
       ORDER BY u.activo DESC, u.nombre ASC
     `, params);
@@ -46,10 +67,12 @@ router.get('/', requireAuth, requireAdmin, async (req, res, next) => {
 // ── Nuevo ────────────────────────────────────────────────────────
 router.get('/nuevo', requireAuth, requireAdmin, async (req, res, next) => {
   try {
-    const areas = await query('SELECT * FROM areas WHERE activa=1 ORDER BY nombre');
+    const areas            = await query('SELECT * FROM areas WHERE activa=1 ORDER BY nombre');
+    const funcionariosDisp = await funcionariosDisponibles();
     res.render('usuarios/form', {
       titulo: 'Nuevo Usuario',
-      usuarioEdit: null, areas, ROLES,
+      usuarioEdit: null, areas, ROLES, funcionariosDisp,
+      linkedFuncionarioId: null,
       accion: '/usuarios',
     });
   } catch (err) { next(err); }
@@ -57,7 +80,7 @@ router.get('/nuevo', requireAuth, requireAdmin, async (req, res, next) => {
 
 router.post('/', requireAuth, requireAdmin, async (req, res, next) => {
   try {
-    const { nombre, cargo, username, password, rol, area_id } = req.body;
+    const { funcionario_id, nombre, cargo, username, password, rol, area_id } = req.body;
 
     if (!password || password.trim().length < 6) {
       req.flash('error', 'La contraseña debe tener al menos 6 caracteres');
@@ -70,11 +93,42 @@ router.post('/', requireAuth, requireAdmin, async (req, res, next) => {
       return res.redirect('/usuarios/nuevo');
     }
 
-    const hash = bcrypt.hashSync(password, 10);
-    await query(
+    const funcId = funcionario_id ? parseInt(funcionario_id) : null;
+    let nombreFinal = nombre;
+    let cargoFinal  = cargo || null;
+    let areaIdFinal = area_id ? parseInt(area_id) : null;
+
+    if (funcId) {
+      const [func] = await query(
+        "SELECT nombre, cargo, area_id FROM funcionarios WHERE id=? AND tipo='interno' AND activo=1 LIMIT 1",
+        [funcId]
+      );
+      if (!func) {
+        req.flash('error', 'El funcionario seleccionado no existe o no está activo');
+        return res.redirect('/usuarios/nuevo');
+      }
+      const [yaVinc] = await query(
+        'SELECT id FROM usuarios WHERE id=(SELECT usuario_id FROM funcionarios WHERE id=? AND usuario_id IS NOT NULL LIMIT 1)',
+        [funcId]
+      );
+      if (yaVinc) {
+        req.flash('error', 'Ese funcionario ya tiene una cuenta vinculada');
+        return res.redirect('/usuarios/nuevo');
+      }
+      nombreFinal = func.nombre;
+      cargoFinal  = func.cargo || null;
+      areaIdFinal = func.area_id || null;
+    }
+
+    const hash   = bcrypt.hashSync(password.trim(), 10);
+    const result = await query(
       'INSERT INTO usuarios (nombre, cargo, username, password_hash, rol, area_id) VALUES (?,?,?,?,?,?)',
-      [nombre, cargo || null, username, hash, rol, area_id || null]
+      [nombreFinal, cargoFinal, username, hash, rol, areaIdFinal]
     );
+
+    if (funcId) {
+      await query('UPDATE funcionarios SET usuario_id=? WHERE id=?', [result.insertId, funcId]);
+    }
 
     req.flash('success', `Usuario "${username}" creado correctamente`);
     res.redirect('/usuarios');
@@ -86,10 +140,19 @@ router.get('/:id/editar', requireAuth, requireAdmin, async (req, res, next) => {
   try {
     const [usuarioEdit] = await query('SELECT * FROM usuarios WHERE id=?', [req.params.id]);
     if (!usuarioEdit) { req.flash('error', 'Usuario no encontrado'); return res.redirect('/usuarios'); }
-    const areas = await query('SELECT * FROM areas WHERE activa=1 ORDER BY nombre');
+
+    const [linkedFunc] = await query(
+      'SELECT id FROM funcionarios WHERE usuario_id=? LIMIT 1',
+      [req.params.id]
+    );
+    const linkedFuncionarioId = linkedFunc ? linkedFunc.id : null;
+
+    const areas            = await query('SELECT * FROM areas WHERE activa=1 ORDER BY nombre');
+    const funcionariosDisp = await funcionariosDisponibles(parseInt(req.params.id));
+
     res.render('usuarios/form', {
       titulo: 'Editar Usuario',
-      usuarioEdit, areas, ROLES,
+      usuarioEdit, areas, ROLES, funcionariosDisp, linkedFuncionarioId,
       accion: `/usuarios/${usuarioEdit.id}`,
     });
   } catch (err) { next(err); }
@@ -97,7 +160,7 @@ router.get('/:id/editar', requireAuth, requireAdmin, async (req, res, next) => {
 
 router.post('/:id', requireAuth, requireAdmin, async (req, res, next) => {
   try {
-    const { nombre, cargo, username, password, rol, area_id } = req.body;
+    const { funcionario_id, nombre, cargo, username, password, rol, area_id } = req.body;
     const id = req.params.id;
 
     const existe = await query('SELECT id FROM usuarios WHERE username=? AND id!=?', [username, id]);
@@ -106,27 +169,65 @@ router.post('/:id', requireAuth, requireAdmin, async (req, res, next) => {
       return res.redirect(`/usuarios/${id}/editar`);
     }
 
+    // Funcionario actualmente vinculado
+    const [currentLinked] = await query(
+      'SELECT id FROM funcionarios WHERE usuario_id=? LIMIT 1', [id]
+    );
+    const currentFuncId = currentLinked ? currentLinked.id : null;
+
+    const funcId = funcionario_id ? parseInt(funcionario_id) : null;
+    let nombreFinal = nombre;
+    let cargoFinal  = cargo || null;
+    let areaIdFinal = area_id ? parseInt(area_id) : null;
+
+    if (funcId) {
+      const [func] = await query(
+        "SELECT nombre, cargo, area_id FROM funcionarios WHERE id=? AND tipo='interno' AND activo=1 LIMIT 1",
+        [funcId]
+      );
+      if (!func) {
+        req.flash('error', 'El funcionario seleccionado no existe o no está activo');
+        return res.redirect(`/usuarios/${id}/editar`);
+      }
+      nombreFinal = func.nombre;
+      cargoFinal  = func.cargo || null;
+      areaIdFinal = func.area_id || null;
+    }
+
     if (password && password.trim()) {
       if (password.trim().length < 6) {
         req.flash('error', 'La contraseña debe tener al menos 6 caracteres');
         return res.redirect(`/usuarios/${id}/editar`);
       }
-      const hash = bcrypt.hashSync(password, 10);
+      const hash = bcrypt.hashSync(password.trim(), 10);
       await query(
         'UPDATE usuarios SET nombre=?, cargo=?, username=?, password_hash=?, rol=?, area_id=? WHERE id=?',
-        [nombre, cargo || null, username, hash, rol, area_id || null, id]
+        [nombreFinal, cargoFinal, username, hash, rol, areaIdFinal, id]
       );
     } else {
       await query(
         'UPDATE usuarios SET nombre=?, cargo=?, username=?, rol=?, area_id=? WHERE id=?',
-        [nombre, cargo || null, username, rol, area_id || null, id]
+        [nombreFinal, cargoFinal, username, rol, areaIdFinal, id]
       );
     }
 
+    // Gestionar vínculo con funcionario
+    if (currentFuncId && currentFuncId !== funcId) {
+      await query('UPDATE funcionarios SET usuario_id=NULL WHERE id=?', [currentFuncId]);
+    }
+    if (funcId && funcId !== currentFuncId) {
+      await query('UPDATE funcionarios SET usuario_id=? WHERE id=?', [id, funcId]);
+    }
+    if (!funcId && currentFuncId) {
+      await query('UPDATE funcionarios SET usuario_id=NULL WHERE id=?', [currentFuncId]);
+    }
+
+    // Actualizar sesión si es el usuario actual
     if (String(req.session.usuario.id) === String(id)) {
-      req.session.usuario.nombre = nombre;
-      req.session.usuario.cargo  = cargo;
-      req.session.usuario.rol    = rol;
+      req.session.usuario.nombre  = nombreFinal;
+      req.session.usuario.cargo   = cargoFinal;
+      req.session.usuario.rol     = rol;
+      req.session.usuario.area_id = areaIdFinal;
     }
 
     req.flash('success', 'Usuario actualizado correctamente');

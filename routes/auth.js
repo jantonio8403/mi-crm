@@ -19,17 +19,30 @@ router.post('/login', async (req, res) => {
       return res.redirect('/login');
     }
 
-    const areas = usuario.area_id
-      ? await query('SELECT nombre FROM areas WHERE id = ?', [usuario.area_id])
+    // Si el usuario está vinculado a un funcionario interno, sus datos
+    // (nombre, cargo, área) se toman del directorio — fuente de verdad única
+    const [funcVinculado] = await query(
+      `SELECT f.nombre, f.cargo, f.area_id
+       FROM funcionarios f
+       WHERE f.usuario_id=? AND f.tipo='interno' AND f.activo=1 LIMIT 1`,
+      [usuario.id]
+    );
+
+    const nombre  = funcVinculado ? funcVinculado.nombre  : usuario.nombre;
+    const cargo   = funcVinculado ? funcVinculado.cargo   : usuario.cargo;
+    const area_id = funcVinculado ? funcVinculado.area_id : usuario.area_id;
+
+    const areas = area_id
+      ? await query('SELECT nombre FROM areas WHERE id = ?', [area_id])
       : [];
 
     req.session.usuario = {
-      id: usuario.id,
-      nombre: usuario.nombre,
-      cargo: usuario.cargo,
-      username: usuario.username,
-      rol: usuario.rol,
-      area_id: usuario.area_id,
+      id:          usuario.id,
+      nombre,
+      cargo,
+      username:    usuario.username,
+      rol:         usuario.rol,
+      area_id,
       area_nombre: areas[0] ? areas[0].nombre : 'Sin área',
     };
 

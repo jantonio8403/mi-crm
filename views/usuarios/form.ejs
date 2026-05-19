@@ -25,25 +25,54 @@
     <div class="card" style="max-width:680px">
       <form method="POST" action="<%= accion %>">
 
-        <h4 style="margin-bottom:16px;color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em">
+        <!-- ── Funcionario del directorio ────────────────────────── -->
+        <h4 style="margin-bottom:12px;color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em">
+          Funcionario del directorio interno
+        </h4>
+        <div class="form-group" style="margin-bottom:20px">
+          <label>Vincular con funcionario
+            <span style="font-weight:400;font-size:11px;color:var(--gris)"> — nombre, cargo y área se toman del directorio automáticamente</span>
+          </label>
+          <select name="funcionario_id" id="sel-funcionario">
+            <option value=""
+                    data-nombre="" data-cargo="" data-area-id="" data-area-nombre="">
+              — Sin vínculo (capturar datos manualmente) —
+            </option>
+            <% funcionariosDisp.forEach(f => { %>
+              <option value="<%= f.id %>"
+                      data-nombre="<%= f.nombre %>"
+                      data-cargo="<%= f.cargo || '' %>"
+                      data-area-id="<%= f.area_id || '' %>"
+                      data-area-nombre="<%= f.area_nombre || '' %>"
+                      <%= linkedFuncionarioId == f.id ? 'selected' : '' %>>
+                <%= f.nombre %><% if(f.cargo){ %> — <%= f.cargo %><% } %><% if(f.area_nombre){ %> (<%= f.area_nombre %>)<% } %>
+              </option>
+            <% }) %>
+          </select>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--borde);margin-bottom:20px">
+
+        <!-- ── Datos personales ──────────────────────────────────── -->
+        <h4 style="margin-bottom:12px;color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em">
           Datos personales
         </h4>
-        <div class="form-grid">
+        <div class="form-grid" style="margin-bottom:20px">
           <div class="form-group form-full">
             <label>Nombre completo *</label>
-            <input type="text" name="nombre" required
+            <input type="text" name="nombre" id="inp-nombre" required
                    value="<%= usuarioEdit ? usuarioEdit.nombre : '' %>"
                    placeholder="Nombre completo del usuario">
           </div>
           <div class="form-group">
             <label>Cargo / Puesto</label>
-            <input type="text" name="cargo"
+            <input type="text" name="cargo" id="inp-cargo"
                    value="<%= usuarioEdit ? (usuarioEdit.cargo || '') : '' %>"
                    placeholder="Ej. Jefe de Enfermería">
           </div>
-          <div class="form-group">
+          <div class="form-group" id="div-area-editable">
             <label>Área</label>
-            <select name="area_id">
+            <select name="area_id" id="sel-area-manual">
               <option value="">— Sin área asignada —</option>
               <% areas.forEach(a => { %>
                 <option value="<%= a.id %>"
@@ -53,10 +82,19 @@
               <% }) %>
             </select>
           </div>
+          <div class="form-group" id="div-area-readonly" style="display:none">
+            <label>Área</label>
+            <input type="hidden" name="area_id" id="inp-area-id">
+            <input type="text"   id="inp-area-nombre" readonly
+                   style="background:var(--verde-fondo);color:var(--gris);cursor:default"
+                   placeholder="— Sin área —">
+          </div>
         </div>
 
-        <hr style="border:none;border-top:1px solid var(--borde);margin:20px 0">
-        <h4 style="margin-bottom:16px;color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em">
+        <hr style="border:none;border-top:1px solid var(--borde);margin-bottom:20px">
+
+        <!-- ── Acceso al sistema ─────────────────────────────────── -->
+        <h4 style="margin-bottom:12px;color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em">
           Acceso al sistema
         </h4>
         <div class="form-grid">
@@ -65,14 +103,15 @@
             <input type="text" name="username" required
                    value="<%= usuarioEdit ? usuarioEdit.username : '' %>"
                    placeholder="Sin espacios ni caracteres especiales"
-                   autocomplete="off">
+                   data-no-upper autocomplete="off">
           </div>
           <div class="form-group">
             <label>Rol *</label>
             <select name="rol" required>
               <% Object.entries(ROLES).forEach(([val, label]) => { %>
                 <option value="<%= val %>"
-                  <%= usuarioEdit && usuarioEdit.rol === val ? 'selected' : (val === 'secretaria' && !usuarioEdit ? 'selected' : '') %>>
+                  <%= usuarioEdit && usuarioEdit.rol === val ? 'selected' :
+                     (val === 'secretaria' && !usuarioEdit ? 'selected' : '') %>>
                   <%= label %>
                 </option>
               <% }) %>
@@ -98,4 +137,53 @@
   </div>
 </div>
 <script src="/js/app.js"></script>
+<script>
+(function () {
+  var sel          = document.getElementById('sel-funcionario');
+  var inpNombre    = document.getElementById('inp-nombre');
+  var inpCargo     = document.getElementById('inp-cargo');
+  var divAreaEd    = document.getElementById('div-area-editable');
+  var divAreaRO    = document.getElementById('div-area-readonly');
+  var inpAreaId    = document.getElementById('inp-area-id');
+  var inpAreaNom   = document.getElementById('inp-area-nombre');
+  if (!sel) return;
+
+  function bloquear(inp) {
+    inp.readOnly = true;
+    inp.style.background = 'var(--verde-fondo)';
+    inp.style.color      = 'var(--gris)';
+    inp.style.cursor     = 'default';
+  }
+  function liberar(inp) {
+    inp.readOnly = false;
+    inp.style.background = '';
+    inp.style.color      = '';
+    inp.style.cursor     = '';
+  }
+
+  function actualizar() {
+    var opt = sel.options[sel.selectedIndex];
+    if (sel.value) {
+      inpNombre.value = opt.dataset.nombre || '';
+      bloquear(inpNombre);
+      inpCargo.value  = opt.dataset.cargo  || '';
+      bloquear(inpCargo);
+      divAreaEd.style.display  = 'none';
+      divAreaRO.style.display  = 'block';
+      inpAreaId.value  = opt.dataset.areaId  || '';
+      inpAreaNom.value = opt.dataset.areaNombre || '— Sin área —';
+    } else {
+      liberar(inpNombre);
+      liberar(inpCargo);
+      divAreaEd.style.display = 'block';
+      divAreaRO.style.display = 'none';
+      inpAreaId.value  = '';
+      inpAreaNom.value = '';
+    }
+  }
+
+  sel.addEventListener('change', actualizar);
+  actualizar();
+}());
+</script>
 </body></html>

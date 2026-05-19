@@ -71,20 +71,23 @@
               placeholder="Ej. Secretaría de Salud de Chiapas, SSA...">
           </div>
 
-          <!-- Campo interno: cuenta de usuario del sistema -->
+          <!-- Campo interno: cuenta de sistema (solo lectura, se gestiona desde Usuarios) -->
           <div class="form-group form-full" id="campo-usuario" style="display:<%= tipoPreset==='interno'?'flex':'none' %>;flex-direction:column;gap:5px">
-            <label>Cuenta de usuario del sistema
-              <span style="font-weight:400;font-size:11px;color:var(--gris)"> — vincula al funcionario con su acceso al CRM</span>
-            </label>
-            <select name="usuario_id">
-              <option value="">— Sin cuenta vinculada —</option>
-              <% usuariosDisp.forEach(u => { %>
-                <option value="<%= u.id %>"
-                  <%= funcionario && funcionario.usuario_id == u.id ? 'selected' : '' %>>
-                  <%= u.nombre %><% if (u.cargo) { %> — <%= u.cargo %><% } %>
-                </option>
-              <% }) %>
-            </select>
+            <label>Cuenta de acceso al sistema</label>
+            <% if (cuentaVinculada) { %>
+              <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--verde-fondo);border:1px solid var(--borde);border-radius:6px">
+                <span style="font-size:18px">✓</span>
+                <div>
+                  <span style="font-weight:600;color:var(--verde)"><%= cuentaVinculada.username %></span>
+                  <span class="text-gris text-sm"> — <%= cuentaVinculada.rol %></span>
+                  <div style="font-size:11px;color:var(--gris);margin-top:2px">Para cambiar o desvincular ve al módulo <a href="/usuarios" style="color:var(--verde)">Usuarios</a></div>
+                </div>
+              </div>
+            <% } else { %>
+              <div style="padding:10px 14px;background:#f9f9f9;border:1px dashed var(--borde);border-radius:6px;font-size:13px;color:var(--gris)">
+                Sin cuenta de sistema. Para crear una ve al módulo <a href="/usuarios/nuevo" style="color:var(--verde)">Usuarios</a> y selecciona este funcionario.
+              </div>
+            <% } %>
           </div>
 
           <!-- Campo interno: área + designar jefe -->
@@ -138,10 +141,9 @@
   const radioInterno = document.getElementById('tipo-interno');
   const tabExt = document.getElementById('tab-externo');
   const tabInt = document.getElementById('tab-interno');
-  const campoInst    = document.getElementById('campo-institucion');
-  const campoArea    = document.getElementById('campo-area');
+  const campoInst   = document.getElementById('campo-institucion');
+  const campoArea   = document.getElementById('campo-area');
   const campoUsuario = document.getElementById('campo-usuario');
-
   const campoEsJefe = document.getElementById('campo-es-jefe');
 
   function actualizarVista() {
@@ -150,10 +152,10 @@
     tabExt.style.color      = esExterno ? '#fff' : 'var(--texto)';
     tabInt.style.background = esExterno ? '#fff' : 'var(--verde)';
     tabInt.style.color      = esExterno ? 'var(--texto)' : '#fff';
-    campoInst.style.display    = esExterno ? 'flex' : 'none';
-    campoArea.style.display    = esExterno ? 'none' : 'flex';
-    campoUsuario.style.display = esExterno ? 'none' : 'flex';
-    if (campoEsJefe) campoEsJefe.style.display = esExterno ? 'none' : 'flex';
+    campoInst.style.display  = esExterno ? 'flex' : 'none';
+    campoArea.style.display  = esExterno ? 'none' : 'flex';
+    if (campoUsuario) campoUsuario.style.display = esExterno ? 'none' : 'flex';
+    if (campoEsJefe)  campoEsJefe.style.display  = esExterno ? 'none' : 'flex';
   }
 
   radioExterno.addEventListener('change', actualizarVista);
