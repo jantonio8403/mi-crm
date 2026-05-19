@@ -105,6 +105,10 @@ function generarOficioPDF(documento, ruta) {
 function htmlToText(html) {
   if (!html) return '';
   return html
+    .replace(/<td[^>]*>/gi, ' ')
+    .replace(/<\/td>/gi, ' | ')
+    .replace(/<\/tr>/gi, '\n')
+    .replace(/<\/table>/gi, '\n')
     .replace(/<p[^>]*>\s*<br\s*\/?>\s*<\/p>/gi, '\n')
     .replace(/<\/p>/gi, '\n')
     .replace(/<br\s*\/?>/gi, '\n')
