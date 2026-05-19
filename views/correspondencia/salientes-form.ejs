@@ -208,33 +208,26 @@
                    style="background:var(--verde-fondo);color:var(--gris);cursor:default">
           </div>
 
-          <div class="form-group">
-            <label style="display:flex;align-items:center;justify-content:space-between;gap:6px">
-              <span>Elaboró
-                <span style="font-weight:400;font-size:11px;color:var(--gris)"> — interno (opcional)</span>
-              </span>
-              <% if (firmante) { %>
-              <button type="button" id="btn-elaboro-yo"
-                data-nombre="<%= firmante.nombre %>" data-cargo="<%= firmante.cargo || '' %>"
-                class="btn btn-secondary btn-sm" style="font-size:11px;padding:2px 8px">
-                + Mi nombre
-              </button>
-              <% } %>
-            </label>
-            <div style="position:relative">
-              <input type="text" name="elaboro_nombre" id="inp-elaboro" autocomplete="off"
-                     value="<%= documento ? (documento.elaboro_nombre || '') : '' %>"
-                     data-db-selected="<%= documento && documento.elaboro_nombre ? '1' : '' %>"
-                     placeholder="Buscar funcionario interno...">
-              <div id="drop-elaboro" class="dir-dropdown" style="display:none"></div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Cargo Elaboró</label>
-            <input type="text" name="elaboro_cargo" id="inp-elaboro-cargo" readonly
-                   value="<%= documento ? (documento.elaboro_cargo || '') : '' %>"
-                   placeholder="Se llena al seleccionar"
-                   style="background:var(--verde-fondo);color:var(--gris);cursor:default">
+          <div class="form-group form-full">
+            <label>Elaboró</label>
+            <% if (firmante) { %>
+              <input type="hidden" name="elaboro_nombre" value="<%= firmante.nombre %>">
+              <input type="hidden" name="elaboro_cargo"  value="<%= firmante.cargo || '' %>">
+              <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--verde-fondo);border:1px solid var(--borde);border-radius:6px">
+                <span style="font-size:18px;color:var(--verde)">✓</span>
+                <div>
+                  <span style="font-weight:600"><%= firmante.nombre %></span>
+                  <% if (firmante.cargo) { %><span class="text-gris text-sm"> — <%= firmante.cargo %></span><% } %>
+                  <div style="font-size:11px;color:var(--gris);margin-top:2px">Establecido automáticamente desde tu cuenta</div>
+                </div>
+              </div>
+            <% } else { %>
+              <input type="hidden" name="elaboro_nombre" value="">
+              <input type="hidden" name="elaboro_cargo"  value="">
+              <div style="padding:10px 14px;background:#f9f9f9;border:1px dashed var(--borde);border-radius:6px;font-size:13px;color:var(--gris)">
+                Sin funcionario vinculado a tu cuenta. Ve al módulo <a href="/directorio" style="color:var(--verde)">Directorio</a> para vincularla.
+              </div>
+            <% } %>
           </div>
 
           <!-- Con copia para (solo oficio) -->
@@ -298,7 +291,6 @@
       { id: 'inp-atencion-a',    label: 'Con atención a', opcional: true },
       { id: 'inp-firmante',      label: 'Firmante' },
       { id: 'inp-vobo',          label: 'Vo. Bo.',        opcional: true },
-      { id: 'inp-elaboro',       label: 'Elaboró',        opcional: true },
     ];
     for (var i = 0; i < camposDir.length; i++) {
       var cd = camposDir[i];

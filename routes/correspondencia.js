@@ -202,16 +202,13 @@ router.post('/salientes', requireAuth, async (req, res, next) => {
       }
     }
 
-    if (elaboro_nombre && elaboro_nombre.trim()) {
-      const [elaboroOk] = await query(
-        "SELECT id FROM funcionarios WHERE nombre=? AND tipo='interno' AND activo=1 LIMIT 1",
-        [elaboro_nombre.trim()]
-      );
-      if (!elaboroOk) {
-        req.flash('error', 'Quien elaboró el oficio no existe en el directorio interno. Selecciónalo del autocomplete.');
-        return res.redirect(redir);
-      }
-    }
+    // elaboro: siempre del funcionario vinculado al usuario en sesión (ignorar body)
+    const [elaboroFunc] = await query(
+      "SELECT nombre, cargo FROM funcionarios WHERE usuario_id=? AND tipo='interno' AND activo=1 LIMIT 1",
+      [req.session.usuario.id]
+    );
+    const elaboro_nombre_real = elaboroFunc ? elaboroFunc.nombre : null;
+    const elaboro_cargo_real  = elaboroFunc ? elaboroFunc.cargo  : null;
 
     if (tipo === 'oficio' && req.body.copias) {
       const copiasRaw = Array.isArray(req.body.copias)
@@ -250,8 +247,8 @@ router.post('/salientes', requireAuth, async (req, res, next) => {
        tipo === 'oficio' ? (atencion_a_cargo || null) : null,
        contenido, areaId, req.session.usuario.id,
        firmante_nombre || null, firmante_cargo || null,
-       vobo_nombre   ? vobo_nombre.trim()   : null,  vobo_cargo    ? vobo_cargo.trim()    : null,
-       elaboro_nombre ? elaboro_nombre.trim() : null, elaboro_cargo ? elaboro_cargo.trim() : null]
+       vobo_nombre ? vobo_nombre.trim() : null, vobo_cargo ? vobo_cargo.trim() : null,
+       elaboro_nombre_real, elaboro_cargo_real]
     );
     const id = result.insertId;
 
@@ -388,13 +385,13 @@ router.post('/salientes/:id/editar', requireAuth, async (req, res, next) => {
       );
       if (!vOk) { req.flash('error', 'El Vo. Bo. no existe en el directorio interno.'); return res.redirect(redir); }
     }
-    if (elaboro_nombre && elaboro_nombre.trim()) {
-      const [eOk] = await query(
-        "SELECT id FROM funcionarios WHERE nombre=? AND tipo='interno' AND activo=1 LIMIT 1",
-        [elaboro_nombre.trim()]
-      );
-      if (!eOk) { req.flash('error', 'Quien elaboró no existe en el directorio interno.'); return res.redirect(redir); }
-    }
+    // elaboro: del funcionario vinculado al usuario en sesión (ignorar body)
+    const [elaboroFuncEd] = await query(
+      "SELECT nombre, cargo FROM funcionarios WHERE usuario_id=? AND tipo='interno' AND activo=1 LIMIT 1",
+      [u.id]
+    );
+    const elaboro_nombre_real = elaboroFuncEd ? elaboroFuncEd.nombre : null;
+    const elaboro_cargo_real  = elaboroFuncEd ? elaboroFuncEd.cargo  : null;
     if (tipo === 'oficio' && req.body.copias) {
       const cr = Array.isArray(req.body.copias) ? req.body.copias : Object.values(req.body.copias);
       for (const c of cr) {
@@ -425,7 +422,7 @@ router.post('/salientes/:id/editar', requireAuth, async (req, res, next) => {
        contenido, areaId,
        firmante_nombre || null, firmante_cargo || null,
        vobo_nombre ? vobo_nombre.trim() : null, vobo_cargo ? vobo_cargo.trim() : null,
-       elaboro_nombre ? elaboro_nombre.trim() : null, elaboro_cargo ? elaboro_cargo.trim() : null,
+       elaboro_nombre_real, elaboro_cargo_real,
        req.params.id]
     );
     // Copias: borrar y reemplazar
