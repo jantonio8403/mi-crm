@@ -115,17 +115,6 @@
           </div>
           <% } %>
 
-          <!-- Con copia para (solo oficio) -->
-          <% if (tipo === 'oficio') { %>
-          <div class="form-full">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-              <label style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--gris);letter-spacing:.05em">Con copia para</label>
-              <button type="button" id="btn-add-copia" class="btn btn-secondary btn-sm">+ Agregar copia</button>
-            </div>
-            <div id="lista-copias"></div>
-          </div>
-          <% } %>
-
           <div class="form-group form-full">
             <label>Contenido / Cuerpo del documento *</label>
             <textarea name="contenido" id="editor-contenido"></textarea>
@@ -155,6 +144,18 @@
                    placeholder="Se llena al seleccionar"
                    style="background:var(--verde-fondo);color:var(--gris);cursor:default">
           </div>
+
+          <!-- Con copia para (solo oficio) -->
+          <% if (tipo === 'oficio') { %>
+          <div class="form-full" style="margin-top:8px">
+            <hr style="border:none;border-top:1px solid var(--borde);margin-bottom:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <span style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--gris);letter-spacing:.05em">Con copia para</span>
+              <button type="button" id="btn-add-copia" class="btn btn-secondary btn-sm">+ Agregar copia</button>
+            </div>
+            <div id="lista-copias"></div>
+          </div>
+          <% } %>
         </div>
 
         <div class="flex gap-8 mt-16">
