@@ -95,16 +95,23 @@ router.get('/salientes/nuevo', requireAuth, async (req, res, next) => {
   try {
     const tipo = req.query.tipo || 'oficio';
     const u = req.session.usuario;
+    const areaFija = u.rol === 'jefe_area';
     const folio = await siguienteFolio(tipo, u.area_id || null);
     const areas = await query('SELECT * FROM areas WHERE activa=1 ORDER BY nombre');
     const [firmante] = await query(
       `SELECT nombre, cargo FROM funcionarios WHERE usuario_id=? AND tipo='interno' AND activo=1 LIMIT 1`,
       [u.id]
     );
+    let areaNombre = '';
+    if (areaFija && u.area_id) {
+      const [a] = await query('SELECT nombre FROM areas WHERE id=?', [u.area_id]);
+      if (a) areaNombre = a.nombre;
+    }
     res.render('correspondencia/salientes-form', {
       titulo: tipo === 'oficio' ? 'Nuevo Oficio' : 'Nuevo Memorándum',
       documento: null, folio, tipo, areas,
       firmante: firmante || null,
+      areaFija, areaNombre,
       accion: '/correspondencia/salientes',
     });
   } catch (err) { next(err); }
@@ -179,8 +186,11 @@ router.post('/salientes', requireAuth, async (req, res, next) => {
     }
     // ── Fin validación ────────────────────────────────────────────────────────
 
-    // Folio se genera con el área real que se seleccionó en el formulario
-    const areaId = area_emisora_id ? parseInt(area_emisora_id) : (req.session.usuario.area_id || null);
+    // Jefe de área: su área es siempre la emisora, independiente del body
+    const u = req.session.usuario;
+    const areaId = u.rol === 'jefe_area'
+      ? (u.area_id || null)
+      : (area_emisora_id ? parseInt(area_emisora_id) : (u.area_id || null));
     const { consecutivo, anio, numero_folio } = await siguienteFolio(tipo, areaId);
 
     const result = await query(

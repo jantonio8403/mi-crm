@@ -55,13 +55,19 @@
           </div>
           <div class="form-group">
             <label>Área emisora</label>
-            <select name="area_emisora_id">
-              <option value="">— Seleccionar área —</option>
-              <% areas.forEach(a => { %>
-                <option value="<%= a.id %>"
-                  <%= usuario.area_id == a.id ? 'selected' : '' %>><%= a.nombre %></option>
-              <% }) %>
-            </select>
+            <% if (areaFija) { %>
+              <input type="hidden" name="area_emisora_id" value="<%= usuario.area_id %>">
+              <input type="text" value="<%= areaNombre %>" readonly
+                     style="background:var(--verde-fondo);color:var(--gris);cursor:default">
+            <% } else { %>
+              <select name="area_emisora_id" id="sel-area">
+                <option value="">— Seleccionar área —</option>
+                <% areas.forEach(a => { %>
+                  <option value="<%= a.id %>"
+                    <%= usuario.area_id == a.id ? 'selected' : '' %>><%= a.nombre %></option>
+                <% }) %>
+              </select>
+            <% } %>
           </div>
 
           <div class="form-group form-full">
@@ -479,7 +485,7 @@
 <script>
 /* Actualizar folio al cambiar área emisora */
 (function () {
-  var sel       = document.querySelector('select[name="area_emisora_id"]');
+  var sel       = document.getElementById('sel-area');
   var folioSpan = document.getElementById('folio-preview');
   if (!sel || !folioSpan) return;
   sel.addEventListener('change', function () {
