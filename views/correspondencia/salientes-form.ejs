@@ -161,66 +161,77 @@
 <script>
 /* ── Editor de texto (Quill + tablas) ────────────────────────── */
 (function () {
-  var BetterTable = window.quillBetterTable || window.QuillBetterTable;
+  /* Detectar el módulo con todos los nombres posibles del UMD */
+  var BetterTable = window.quillBetterTable
+    || window.QuillBetterTable
+    || window['quill-better-table'];
 
   if (BetterTable) {
     Quill.register({ 'modules/better-table': BetterTable }, true);
   }
 
-  var modulos = {
-    toolbar: [
-      [{ header: [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline'],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      [{ align: [] }],
-      [{ indent: '-1' }, { indent: '+1' }],
-      ['clean']
-    ],
-    table: false
-  };
-
-  if (BetterTable) {
-    modulos['better-table'] = {
-      operationMenu: { items: { unmergeCells: { text: 'Separar celdas' } } }
-    };
-    modulos.keyboard = { bindings: BetterTable.keyboardBindings };
-  }
-
   var quill = new Quill('#quill-editor', {
     theme: 'snow',
     placeholder: 'Redacte aquí el cuerpo del documento...',
-    modules: modulos
+    modules: Object.assign(
+      {
+        toolbar: [
+          [{ header: [1, 2, 3, false] }],
+          ['bold', 'italic', 'underline'],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          [{ align: [] }],
+          [{ indent: '-1' }, { indent: '+1' }],
+          ['clean']
+        ],
+        table: false
+      },
+      BetterTable ? {
+        'better-table': { operationMenu: { items: { unmergeCells: { text: 'Separar celdas' } } } },
+        keyboard: { bindings: BetterTable.keyboardBindings }
+      } : {}
+    )
   });
 
-  /* Botón "Insertar tabla" inyectado directamente en la toolbar */
-  if (BetterTable) {
-    var toolbar = document.querySelector('.ql-toolbar');
+  /* ── Botón "Insertar tabla" — siempre visible ── */
+  var toolbar = document.querySelector('.ql-toolbar');
+  if (toolbar) {
     var span = document.createElement('span');
     span.className = 'ql-formats';
+
     var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.title = 'Insertar tabla';
-    btn.style.cssText = 'width:auto;padding:2px 8px;font-size:12px;font-weight:600';
-    btn.textContent = '⊞ Tabla';
+    btn.type  = 'button';
+    btn.title = 'Insertar tabla 3×3';
+    btn.style.cssText = 'width:auto;padding:2px 8px;font-size:12px;font-weight:600;letter-spacing:.02em';
+    btn.innerHTML = '&#9783; Tabla';
+
     btn.addEventListener('mousedown', function (e) {
       e.preventDefault();
-      quill.getModule('better-table').insertTable(3, 3);
+      var mod = quill.getModule('better-table');
+      if (mod) {
+        mod.insertTable(3, 3);
+      } else {
+        /* fallback: insertar HTML de tabla básica */
+        var idx = (quill.getSelection(true) || { index: quill.getLength() }).index;
+        quill.clipboard.dangerouslyPasteHTML(idx,
+          '<table><tr><td> </td><td> </td><td> </td></tr>' +
+          '<tr><td> </td><td> </td><td> </td></tr>' +
+          '<tr><td> </td><td> </td><td> </td></tr></table>');
+      }
     });
+
     span.appendChild(btn);
     toolbar.appendChild(span);
   }
 
-  var form   = document.querySelector('form');
-  var hidden = document.getElementById('contenido-hidden');
-
-  form.addEventListener('submit', function (e) {
+  /* ── Submit ── */
+  document.querySelector('form').addEventListener('submit', function (e) {
     if (quill.getText().trim() === '') {
       e.preventDefault();
       quill.root.style.borderColor = 'var(--rojo)';
       quill.focus();
       return;
     }
-    hidden.value = quill.root.innerHTML;
+    document.getElementById('contenido-hidden').value = quill.root.innerHTML;
   });
 }());
 </script>
