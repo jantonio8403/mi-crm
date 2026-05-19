@@ -4,6 +4,11 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= titulo %> — HBC Berriozabal</title>
   <link rel="stylesheet" href="/css/app.css">
+  <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+  <style>
+    .ql-viewer { border: none !important; padding: 0 !important; font-family: inherit; }
+    .ql-viewer p { margin: 0 0 6px; }
+  </style>
 </head>
 <body>
 <%- include('../layout/sidebar') %>
@@ -94,7 +99,7 @@
 
         <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--borde)">
           <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gris)">Contenido</label>
-          <div style="margin-top:8px;font-size:13px;line-height:1.7;white-space:pre-wrap"><%= doc.contenido %></div>
+          <div style="margin-top:8px;font-size:13px;line-height:1.7" class="ql-editor ql-viewer"><%- doc.contenido %></div>
         </div>
       </div>
 

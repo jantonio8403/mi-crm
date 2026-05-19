@@ -66,7 +66,7 @@ function generarOficioPDF(documento, ruta) {
     doc.moveDown(1);
 
     // ─── Cuerpo ───────────────────────────────────────────────────
-    doc.fontSize(10).font('Helvetica').text(documento.contenido, {
+    doc.fontSize(10).font('Helvetica').text(htmlToText(documento.contenido), {
       align: 'justify',
       lineGap: 4,
     });
@@ -100,6 +100,26 @@ function generarOficioPDF(documento, ruta) {
     stream.on('finish', () => resolve(ruta));
     stream.on('error', reject);
   });
+}
+
+function htmlToText(html) {
+  if (!html) return '';
+  return html
+    .replace(/<p[^>]*>\s*<br\s*\/?>\s*<\/p>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '  • ')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<\/h[1-6]>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 function formatearFecha(fechaStr) {
