@@ -56,7 +56,7 @@ function folioToFilename(folio) {
 //  DOCUMENTOS SALIENTES
 // ═══════════════════════════════════════════════════════════════
 
-router.get('/salientes', requireAuth, async (req, res) => {
+router.get('/salientes', requireAuth, async (req, res, next) => {
   try {
     const { tipo, estatus, buscar, page = 1 } = req.query;
     const limit = 15;
@@ -107,6 +107,15 @@ router.get('/salientes/nuevo', requireAuth, async (req, res, next) => {
       firmante: firmante || null,
       accion: '/correspondencia/salientes',
     });
+  } catch (err) { next(err); }
+});
+
+router.get('/salientes/folio', requireAuth, async (req, res, next) => {
+  try {
+    const tipo = req.query.tipo || 'oficio';
+    const areaId = req.query.area_id ? parseInt(req.query.area_id) : null;
+    const folio = await siguienteFolio(tipo, areaId);
+    res.json({ numero_folio: folio.numero_folio });
   } catch (err) { next(err); }
 });
 

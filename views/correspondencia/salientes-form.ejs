@@ -39,7 +39,7 @@
         <div style="background:var(--verde-fondo);border:1px solid var(--borde);border-radius:6px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
           <div>
             <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gris);margin-bottom:2px">Folio asignado</div>
-            <span style="font-size:20px;font-weight:700;color:var(--verde);letter-spacing:.04em"><%= folio.numero_folio %></span>
+            <span id="folio-preview" style="font-size:20px;font-weight:700;color:var(--verde);letter-spacing:.04em"><%= folio.numero_folio %></span>
           </div>
           <div style="font-size:11px;color:var(--gris);border-left:1px solid var(--borde);padding-left:16px">
             El folio se genera con el área emisora seleccionada.<br>
@@ -131,7 +131,7 @@
             </label>
             <div style="position:relative">
               <input type="text" name="firmante_nombre" id="inp-firmante" required autocomplete="off"
-                     value="<%= firmante ? firmante.nombre : usuario.nombre %>"
+                     value="<%= firmante ? firmante.nombre : '' %>"
                      data-db-selected="<%= firmante ? '1' : '' %>"
                      placeholder="Buscar funcionario interno...">
               <div id="drop-firmante" class="dir-dropdown" style="display:none"></div>
@@ -140,7 +140,7 @@
           <div class="form-group">
             <label>Cargo del firmante</label>
             <input type="text" name="firmante_cargo" id="inp-firmante-cargo" readonly
-                   value="<%= firmante ? (firmante.cargo || '') : (usuario.cargo || '') %>"
+                   value="<%= firmante ? (firmante.cargo || '') : '' %>"
                    placeholder="Se llena al seleccionar"
                    style="background:var(--verde-fondo);color:var(--gris);cursor:default">
           </div>
@@ -235,15 +235,11 @@
 <script>
 /* Autocomplete destinatario — directorio de funcionarios */
 (function () {
-  var inp    = document.getElementById('inp-destinatario');
-  var drop   = document.getElementById('dir-dropdown');
-  var cargo  = document.getElementById('inp-cargo-dest');
-  var inst   = document.getElementById('inp-institucion-dest');
+  var inp   = document.getElementById('inp-destinatario');
+  var drop  = document.getElementById('dir-dropdown');
+  var cargo = document.getElementById('inp-cargo-dest');
 
-  if (!inp || !drop) {
-    console.error('Autocomplete: no se encontraron los elementos del DOM');
-    return;
-  }
+  if (!inp || !drop) return;
 
   var timer = null;
   var ultima = '';
@@ -281,7 +277,6 @@
         inp.dataset.dbSelected = '1';
         inp.style.borderColor = '';
         if (cargo) cargo.value = f.cargo || '';
-        if (inst)  inst.value  = esInt ? (f.area_nombre || '') : (f.institucion || '');
         ocultar();
       });
       drop.appendChild(el);
@@ -478,6 +473,25 @@
   inp.addEventListener('focus', function () { if (inp.value.trim()) buscar(inp.value); });
   document.addEventListener('click', function (e) {
     if (!inp.contains(e.target) && !drop.contains(e.target)) ocultar();
+  });
+}());
+</script>
+<script>
+/* Actualizar folio al cambiar área emisora */
+(function () {
+  var sel       = document.querySelector('select[name="area_emisora_id"]');
+  var folioSpan = document.getElementById('folio-preview');
+  if (!sel || !folioSpan) return;
+  sel.addEventListener('change', function () {
+    var areaId = sel.value || '';
+    var tipo   = '<%= tipo %>';
+    fetch('/correspondencia/salientes/folio?tipo=' + tipo + (areaId ? '&area_id=' + areaId : ''), {
+      credentials: 'include',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { if (d.numero_folio) folioSpan.textContent = d.numero_folio; })
+    .catch(function () {});
   });
 }());
 </script>
