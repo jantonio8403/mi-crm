@@ -140,7 +140,10 @@ function formatearFecha(fechaStr) {
   if (!fechaStr) return '';
   const meses = ['enero','febrero','marzo','abril','mayo','junio',
                   'julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  const [anio, mes, dia] = fechaStr.split('-');
+  const s = fechaStr instanceof Date
+    ? fechaStr.toISOString().split('T')[0]
+    : String(fechaStr);
+  const [anio, mes, dia] = s.split('-');
   return `${parseInt(dia)} de ${meses[parseInt(mes) - 1]} de ${anio}`;
 }
 
