@@ -170,56 +170,53 @@
                    style="background:var(--verde-fondo);color:var(--gris);cursor:default">
           </div>
 
-          <!-- Vo. Bo. + Elaboró (misma fila) -->
-          <div class="form-full" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <!-- Vo. Bo. + Elaboró -->
+          <hr style="grid-column:1/-1;border:none;border-top:1px solid var(--borde)">
+          <div style="grid-column:1/-1;font-size:12px;font-weight:700;text-transform:uppercase;color:var(--gris);letter-spacing:.05em">
+            Vo. Bo. y Elaboró
+          </div>
 
-            <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;align-items:start">
-              <div class="form-group">
-                <label>Vo. Bo.
-                  <span style="font-weight:400;font-size:11px;color:var(--gris)"> — funcionario interno (opcional)</span>
-                </label>
-                <div style="position:relative">
-                  <input type="text" name="vobo_nombre" id="inp-vobo" autocomplete="off"
-                         placeholder="Buscar funcionario interno...">
-                  <div id="drop-vobo" class="dir-dropdown" style="display:none"></div>
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Cargo</label>
-                <input type="text" name="vobo_cargo" id="inp-vobo-cargo" readonly
-                       placeholder="Se llena al seleccionar"
-                       style="background:var(--verde-fondo);color:var(--gris);cursor:default">
-              </div>
+          <div class="form-group">
+            <label>Vo. Bo.
+              <span style="font-weight:400;font-size:11px;color:var(--gris)"> — interno (opcional)</span>
+            </label>
+            <div style="position:relative">
+              <input type="text" name="vobo_nombre" id="inp-vobo" autocomplete="off"
+                     placeholder="Buscar funcionario interno...">
+              <div id="drop-vobo" class="dir-dropdown" style="display:none"></div>
             </div>
+          </div>
+          <div class="form-group">
+            <label>Cargo Vo. Bo.</label>
+            <input type="text" name="vobo_cargo" id="inp-vobo-cargo" readonly
+                   placeholder="Se llena al seleccionar"
+                   style="background:var(--verde-fondo);color:var(--gris);cursor:default">
+          </div>
 
-            <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;align-items:start">
-              <div class="form-group">
-                <label style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-                  <span>Elaboró
-                    <span style="font-weight:400;font-size:11px;color:var(--gris)"> — funcionario interno (opcional)</span>
-                  </span>
-                  <% if (firmante) { %>
-                  <button type="button" id="btn-elaboro-yo"
-                    data-nombre="<%= firmante.nombre %>" data-cargo="<%= firmante.cargo || '' %>"
-                    class="btn btn-secondary btn-sm" style="font-size:11px;padding:2px 8px;margin-bottom:2px">
-                    + Mi nombre
-                  </button>
-                  <% } %>
-                </label>
-                <div style="position:relative">
-                  <input type="text" name="elaboro_nombre" id="inp-elaboro" autocomplete="off"
-                         placeholder="Buscar funcionario interno...">
-                  <div id="drop-elaboro" class="dir-dropdown" style="display:none"></div>
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Cargo</label>
-                <input type="text" name="elaboro_cargo" id="inp-elaboro-cargo" readonly
-                       placeholder="Se llena al seleccionar"
-                       style="background:var(--verde-fondo);color:var(--gris);cursor:default">
-              </div>
+          <div class="form-group">
+            <label style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+              <span>Elaboró
+                <span style="font-weight:400;font-size:11px;color:var(--gris)"> — interno (opcional)</span>
+              </span>
+              <% if (firmante) { %>
+              <button type="button" id="btn-elaboro-yo"
+                data-nombre="<%= firmante.nombre %>" data-cargo="<%= firmante.cargo || '' %>"
+                class="btn btn-secondary btn-sm" style="font-size:11px;padding:2px 8px">
+                + Mi nombre
+              </button>
+              <% } %>
+            </label>
+            <div style="position:relative">
+              <input type="text" name="elaboro_nombre" id="inp-elaboro" autocomplete="off"
+                     placeholder="Buscar funcionario interno...">
+              <div id="drop-elaboro" class="dir-dropdown" style="display:none"></div>
             </div>
-
+          </div>
+          <div class="form-group">
+            <label>Cargo Elaboró</label>
+            <input type="text" name="elaboro_cargo" id="inp-elaboro-cargo" readonly
+                   placeholder="Se llena al seleccionar"
+                   style="background:var(--verde-fondo);color:var(--gris);cursor:default">
           </div>
 
           <!-- Con copia para (solo oficio) -->
