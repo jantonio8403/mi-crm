@@ -64,6 +64,12 @@
             <p><%= doc.institucion_destinatario %></p>
           </div>
           <% } %>
+          <% if (doc.atencion_a) { %>
+          <div class="detalle-item full">
+            <label>Con atención a</label>
+            <p><%= doc.atencion_a %></p>
+          </div>
+          <% } %>
           <div class="detalle-item">
             <label>Área emisora</label>
             <p><%= doc.area_nombre || '—' %></p>
