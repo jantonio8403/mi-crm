@@ -89,14 +89,26 @@
                    value="<%= documento ? documento.asunto : '' %>">
           </div>
 
-          <!-- Destinatario + Cargo (misma fila) -->
+          <!-- Destinatario circular: checkboxes por grupo -->
           <% if (tipo === 'circular') { %>
           <div class="form-group form-full">
-            <label>Destinatario</label>
-            <input type="hidden" name="destinatario" value="<%= locals.destinatarioCircular || '' %>">
-            <div style="padding:10px 14px;background:var(--verde-fondo);border:1px solid var(--borde);border-radius:6px;font-size:13px;color:var(--texto);line-height:1.5">
-              <span style="font-size:18px;color:var(--verde);margin-right:8px">✓</span>
-              <strong><%= locals.destinatarioCircular %></strong>
+            <label>Dirigido a *</label>
+            <div id="grupos-circular-wrap" style="display:flex;flex-direction:column;gap:6px;padding:12px 14px;border:1px solid var(--borde);border-radius:6px;background:#fff">
+              <% var _sel = locals.gruposSeleccionados || []; %>
+              <% locals.gruposCircular.forEach(function(g) { %>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:400;padding:4px 6px;border-radius:4px;transition:background .15s"
+                     onmouseover="this.style.background='var(--verde-fondo)'" onmouseout="this.style.background=''">
+                <input type="checkbox" name="grupos_circular" value="<%= g %>"
+                       class="grupo-circular-chk"
+                       <%= _sel.includes(g) ? 'checked' : '' %>
+                       style="width:15px;height:15px;accent-color:var(--verde);cursor:pointer">
+                <span><%= g %></span>
+              </label>
+              <% }) %>
+            </div>
+            <div id="preview-destinatario" style="margin-top:8px;padding:10px 14px;background:var(--verde-fondo);border:1px solid var(--borde);border-radius:6px;font-size:12px;color:var(--gris);line-height:1.5">
+              <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Vista previa del destinatario</span>
+              <span id="preview-texto" style="color:var(--texto)"></span>
             </div>
           </div>
           <% } else { %>
@@ -340,6 +352,16 @@
 
     // Validar campos que deben venir del directorio
     var esCircular = '<%= tipo %>' === 'circular';
+
+    // Circular: al menos un grupo seleccionado
+    if (esCircular) {
+      var chksGrupos = document.querySelectorAll('.grupo-circular-chk:checked');
+      if (chksGrupos.length === 0) {
+        mostrarError('Selecciona al menos un <strong>grupo destinatario</strong> para la circular.');
+        return;
+      }
+    }
+
     var camposDir = [
       { id: 'inp-destinatario', label: 'Destinatario', opcional: esCircular },
       { id: 'inp-atencion-a',   label: 'Con atención a', opcional: true },
@@ -836,6 +858,35 @@
   });
 }());
 </script>
+<% if (tipo === 'circular') { %>
+<script>
+/* Vista previa destinatario circular */
+(function () {
+  var GRUPOS = <%- JSON.stringify(locals.gruposCircular || []) %>;
+  var SUFIJO = 'que laboran y/o prestan servicio en esta unidad médica';
+  var previewEl = document.getElementById('preview-texto');
+  var wrap = document.getElementById('grupos-circular-wrap');
+  if (!previewEl || !wrap) return;
+
+  function actualizar() {
+    var chks = wrap.querySelectorAll('.grupo-circular-chk:checked');
+    var seleccionados = Array.prototype.map.call(chks, function (c) { return c.value; });
+    var ordenados = GRUPOS.filter(function (g) { return seleccionados.indexOf(g) !== -1; });
+    if (ordenados.length === 0) {
+      previewEl.innerHTML = '<em style="color:var(--gris)">Selecciona al menos un grupo</em>';
+    } else {
+      previewEl.textContent = ordenados.join(', ') + ' ' + SUFIJO;
+    }
+  }
+
+  wrap.querySelectorAll('.grupo-circular-chk').forEach(function (chk) {
+    chk.addEventListener('change', actualizar);
+  });
+
+  actualizar(); // inicializar al cargar
+}());
+</script>
+<% } %>
 <% if (tipo === 'oficio') { %>
 <script>
 /* Copias dinámicas (C.c.p.) */

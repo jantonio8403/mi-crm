@@ -17,10 +17,7 @@ function fmtFecha(d) {
 }
 var TIPO_LABEL = { oficio: 'Oficio', memorandum: 'Memorándum', circular: 'Circular' };
 function tipoLabel(t) { return TIPO_LABEL[t] || t; }
-var DEST_CIRCULAR = 'Personal Médico, Paramédico, Trabajo Social, Internos y Pasantes';
-function fmtDestinatario(d) {
-  return d.tipo === 'circular' ? DEST_CIRCULAR : d.destinatario;
-}
+function fmtDestinatario(d) { return d.destinatario || '—'; }
 %>
 <div class="main-wrapper">
   <div class="topbar">

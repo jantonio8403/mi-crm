@@ -23,8 +23,21 @@ const upload = multer({
   },
 });
 
-// ─── Destinatario fijo para circulares ───────────────────────────
-const DESTINATARIO_CIRCULAR = 'Personal Médico y Paramédico, Trabajo Social, Internos de Pregrado, Administrativos, Pasantes de servicio social que laboran y/o prestan servicio en esta unidad médica';
+// ─── Grupos de destinatarios para circulares ─────────────────────
+const GRUPOS_CIRCULAR = [
+  'Personal Médico y Paramédico',
+  'Trabajo Social',
+  'Internos de Pregrado',
+  'Administrativos',
+  'Pasantes de servicio social',
+];
+const SUFIJO_CIRCULAR = 'que laboran y/o prestan servicio en esta unidad médica';
+
+function ensamblarDestinatarioCircular(grupos) {
+  const seleccionados = GRUPOS_CIRCULAR.filter(g => grupos.includes(g));
+  if (seleccionados.length === 0) return '';
+  return seleccionados.join(', ') + ' ' + SUFIJO_CIRCULAR;
+}
 
 // ─── Roles que pueden registrar correspondencia entrante ─────────
 const ROLES_REGISTRO_ENT = ['admin', 'director', 'secretaria', 'recepcion'];
@@ -151,7 +164,8 @@ router.get('/salientes/nuevo', requireAuth, async (req, res, next) => {
       firmante: firmante || null,
       director,
       areaFija, areaNombre,
-      destinatarioCircular: DESTINATARIO_CIRCULAR,
+      gruposCircular: GRUPOS_CIRCULAR,
+      gruposSeleccionados: GRUPOS_CIRCULAR, // todos marcados por defecto
       responde_a,
       accion: '/correspondencia/salientes',
     });
@@ -179,8 +193,16 @@ router.post('/salientes', requireAuth, async (req, res, next) => {
     const redir = `/correspondencia/salientes/nuevo?tipo=${tipo}${responde_a ? `&responde_a=${responde_a}` : ''}`;
 
     // ── Validación servidor ───────────────────────────────────────────────────
-    // Circular: destinatario es fijo, no se valida contra el directorio
-    if (tipo !== 'circular') {
+    // Circular: destinatario se ensambla desde grupos seleccionados
+    let destinatarioFinal = destinatario;
+    if (tipo === 'circular') {
+      const grupos = [].concat(req.body.grupos_circular || []);
+      destinatarioFinal = ensamblarDestinatarioCircular(grupos);
+      if (!destinatarioFinal) {
+        req.flash('error', 'Selecciona al menos un grupo destinatario para la circular.');
+        return res.redirect(redir);
+      }
+    } else {
       const tipoDestino = tipo === 'memorandum' ? 'interno' : 'externo';
       const [destOk] = await query(
         'SELECT id FROM funcionarios WHERE nombre=? AND tipo=? AND activo=1 LIMIT 1',
@@ -267,7 +289,7 @@ router.post('/salientes', requireAuth, async (req, res, next) => {
         vobo_nombre, vobo_cargo, elaboro_nombre, elaboro_cargo, estatus)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'borrador')`,
       [tipo, numero_folio, consecutivo, anio, fecha_emision, asunto,
-       tipo === 'circular' ? DESTINATARIO_CIRCULAR : destinatario,
+       destinatarioFinal,
        tipo === 'circular' ? null : (cargo_destinatario || null),
        tipo === 'oficio' ? (atencion_a || null) : null,
        tipo === 'oficio' ? (atencion_a_cargo || null) : null,
@@ -368,12 +390,16 @@ router.get('/salientes/:id/editar', requireAuth, async (req, res, next) => {
       ? doc.fecha_emision.toISOString().split('T')[0]
       : String(doc.fecha_emision || '').split('T')[0];
     const titulos = { oficio: 'Editar Oficio', memorandum: 'Editar Memorándum', circular: 'Editar Circular' };
+    const gruposSeleccionados = doc.tipo === 'circular'
+      ? GRUPOS_CIRCULAR.filter(g => (doc.destinatario || '').includes(g))
+      : [];
     res.render('correspondencia/salientes-form', {
       titulo: titulos[doc.tipo] || 'Editar Documento',
       documento: doc, folio: { numero_folio: doc.numero_folio },
       tipo: doc.tipo, areas, copias,
       firmante, director, areaFija, areaNombre,
-      destinatarioCircular: DESTINATARIO_CIRCULAR,
+      gruposCircular: GRUPOS_CIRCULAR,
+      gruposSeleccionados,
       accion: `/correspondencia/salientes/${doc.id}/editar`,
     });
   } catch (err) { next(err); }
@@ -395,7 +421,15 @@ router.post('/salientes/:id/editar', requireAuth, async (req, res, next) => {
             vobo_nombre, vobo_cargo, elaboro_nombre, elaboro_cargo } = req.body;
 
     // ── Validaciones (mismas que en creación) ────────────────────
-    if (tipo !== 'circular') {
+    let destinatarioFinalEd = destinatario;
+    if (tipo === 'circular') {
+      const grupos = [].concat(req.body.grupos_circular || []);
+      destinatarioFinalEd = ensamblarDestinatarioCircular(grupos);
+      if (!destinatarioFinalEd) {
+        req.flash('error', 'Selecciona al menos un grupo destinatario para la circular.');
+        return res.redirect(redir);
+      }
+    } else {
       const tipoDestino = tipo === 'memorandum' ? 'interno' : 'externo';
       const [destOk] = await query(
         'SELECT id FROM funcionarios WHERE nombre=? AND tipo=? AND activo=1 LIMIT 1',
@@ -456,7 +490,7 @@ router.post('/salientes/:id/editar', requireAuth, async (req, res, next) => {
        vobo_nombre=?, vobo_cargo=?, elaboro_nombre=?, elaboro_cargo=?
        WHERE id=?`,
       [fecha_emision, asunto,
-       tipo === 'circular' ? DESTINATARIO_CIRCULAR : destinatario,
+       destinatarioFinalEd,
        tipo === 'circular' ? null : (cargo_destinatario || null),
        tipo === 'oficio' ? (atencion_a || null) : null,
        tipo === 'oficio' ? (atencion_a_cargo || null) : null,
