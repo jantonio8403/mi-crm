@@ -35,6 +35,7 @@
     <div class="card">
       <form method="POST" action="<%= accion %>">
         <input type="hidden" name="tipo" value="<%= tipo %>">
+        <div id="form-alert" class="alert alert-error" style="display:none;margin-bottom:16px"></div>
 
         <div style="background:var(--verde-fondo);border:1px solid var(--borde);border-radius:6px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
           <div>
@@ -276,42 +277,76 @@
     showXPathInStatusbar: false
   });
 
+  var alerta = document.getElementById('form-alert');
+
   document.querySelector('form').addEventListener('submit', function (e) {
-    // Validar contenido
+    alerta.style.display = 'none';
+
+    function mostrarError(msg, campo) {
+      e.preventDefault();
+      alerta.innerHTML = '<strong>✕ Campo incompleto:</strong> ' + msg;
+      alerta.style.display = 'block';
+      alerta.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (campo) {
+        campo.style.borderColor = 'var(--rojo)';
+        setTimeout(function () { campo.focus(); }, 200);
+      }
+    }
+
+    // Validar fecha
+    var fecha = document.querySelector('[name="fecha_emision"]');
+    if (fecha && !fecha.value.trim()) {
+      mostrarError('La <strong>Fecha de emisión</strong> es obligatoria.', fecha);
+      return;
+    }
+
+    // Validar asunto
+    var asunto = document.querySelector('[name="asunto"]');
+    if (asunto && !asunto.value.trim()) {
+      mostrarError('El campo <strong>Asunto</strong> es obligatorio.', asunto);
+      return;
+    }
+
+    // Validar contenido del editor
     var contenido = editor.value || '';
     if (contenido.replace(/<[^>]*>/g, '').trim() === '') {
       e.preventDefault();
+      alerta.innerHTML = '<strong>✕ Campo incompleto:</strong> El <strong>Contenido</strong> del documento es obligatorio. Redacte el cuerpo antes de guardar.';
+      alerta.style.display = 'block';
+      alerta.scrollIntoView({ behavior: 'smooth', block: 'center' });
       editor.container.style.borderColor = 'var(--rojo)';
       editor.focus();
       return;
     }
+
     // Validar campos que deben venir del directorio
     var camposDir = [
-      { id: 'inp-destinatario',  label: 'Destinatario' },
-      { id: 'inp-atencion-a',    label: 'Con atención a', opcional: true },
-      { id: 'inp-firmante',      label: 'Firmante' },
-      { id: 'inp-vobo',          label: 'Vo. Bo.',        opcional: true },
+      { id: 'inp-destinatario', label: 'Destinatario', opcional: false },
+      { id: 'inp-atencion-a',   label: 'Con atención a', opcional: true },
+      { id: 'inp-firmante',     label: 'Firmante',     opcional: false },
+      { id: 'inp-vobo',         label: 'Vo. Bo.',       opcional: true },
     ];
     for (var i = 0; i < camposDir.length; i++) {
       var cd = camposDir[i];
       var el = document.getElementById(cd.id);
       if (!el) continue;
+      if (!cd.opcional && !el.value.trim()) {
+        mostrarError('El campo <strong>' + cd.label + '</strong> es obligatorio.', el);
+        return;
+      }
       if (cd.opcional && !el.value.trim()) continue;
       if (el.value.trim() && !el.dataset.dbSelected) {
-        e.preventDefault();
-        el.style.borderColor = 'var(--rojo)';
-        el.focus();
+        mostrarError('El campo <strong>' + cd.label + '</strong> debe seleccionarse del directorio. Use el buscador y seleccione una opción de la lista.', el);
         return;
       }
     }
-    // Validar copias
+
+    // Validar copias (solo oficio)
     var copiaFilas = document.querySelectorAll('.copia-fila');
     for (var j = 0; j < copiaFilas.length; j++) {
       var nombreInp = copiaFilas[j].querySelector('.copia-nombre');
       if (nombreInp && nombreInp.value.trim() && !nombreInp.dataset.dbSelected) {
-        e.preventDefault();
-        nombreInp.style.borderColor = 'var(--rojo)';
-        nombreInp.focus();
+        mostrarError('Una entrada de <strong>Con copia para</strong> no fue seleccionada del directorio. Use el buscador.', nombreInp);
         return;
       }
     }
