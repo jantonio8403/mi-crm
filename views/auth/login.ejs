@@ -9,11 +9,15 @@
 <body>
 <div class="login-page">
   <div class="login-card">
-    <h1>AGORA</h1>
-    <p style="font-size:13px;line-height:1.6">Sistema de Gestión Administrativa<br><strong>H.B.C. 12 Camas Berriozábal</strong></p>
+    <div class="login-brand">
+      <div class="login-icon">A</div>
+      <h1>AGORA</h1>
+      <p class="login-desc">Sistema de Gestión Administrativa</p>
+      <p class="login-hosp">H.B.C. 12 Camas · Berriozábal, Chiapas</p>
+    </div>
 
     <% if (error && error.length > 0) { %>
-      <div class="alert alert-error" style="margin-bottom:16px">✕ <%= error[0] %></div>
+      <div class="alert alert-error" style="margin-bottom:20px">✕ <%= error[0] %></div>
     <% } %>
 
     <form method="POST" action="/login">
@@ -21,7 +25,7 @@
         <label>Usuario</label>
         <input type="text" name="username" required autofocus placeholder="Nombre de usuario">
       </div>
-      <div class="form-group" style="margin-bottom:20px">
+      <div class="form-group">
         <label>Contraseña</label>
         <input type="password" name="password" required placeholder="Contraseña">
       </div>
