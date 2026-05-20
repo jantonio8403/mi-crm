@@ -29,11 +29,26 @@ body {
 }
 
 .sidebar-header {
-  padding: 20px 16px 16px;
+  padding: 18px 16px 14px;
   border-bottom: 1px solid rgba(255,255,255,0.15);
 }
-.sidebar-header h2 { font-size: 13px; font-weight: 700; line-height: 1.4; }
-.sidebar-header p { font-size: 11px; opacity: 0.75; margin-top: 2px; }
+.sidebar-wordmark {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
+}
+.sidebar-a {
+  width: 30px; height: 30px; flex-shrink: 0;
+  background: rgba(255,255,255,0.18);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 16px; font-weight: 800; line-height: 1;
+}
+.sidebar-gora {
+  font-size: 22px; font-weight: 800;
+  color: #fff; letter-spacing: 2px; line-height: 1;
+}
+.sidebar-hospital {
+  font-size: 10px; opacity: 0.65; margin: 0; padding: 0;
+}
 
 .sidebar-section { padding: 12px 0; }
 .sidebar-label {
