@@ -6,9 +6,6 @@ const MEMBRETE_PATH = path.join(__dirname, '../public/img/membrete.png');
 
 // Y donde inicia el contenido (bajo los logos del membrete)
 const CONTENT_TOP = 115;
-// Color de la línea del pie de membrete (vino/guinda IMSS-Bienestar)
-const COLOR_PIE = '#7B2036';
-
 function dibujarMembrete(doc) {
   if (fs.existsSync(MEMBRETE_PATH)) {
     doc.image(MEMBRETE_PATH, 0, 0, { width: 612, height: 792 });
@@ -16,14 +13,6 @@ function dibujarMembrete(doc) {
   }
 }
 
-function dibujarPiePagina(doc) {
-  doc.fontSize(7).font('Helvetica').fillColor(COLOR_PIE)
-    .text(
-      'Calle 12a. Poniente Norte No. 867, Barrio Pénjamo, C.P. 29130, en Berriozábal, Chiapas.',
-      60, 756, { align: 'center', width: 492, lineBreak: false }
-    );
-  doc.fillColor('black');
-}
 
 function generarOficioPDF(documento, ruta, copias = []) {
   return new Promise((resolve, reject) => {
@@ -135,7 +124,6 @@ function generarOficio(doc, documento, copias) {
     doc.fontSize(7).font('Helvetica').text(linea, { width: 492 });
   }
 
-  dibujarPiePagina(doc);
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -206,7 +194,6 @@ function generarMemorandum(doc, documento, copias) {
     doc.fontSize(7).font('Helvetica').text(linea, { width: 492 });
   }
 
-  dibujarPiePagina(doc);
 }
 
 // ════════════════════════════════════════════════════════════════
