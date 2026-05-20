@@ -129,7 +129,7 @@
           <% if (doc.tipo === 'memorandum') { %>
           <div class="detalle-item">
             <label>Leído</label>
-            <p><%= doc.leido_en ? doc.leido_en : '<span class="badge badge-recibido">Pendiente</span>' %></p>
+            <p><%- doc.leido_en ? doc.leido_en : '<span class="badge badge-recibido">Pendiente</span>' %></p>
           </div>
           <% } %>
         </div>
@@ -141,7 +141,7 @@
       </div>
 
       <div style="display:flex;flex-direction:column;gap:16px">
-        <!-- Marcar como leído (solo memorandums no leídos) -->
+        <!-- Marcar como leído (solo memorandums no leídos, no circulares) -->
         <% if (doc.tipo === 'memorandum' && !doc.leido_en) { %>
         <div class="card" style="border-color:var(--naranja)">
           <div class="card-header"><h3>Acuse de recibo</h3></div>

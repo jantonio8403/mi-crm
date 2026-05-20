@@ -24,6 +24,7 @@
 
     <div class="flex items-center mb-16" style="gap:12px">
       <a href="/correspondencia/salientes" class="btn btn-secondary">← Regresar</a>
+      <% if (!documento) { %>
       <div class="flex gap-8">
         <a href="/correspondencia/salientes/nuevo?tipo=oficio"
            class="btn <%= tipo==='oficio'?'btn-primary':'btn-secondary' %>">Oficio</a>
@@ -32,6 +33,9 @@
         <a href="/correspondencia/salientes/nuevo?tipo=circular"
            class="btn <%= tipo==='circular'?'btn-primary':'btn-secondary' %>">Circular</a>
       </div>
+      <% } else { %>
+      <span class="badge badge-<%= tipo %>" style="font-size:13px;padding:4px 14px"><%= tipo.charAt(0).toUpperCase() + tipo.slice(1) %></span>
+      <% } %>
     </div>
 
     <div class="card">

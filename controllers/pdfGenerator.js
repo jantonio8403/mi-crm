@@ -25,6 +25,8 @@ function generarOficioPDF(documento, ruta, copias = []) {
 
     if (documento.tipo === 'oficio') {
       generarOficio(doc, documento, copias);
+    } else if (documento.tipo === 'circular') {
+      generarCircular(doc, documento);
     } else {
       generarMemorandum(doc, documento, copias);
     }
@@ -136,9 +138,8 @@ function generarMemorandum(doc, documento, copias) {
   doc.moveDown(0.8);
 
   // ── Bloque derecho: folio / fecha / asunto ───────────────────
-  const etiquetaFolio = documento.tipo === 'circular' ? 'Circular Número' : 'Memorándum Número';
   doc.fontSize(10).font('Helvetica-Bold')
-    .text(`${etiquetaFolio}: ${documento.numero_folio}.`, { align: 'right' });
+    .text(`Memorándum Número: ${documento.numero_folio}.`, { align: 'right' });
   doc.moveDown(0.4);
   doc.font('Helvetica')
     .text(`Berriozábal, Chiapas a ${formatearFecha(documento.fecha_emision)}.`, { align: 'right' });
@@ -196,6 +197,73 @@ function generarMemorandum(doc, documento, copias) {
     doc.fontSize(7).font('Helvetica').text(linea, { width: 492 });
   }
 
+}
+
+// ════════════════════════════════════════════════════════════════
+//  CIRCULAR
+// ════════════════════════════════════════════════════════════════
+function generarCircular(doc, documento) {
+
+  // ── Membrete institucional ───────────────────────────────────
+  dibujarMembrete(doc);
+  doc.moveDown(0.8);
+
+  // ── Bloque derecho: folio / fecha / asunto ───────────────────
+  doc.fontSize(10).font('Helvetica-Bold')
+    .text(`Circular Número: ${documento.numero_folio}.`, { align: 'right' });
+  doc.moveDown(0.4);
+  doc.font('Helvetica')
+    .text(`Berriozábal, Chiapas a ${formatearFecha(documento.fecha_emision)}.`, { align: 'right' });
+  doc.moveDown(0.4);
+  doc.font('Helvetica-Bold')
+    .text(`Asunto: ${documento.asunto}.`, { align: 'right' });
+
+  doc.moveDown(1.4);
+
+  // ── Destinatario institucional (mayúsculas, negritas) ─────────
+  doc.fontSize(10).font('Helvetica-Bold')
+    .text(documento.destinatario.toUpperCase(), { width: 492 });
+
+  doc.moveDown(0.5);
+  doc.font('Helvetica-Bold').text('PRESENTE.', { width: 492 });
+  doc.moveDown(1.2);
+
+  // ── Cuerpo ───────────────────────────────────────────────────
+  doc.fontSize(10).font('Helvetica').text(htmlToText(documento.contenido), {
+    align: 'justify',
+    lineGap: 3,
+    width: 492,
+  });
+
+  doc.moveDown(2.5);
+
+  // ── Firmante (negritas, mayúsculas, sin línea) ────────────────
+  const firmaNombre = documento.firmante_nombre || '';
+  const firmaCargo  = documento.firmante_cargo  || '';
+  if (firmaNombre) {
+    doc.fontSize(10).font('Helvetica-Bold')
+      .text(firmaNombre.toUpperCase(), { width: 492 });
+  }
+  if (firmaCargo) {
+    doc.font('Helvetica-Bold').text(firmaCargo.toUpperCase(), { width: 492 });
+  }
+
+  doc.moveDown(1.2);
+
+  // ── Vo. Bo. ──────────────────────────────────────────────────
+  if (documento.vobo_nombre) {
+    const linea = 'Vo. Bo. ' + documento.vobo_nombre +
+      (documento.vobo_cargo ? '.- ' + documento.vobo_cargo + '.' : '.');
+    doc.fontSize(7).font('Helvetica').text(linea, { width: 492 });
+    doc.moveDown(0.3);
+  }
+
+  // ── Elaboró ──────────────────────────────────────────────────
+  if (documento.elaboro_nombre) {
+    const linea = 'Elaboró: ' + documento.elaboro_nombre +
+      (documento.elaboro_cargo ? '.- ' + documento.elaboro_cargo + '.' : '.');
+    doc.fontSize(7).font('Helvetica').text(linea, { width: 492 });
+  }
 }
 
 // ════════════════════════════════════════════════════════════════
