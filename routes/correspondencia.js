@@ -351,6 +351,7 @@ router.post('/salientes/:id/editar', requireAuth, async (req, res, next) => {
       return res.redirect(`/correspondencia/salientes/${req.params.id}`);
     }
     const redir = `/correspondencia/salientes/${req.params.id}/editar`;
+    const u = req.session.usuario;
     const { tipo, fecha_emision, asunto, destinatario, cargo_destinatario,
             atencion_a, atencion_a_cargo, contenido, area_emisora_id,
             firmante_nombre, firmante_cargo,
@@ -404,7 +405,6 @@ router.post('/salientes/:id/editar', requireAuth, async (req, res, next) => {
       }
     }
     // ── Actualizar ───────────────────────────────────────────────
-    const u = req.session.usuario;
     const areaId = u.rol === 'jefe_area'
       ? (u.area_id || null)
       : (area_emisora_id ? parseInt(area_emisora_id) : (u.area_id || null));
