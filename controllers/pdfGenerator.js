@@ -20,14 +20,17 @@ function dibujarPiePagina(doc) {
   doc.fontSize(7).font('Helvetica').fillColor(COLOR_PIE)
     .text(
       'Calle 12a. Poniente Norte No. 867, Barrio Pénjamo, C.P. 29130, en Berriozábal, Chiapas.',
-      60, 756, { align: 'center', width: 492 }
+      60, 756, { align: 'center', width: 492, lineBreak: false }
     );
   doc.fillColor('black');
 }
 
 function generarOficioPDF(documento, ruta, copias = []) {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 60, size: 'LETTER' });
+    const doc = new PDFDocument({
+      size: 'LETTER',
+      margins: { top: 60, bottom: 25, left: 60, right: 60 },
+    });
     const stream = fs.createWriteStream(ruta);
     doc.pipe(stream);
 
