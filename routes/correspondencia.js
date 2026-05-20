@@ -23,10 +23,13 @@ const upload = multer({
   },
 });
 
+// ─── Destinatario fijo para circulares ───────────────────────────
+const DESTINATARIO_CIRCULAR = 'Personal Médico y Paramédico, Trabajo Social, Internos de Pregrado, Administrativos, Pasantes de servicio social que laboran y/o prestan servicio en esta unidad médica';
+
 // ─── Helper folio ─────────────────────────────────────────────────
 async function siguienteFolio(tipo, area_id) {
   const anio = new Date().getFullYear();
-  const prefijo = tipo === 'oficio' ? 'OFI' : 'MEM';
+  const prefijo = tipo === 'oficio' ? 'OFI' : tipo === 'circular' ? 'CIR' : 'MEM';
 
   // Obtener código del área
   let codigoArea = 'GEN';
@@ -126,12 +129,14 @@ router.get('/salientes/nuevo', requireAuth, async (req, res, next) => {
       const [a] = await query('SELECT nombre FROM areas WHERE id=?', [u.area_id]);
       if (a) areaNombre = a.nombre;
     }
+    const titulos = { oficio: 'Nuevo Oficio', memorandum: 'Nuevo Memorándum', circular: 'Nueva Circular' };
     res.render('correspondencia/salientes-form', {
-      titulo: tipo === 'oficio' ? 'Nuevo Oficio' : 'Nuevo Memorándum',
+      titulo: titulos[tipo] || 'Nuevo Documento',
       documento: null, folio, tipo, areas,
       firmante: firmante || null,
       director,
       areaFija, areaNombre,
+      destinatarioCircular: DESTINATARIO_CIRCULAR,
       accion: '/correspondencia/salientes',
     });
   } catch (err) { next(err); }
@@ -156,15 +161,18 @@ router.post('/salientes', requireAuth, async (req, res, next) => {
 
     const redir = `/correspondencia/salientes/nuevo?tipo=${tipo}`;
 
-    // ── Validación servidor: todos los nombres deben existir en funcionarios ──
-    const tipoDestino = tipo === 'memorandum' ? 'interno' : 'externo';
-    const [destOk] = await query(
-      'SELECT id FROM funcionarios WHERE nombre=? AND tipo=? AND activo=1 LIMIT 1',
-      [destinatario, tipoDestino]
-    );
-    if (!destOk) {
-      req.flash('error', 'El destinatario no existe en el directorio. Selecciónalo del autocomplete.');
-      return res.redirect(redir);
+    // ── Validación servidor ───────────────────────────────────────────────────
+    // Circular: destinatario es fijo, no se valida contra el directorio
+    if (tipo !== 'circular') {
+      const tipoDestino = tipo === 'memorandum' ? 'interno' : 'externo';
+      const [destOk] = await query(
+        'SELECT id FROM funcionarios WHERE nombre=? AND tipo=? AND activo=1 LIMIT 1',
+        [destinatario, tipoDestino]
+      );
+      if (!destOk) {
+        req.flash('error', 'El destinatario no existe en el directorio. Selecciónalo del autocomplete.');
+        return res.redirect(redir);
+      }
     }
 
     if (tipo === 'oficio' && atencion_a) {
@@ -241,8 +249,9 @@ router.post('/salientes', requireAuth, async (req, res, next) => {
         elaborado_por_id, firmante_nombre, firmante_cargo,
         vobo_nombre, vobo_cargo, elaboro_nombre, elaboro_cargo, estatus)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'borrador')`,
-      [tipo, numero_folio, consecutivo, anio, fecha_emision, asunto, destinatario,
-       cargo_destinatario || null,
+      [tipo, numero_folio, consecutivo, anio, fecha_emision, asunto,
+       tipo === 'circular' ? DESTINATARIO_CIRCULAR : destinatario,
+       tipo === 'circular' ? null : (cargo_destinatario || null),
        tipo === 'oficio' ? (atencion_a || null) : null,
        tipo === 'oficio' ? (atencion_a_cargo || null) : null,
        contenido, areaId, req.session.usuario.id,
@@ -332,11 +341,13 @@ router.get('/salientes/:id/editar', requireAuth, async (req, res, next) => {
     doc.fecha_emisionStr = doc.fecha_emision instanceof Date
       ? doc.fecha_emision.toISOString().split('T')[0]
       : String(doc.fecha_emision || '').split('T')[0];
+    const titulos = { oficio: 'Editar Oficio', memorandum: 'Editar Memorándum', circular: 'Editar Circular' };
     res.render('correspondencia/salientes-form', {
-      titulo: doc.tipo === 'oficio' ? 'Editar Oficio' : 'Editar Memorándum',
+      titulo: titulos[doc.tipo] || 'Editar Documento',
       documento: doc, folio: { numero_folio: doc.numero_folio },
       tipo: doc.tipo, areas, copias,
       firmante, director, areaFija, areaNombre,
+      destinatarioCircular: DESTINATARIO_CIRCULAR,
       accion: `/correspondencia/salientes/${doc.id}/editar`,
     });
   } catch (err) { next(err); }
@@ -358,12 +369,14 @@ router.post('/salientes/:id/editar', requireAuth, async (req, res, next) => {
             vobo_nombre, vobo_cargo, elaboro_nombre, elaboro_cargo } = req.body;
 
     // ── Validaciones (mismas que en creación) ────────────────────
-    const tipoDestino = tipo === 'memorandum' ? 'interno' : 'externo';
-    const [destOk] = await query(
-      'SELECT id FROM funcionarios WHERE nombre=? AND tipo=? AND activo=1 LIMIT 1',
-      [destinatario, tipoDestino]
-    );
-    if (!destOk) { req.flash('error', 'El destinatario no existe en el directorio.'); return res.redirect(redir); }
+    if (tipo !== 'circular') {
+      const tipoDestino = tipo === 'memorandum' ? 'interno' : 'externo';
+      const [destOk] = await query(
+        'SELECT id FROM funcionarios WHERE nombre=? AND tipo=? AND activo=1 LIMIT 1',
+        [destinatario, tipoDestino]
+      );
+      if (!destOk) { req.flash('error', 'El destinatario no existe en el directorio.'); return res.redirect(redir); }
+    }
 
     if (tipo === 'oficio' && atencion_a) {
       const [aOk] = await query(
@@ -416,7 +429,9 @@ router.post('/salientes/:id/editar', requireAuth, async (req, res, next) => {
        firmante_nombre=?, firmante_cargo=?,
        vobo_nombre=?, vobo_cargo=?, elaboro_nombre=?, elaboro_cargo=?
        WHERE id=?`,
-      [fecha_emision, asunto, destinatario, cargo_destinatario || null,
+      [fecha_emision, asunto,
+       tipo === 'circular' ? DESTINATARIO_CIRCULAR : destinatario,
+       tipo === 'circular' ? null : (cargo_destinatario || null),
        tipo === 'oficio' ? (atencion_a || null) : null,
        tipo === 'oficio' ? (atencion_a_cargo || null) : null,
        contenido, areaId,

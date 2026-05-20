@@ -29,6 +29,8 @@
            class="btn <%= tipo==='oficio'?'btn-primary':'btn-secondary' %>">Oficio</a>
         <a href="/correspondencia/salientes/nuevo?tipo=memorandum"
            class="btn <%= tipo==='memorandum'?'btn-primary':'btn-secondary' %>">Memorándum</a>
+        <a href="/correspondencia/salientes/nuevo?tipo=circular"
+           class="btn <%= tipo==='circular'?'btn-primary':'btn-secondary' %>">Circular</a>
       </div>
     </div>
 
@@ -82,6 +84,16 @@
           </div>
 
           <!-- Destinatario + Cargo (misma fila) -->
+          <% if (tipo === 'circular') { %>
+          <div class="form-group form-full">
+            <label>Destinatario</label>
+            <input type="hidden" name="destinatario" value="<%= locals.destinatarioCircular || '' %>">
+            <div style="padding:10px 14px;background:var(--verde-fondo);border:1px solid var(--borde);border-radius:6px;font-size:13px;color:var(--texto);line-height:1.5">
+              <span style="font-size:18px;color:var(--verde);margin-right:8px">✓</span>
+              <strong><%= locals.destinatarioCircular %></strong>
+            </div>
+          </div>
+          <% } else { %>
           <div class="form-full" style="display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:start">
             <div class="form-group">
               <label>Destinatario *
@@ -107,6 +119,7 @@
                      style="background:var(--verde-fondo);color:var(--gris);cursor:default">
             </div>
           </div>
+          <% } %>
 
           <!-- Con atención a + Cargo (misma fila, solo oficio) -->
           <% if (tipo === 'oficio') { %>
@@ -320,8 +333,9 @@
     }
 
     // Validar campos que deben venir del directorio
+    var esCircular = '<%= tipo %>' === 'circular';
     var camposDir = [
-      { id: 'inp-destinatario', label: 'Destinatario', opcional: false },
+      { id: 'inp-destinatario', label: 'Destinatario', opcional: esCircular },
       { id: 'inp-atencion-a',   label: 'Con atención a', opcional: true },
       { id: 'inp-firmante',     label: 'Firmante',     opcional: false },
       { id: 'inp-vobo',         label: 'Vo. Bo.',       opcional: true },

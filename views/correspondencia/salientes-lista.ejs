@@ -32,6 +32,7 @@ function fmtFecha(d) {
       <div class="flex gap-8">
         <a href="/correspondencia/salientes/nuevo?tipo=oficio" class="btn btn-primary">+ Nuevo Oficio</a>
         <a href="/correspondencia/salientes/nuevo?tipo=memorandum" class="btn btn-secondary">+ Nuevo Memorándum</a>
+        <a href="/correspondencia/salientes/nuevo?tipo=circular" class="btn btn-secondary">+ Nueva Circular</a>
       </div>
     </div>
 
@@ -41,6 +42,7 @@ function fmtFecha(d) {
         <option value="">Todos los tipos</option>
         <option value="oficio" <%= filtros.tipo === 'oficio' ? 'selected' : '' %>>Oficio</option>
         <option value="memorandum" <%= filtros.tipo === 'memorandum' ? 'selected' : '' %>>Memorándum</option>
+        <option value="circular" <%= filtros.tipo === 'circular' ? 'selected' : '' %>>Circular</option>
       </select>
       <select name="estatus">
         <option value="">Todos los estatus</option>

@@ -23,10 +23,10 @@ function generarOficioPDF(documento, ruta, copias = []) {
     const stream = fs.createWriteStream(ruta);
     doc.pipe(stream);
 
-    if (documento.tipo === 'memorandum') {
-      generarMemorandum(doc, documento, copias);
-    } else {
+    if (documento.tipo === 'oficio') {
       generarOficio(doc, documento, copias);
+    } else {
+      generarMemorandum(doc, documento, copias);
     }
 
     doc.end();
@@ -136,8 +136,9 @@ function generarMemorandum(doc, documento, copias) {
   doc.moveDown(0.8);
 
   // ── Bloque derecho: folio / fecha / asunto ───────────────────
+  const etiquetaFolio = documento.tipo === 'circular' ? 'Circular Número' : 'Memorándum Número';
   doc.fontSize(10).font('Helvetica-Bold')
-    .text(`Memorándum Número: ${documento.numero_folio}.`, { align: 'right' });
+    .text(`${etiquetaFolio}: ${documento.numero_folio}.`, { align: 'right' });
   doc.moveDown(0.4);
   doc.font('Helvetica')
     .text(`Berriozábal, Chiapas a ${formatearFecha(documento.fecha_emision)}.`, { align: 'right' });
