@@ -222,12 +222,17 @@ tr:hover td { background: var(--verde-fondo); }
 .detalle-item.full { grid-column: 1 / -1; }
 
 /* ── Login ───────────────────────────────────────────── */
+body:has(.login-page) {
+  background: transparent;
+}
 .login-page {
   min-height: 100vh;
   min-height: 100dvh;
   display: flex; align-items: center; justify-content: center;
   background: linear-gradient(160deg, #0b3320 0%, #1a7a4a 100%);
   padding: 20px;
+  padding-top: max(20px, env(safe-area-inset-top));
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
 }
 .login-card {
   background: #fff; border-radius: 20px;
@@ -461,8 +466,4 @@ a { color: var(--verde); }
   .btn-sm { padding: 5px 8px; font-size: 11px; }
   .truncate { max-width: 130px; }
 
-  /* Login en pantallas muy pequeñas */
-  .login-card { padding: 28px 16px; }
-  .login-gora { font-size: 38px; letter-spacing: 2px; }
-  .login-icon { width: 44px; height: 44px; font-size: 20px; border-radius: 10px; }
 }
