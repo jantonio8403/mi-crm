@@ -2,6 +2,18 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 
+const MEMBRETE_PATH = path.join(__dirname, '../public/img/membrete.png');
+
+// Y donde inicia el contenido (bajo los logos del membrete)
+const CONTENT_TOP = 115;
+
+function dibujarMembrete(doc) {
+  if (fs.existsSync(MEMBRETE_PATH)) {
+    doc.image(MEMBRETE_PATH, 0, 0, { width: 612, height: 792 });
+    doc.y = CONTENT_TOP;
+  }
+}
+
 function generarOficioPDF(documento, ruta, copias = []) {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 60, size: 'LETTER' });
@@ -25,13 +37,8 @@ function generarOficioPDF(documento, ruta, copias = []) {
 // ════════════════════════════════════════════════════════════════
 function generarOficio(doc, documento, copias) {
 
-  // ── Encabezado institucional ─────────────────────────────────
-  doc.fontSize(8).font('Helvetica-Bold')
-    .text('IMSS-BIENESTAR / SERVICIOS PÚBLICOS DE SALUD', { align: 'center' });
-  doc.fontSize(8).font('Helvetica')
-    .text('HOSPITAL BÁSICO COMUNITARIO 12 CAMAS, BERRIOZÁBAL, CHIAPAS', { align: 'center' });
-  doc.moveDown(0.4);
-  doc.moveTo(60, doc.y).lineTo(552, doc.y).stroke();
+  // ── Membrete institucional ───────────────────────────────────
+  dibujarMembrete(doc);
   doc.moveDown(0.8);
 
   // ── Bloque derecho: folio / fecha / asunto ───────────────────
@@ -118,13 +125,8 @@ function generarOficio(doc, documento, copias) {
 // ════════════════════════════════════════════════════════════════
 function generarMemorandum(doc, documento, copias) {
 
-  // ── Encabezado ───────────────────────────────────────────────
-  doc.fontSize(8).font('Helvetica-Bold')
-    .text('IMSS-BIENESTAR / SERVICIOS PÚBLICOS DE SALUD', { align: 'center' });
-  doc.fontSize(8).font('Helvetica')
-    .text('HOSPITAL BÁSICO COMUNITARIO 12 CAMAS, BERRIOZÁBAL, CHIAPAS', { align: 'center' });
-  doc.moveDown(0.4);
-  doc.moveTo(60, doc.y).lineTo(552, doc.y).stroke();
+  // ── Membrete institucional ───────────────────────────────────
+  dibujarMembrete(doc);
   doc.moveDown(0.8);
 
   doc.fontSize(13).font('Helvetica-Bold')
