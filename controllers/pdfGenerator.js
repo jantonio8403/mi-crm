@@ -63,9 +63,10 @@ function generarOficio(doc, documento, copias) {
   // Con atención a (opcional)
   if (documento.atencion_a) {
     doc.moveDown(0.4);
-    doc.font('Helvetica-Bold').text(`Con Atención A: ${documento.atencion_a.toUpperCase()}`, { align: 'right', width: 492 });
+    doc.font('Helvetica').text('Con atención a:', { align: 'right', width: 492 });
+    doc.font('Helvetica-Bold').text(documento.atencion_a.toUpperCase(), { align: 'right', width: 492 });
     if (documento.atencion_a_cargo) {
-      doc.font('Helvetica').text(documento.atencion_a_cargo.toUpperCase(), { align: 'right', width: 492 });
+      doc.font('Helvetica-Bold').text(documento.atencion_a_cargo.toUpperCase(), { align: 'right', width: 492 });
     }
   }
 
