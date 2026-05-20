@@ -38,9 +38,12 @@
   <% } %>
   <div class="sidebar-footer">
     <a href="/perfil" class="sidebar-footer-link">
-      <div><strong><%= usuario ? usuario.nombre : '' %></strong></div>
-      <div style="font-size:10px;opacity:.7;margin-top:1px"><%= usuario ? usuario.rol : '' %></div>
-      <div><%= usuario ? usuario.area_nombre : '' %></div>
+      <div class="sidebar-footer-avatar">👤</div>
+      <div class="sidebar-footer-info">
+        <div class="sidebar-footer-nombre"><%= usuario ? usuario.nombre : '' %></div>
+        <div class="sidebar-footer-meta"><%= usuario ? usuario.rol : '' %><% if (usuario && usuario.area_nombre) { %> · <%= usuario.area_nombre %><% } %></div>
+      </div>
     </a>
+    <a href="/logout" class="sidebar-logout">⎋ Cerrar sesión</a>
   </div>
 </div>
