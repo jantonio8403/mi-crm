@@ -23,7 +23,7 @@ body {
 /* ── Sidebar ─────────────────────────────────────────── */
 .sidebar {
   position: fixed; top: 0; left: 0; bottom: 0;
-  width: 240px; background: var(--verde);
+  width: 240px; background: linear-gradient(160deg, #0b3320 0%, #1a7a4a 100%);
   color: #fff; display: flex; flex-direction: column;
   z-index: 100; overflow-y: auto;
 }
