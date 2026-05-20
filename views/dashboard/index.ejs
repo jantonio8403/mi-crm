@@ -9,49 +9,7 @@
 </head>
 <body>
 
-<div class="sidebar">
-  <div class="sidebar-header">
-    <h2>Hospital Básico Comunitario</h2>
-    <p>12 Camas — Berriozabal, Chis.</p>
-  </div>
-  <div class="sidebar-section">
-    <p class="sidebar-label">General</p>
-    <a href="/dashboard" class="activo"><span class="icon">⊞</span> Dashboard</a>
-  </div>
-  <div class="sidebar-section">
-    <p class="sidebar-label">Correspondencia</p>
-    <a href="/correspondencia/salientes/nuevo?tipo=oficio"><span class="icon">✉</span> Nuevo Oficio</a>
-    <a href="/correspondencia/salientes/nuevo?tipo=memorandum"><span class="icon">📝</span> Nuevo Memorándum</a>
-    <a href="/correspondencia/salientes"><span class="icon">📤</span> Emitidos</a>
-    <a href="/correspondencia/entrante/nuevo"><span class="icon">➕</span> Registrar Recibido</a>
-    <a href="/correspondencia/entrante"><span class="icon">📥</span> Recibidos</a>
-    <a href="/directorio"><span class="icon">📒</span> Directorio</a>
-  </div>
-  <div class="sidebar-section">
-    <p class="sidebar-label">Tickets</p>
-    <a href="/tickets/nuevo"><span class="icon">🎫</span> Nuevo Ticket</a>
-    <a href="/tickets" style="justify-content:space-between">
-      <span><span class="icon">📋</span> Ver Tickets</span>
-      <% if (tickets_badge > 0) { %>
-        <span class="sidebar-badge"><%= tickets_badge %></span>
-      <% } %>
-    </a>
-  </div>
-  <% if (usuario.rol === 'admin') { %>
-  <div class="sidebar-section">
-    <p class="sidebar-label">Administración</p>
-    <a href="/usuarios"><span class="icon">👥</span> Usuarios</a>
-    <a href="/areas"><span class="icon">🏥</span> Áreas</a>
-  </div>
-  <% } %>
-  <div class="sidebar-footer">
-    <a href="/perfil" class="sidebar-footer-link">
-      <div><strong><%= usuario.nombre %></strong></div>
-      <div style="font-size:10px;opacity:.7;margin-top:1px"><%= usuario.rol %></div>
-      <div><%= usuario.area_nombre %></div>
-    </a>
-  </div>
-</div>
+<%- include('../layout/sidebar') %>
 
 <div class="main-wrapper">
   <div class="topbar">
