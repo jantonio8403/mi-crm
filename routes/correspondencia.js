@@ -38,17 +38,27 @@ async function siguienteFolio(tipo, area_id) {
     if (area && area.codigo) codigoArea = area.codigo.toUpperCase();
   }
 
-  // Consecutivo por área + tipo + año
+  // Consecutivo base por MAX — puede estar desincronizado si hay NULL o borrados
   const [row] = await query(
     'SELECT MAX(consecutivo) as max FROM documentos_salientes WHERE tipo=? AND anio=? AND area_emisora_id<=>?',
     [tipo, anio, area_id || null]
   );
-  const siguiente = (row.max || 0) + 1;
-  return {
-    consecutivo: siguiente,
-    anio,
-    numero_folio: `${prefijo}/${codigoArea}/${String(siguiente).padStart(4, '0')}/${anio}`,
-  };
+  let siguiente = (row.max || 0) + 1;
+
+  // Verificar que el folio generado no exista ya (evita colisión por NULLs o gaps)
+  let numero_folio;
+  let intentos = 0;
+  do {
+    numero_folio = `${prefijo}/${codigoArea}/${String(siguiente).padStart(4, '0')}/${anio}`;
+    const [existe] = await query(
+      'SELECT id FROM documentos_salientes WHERE numero_folio=?', [numero_folio]
+    );
+    if (!existe) break;
+    siguiente++;
+    intentos++;
+  } while (intentos < 100);
+
+  return { consecutivo: siguiente, anio, numero_folio };
 }
 
 function folioToFilename(folio) {
