@@ -44,8 +44,10 @@ function generarOficio(doc, documento, copias) {
   // ── Bloque derecho: folio / fecha / asunto ───────────────────
   doc.fontSize(10).font('Helvetica-Bold')
     .text(`Oficio Número: ${documento.numero_folio}.`, { align: 'right' });
+  doc.moveDown(0.4);
   doc.font('Helvetica')
     .text(`Berriozábal, Chiapas a ${formatearFecha(documento.fecha_emision)}.`, { align: 'right' });
+  doc.moveDown(0.4);
   doc.font('Helvetica-Bold')
     .text(`Asunto: ${documento.asunto}.`, { align: 'right' });
 
