@@ -135,27 +135,28 @@ function generarMemorandum(doc, documento, copias) {
   dibujarMembrete(doc);
   doc.moveDown(0.8);
 
-  doc.fontSize(13).font('Helvetica-Bold')
-    .text('MEMORÁNDUM', { align: 'center' });
-  doc.fontSize(10).font('Helvetica')
-    .text(documento.numero_folio, { align: 'center' });
-  doc.moveDown(1);
+  // ── Bloque derecho: folio / fecha / asunto ───────────────────
+  doc.fontSize(10).font('Helvetica-Bold')
+    .text(`Memorándum Número: ${documento.numero_folio}.`, { align: 'right' });
+  doc.moveDown(0.4);
+  doc.font('Helvetica')
+    .text(`Berriozábal, Chiapas a ${formatearFecha(documento.fecha_emision)}.`, { align: 'right' });
+  doc.moveDown(0.4);
+  doc.font('Helvetica-Bold')
+    .text(`Asunto: ${documento.asunto}.`, { align: 'right' });
 
-  // ── Encabezado interno ───────────────────────────────────────
-  doc.fontSize(10).font('Helvetica-Bold').text('PARA: ', { continued: true })
-    .font('Helvetica').text(documento.destinatario);
+  doc.moveDown(1.4);
+
+  // ── Destinatario (izquierda, negritas, mayúsculas) ───────────
+  doc.fontSize(10).font('Helvetica-Bold')
+    .text(documento.destinatario.toUpperCase(), { width: 370 });
   if (documento.cargo_destinatario) {
-    doc.font('Helvetica-Bold').text('CARGO: ', { continued: true })
-      .font('Helvetica').text(documento.cargo_destinatario);
+    doc.text(documento.cargo_destinatario.toUpperCase(), { width: 370 });
   }
-  doc.font('Helvetica-Bold').text('ASUNTO: ', { continued: true })
-    .font('Helvetica').text(documento.asunto);
-  doc.font('Helvetica-Bold').text('FECHA: ', { continued: true })
-    .font('Helvetica').text(formatearFecha(documento.fecha_emision));
 
-  doc.moveDown(1);
-  doc.moveTo(60, doc.y).lineTo(552, doc.y).dash(3, { space: 3 }).stroke().undash();
-  doc.moveDown(1);
+  doc.moveDown(0.5);
+  doc.font('Helvetica-Bold').text('PRESENTE.', { width: 370 });
+  doc.moveDown(1.2);
 
   // ── Cuerpo ───────────────────────────────────────────────────
   doc.fontSize(10).font('Helvetica').text(htmlToText(documento.contenido), {
@@ -166,7 +167,7 @@ function generarMemorandum(doc, documento, copias) {
 
   doc.moveDown(2.5);
 
-  // ── Firmante ─────────────────────────────────────────────────
+  // ── Firmante (negritas, mayúsculas, sin línea) ────────────────
   const firmaNombre = documento.firmante_nombre || '';
   const firmaCargo  = documento.firmante_cargo  || '';
   if (firmaNombre) {
