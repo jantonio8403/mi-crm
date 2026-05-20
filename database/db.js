@@ -246,6 +246,16 @@ async function initDB() {
     await query(`ALTER TABLE areas ADD CONSTRAINT fk_areas_responsable_id FOREIGN KEY (responsable_id) REFERENCES funcionarios(id) ON DELETE SET NULL`);
   }
 
+  // Migrar: agregar 'circular' al ENUM tipo de documentos_salientes
+  const [tipoEnumInfo] = await query(
+    `SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='documentos_salientes' AND COLUMN_NAME='tipo'`
+  );
+  if (tipoEnumInfo && !tipoEnumInfo.COLUMN_TYPE.includes('circular')) {
+    await query(`ALTER TABLE documentos_salientes
+      MODIFY COLUMN tipo ENUM('oficio','memorandum','circular') NOT NULL`);
+  }
+
   // Datos iniciales solo si las tablas están vacías
   const [countRow] = await query('SELECT COUNT(*) as c FROM areas');
   if (countRow.c === 0) {
