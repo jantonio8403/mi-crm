@@ -111,12 +111,6 @@ function generarOficio(doc, documento, copias) {
     doc.fontSize(8).font('Helvetica').text(linea, { width: 492 });
   }
 
-  // ── Pie de página ─────────────────────────────────────────────
-  doc.fontSize(7).fillColor('gray')
-    .text(
-      'Gustavo E. Campa No. 54, Col. Guadalupe Inn, C.P. 01020, Alcaldía Álvaro Obregón, CDMX. (Tel: 55) 9160 8100 imssbienestar.gob.mx',
-      60, 728, { align: 'center', width: 492 }
-    );
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -192,12 +186,6 @@ function generarMemorandum(doc, documento, copias) {
     doc.fontSize(8).font('Helvetica').text(linea, { width: 492 });
   }
 
-  // ── Pie de página ─────────────────────────────────────────────
-  doc.fontSize(7).fillColor('gray')
-    .text(
-      'Gustavo E. Campa No. 54, Col. Guadalupe Inn, C.P. 01020, Alcaldía Álvaro Obregón, CDMX. (Tel: 55) 9160 8100 imssbienestar.gob.mx',
-      60, 728, { align: 'center', width: 492 }
-    );
 }
 
 // ════════════════════════════════════════════════════════════════
