@@ -10,13 +10,14 @@
 <body>
 <div class="login-page">
   <div class="login-card">
+
     <div class="login-brand">
       <div class="login-wordmark">
-        <div class="login-icon">A</div>
+        <div class="login-a">A</div>
         <span class="login-gora">GORA</span>
       </div>
-      <p class="login-desc">Sistema de Gestión Administrativa</p>
-      <p class="login-hosp">H.B.C. 12 Camas · Berriozábal, Chiapas</p>
+      <p class="login-subtitulo">Sistema de Gestión Administrativa</p>
+      <p class="login-hospital">H.B.C. 12 Camas · Berriozábal, Chiapas</p>
     </div>
 
     <% if (error && error.length > 0) { %>
@@ -24,16 +25,17 @@
     <% } %>
 
     <form method="POST" action="/login">
-      <div class="form-group">
+      <div class="login-field">
         <label>Usuario</label>
         <input type="text" name="username" required autofocus placeholder="Nombre de usuario">
       </div>
-      <div class="form-group">
+      <div class="login-field">
         <label>Contraseña</label>
         <input type="password" name="password" required placeholder="Contraseña">
       </div>
-      <button type="submit" class="btn btn-primary">Iniciar sesión</button>
+      <button type="submit" class="login-btn">Iniciar sesión</button>
     </form>
+
   </div>
 </div>
 </body>
