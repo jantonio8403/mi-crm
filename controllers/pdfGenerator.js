@@ -8,129 +8,11 @@ function generarOficioPDF(documento, ruta, copias = []) {
     const stream = fs.createWriteStream(ruta);
     doc.pipe(stream);
 
-    const esMemora = documento.tipo === 'memorandum';
-
-    // ─── Encabezado ───────────────────────────────────────────────
-    doc.fontSize(9).font('Helvetica')
-      .text('SECRETARÍA DE SALUD DE CHIAPAS', { align: 'center' })
-      .text('HOSPITAL BÁSICO COMUNITARIO 12 CAMAS', { align: 'center' })
-      .text('BERRIOZABAL, CHIAPAS', { align: 'center' });
-
-    doc.moveDown(0.5);
-    doc.moveTo(60, doc.y).lineTo(552, doc.y).stroke();
-    doc.moveDown(0.5);
-
-    // ─── Tipo de documento ────────────────────────────────────────
-    doc.fontSize(13).font('Helvetica-Bold')
-      .text(esMemora ? 'MEMORÁNDUM' : 'OFICIO', { align: 'center' });
-
-    doc.moveDown(0.3);
-    doc.fontSize(10).font('Helvetica')
-      .text(`${documento.numero_folio}`, { align: 'center' });
-
-    doc.moveDown(1);
-
-    // ─── Datos del documento ──────────────────────────────────────
-    if (esMemora) {
-      doc.fontSize(10).font('Helvetica-Bold').text('PARA: ', { continued: true })
-        .font('Helvetica').text(documento.destinatario);
-      if (documento.cargo_destinatario) {
-        doc.font('Helvetica-Bold').text('CARGO: ', { continued: true })
-          .font('Helvetica').text(documento.cargo_destinatario);
-      }
-      doc.font('Helvetica-Bold').text('ASUNTO: ', { continued: true })
-        .font('Helvetica').text(documento.asunto);
-      doc.font('Helvetica-Bold').text('FECHA: ', { continued: true })
-        .font('Helvetica').text(formatearFecha(documento.fecha_emision));
+    if (documento.tipo === 'memorandum') {
+      generarMemorandum(doc, documento, copias);
     } else {
-      // Oficio: fecha arriba a la derecha, destinatario al inicio
-      doc.fontSize(10).font('Helvetica')
-        .text(`Berriozabal, Chiapas; ${formatearFecha(documento.fecha_emision)}`, { align: 'right' });
-      doc.moveDown(0.8);
-
-      doc.font('Helvetica-Bold').text(documento.destinatario);
-      if (documento.cargo_destinatario) doc.font('Helvetica').text(documento.cargo_destinatario);
-      if (documento.atencion_a) {
-        doc.moveDown(0.3);
-        doc.font('Helvetica-Bold').text('ATN: ', { continued: true })
-          .font('Helvetica').text(documento.atencion_a);
-        if (documento.atencion_a_cargo) doc.font('Helvetica').text(documento.atencion_a_cargo);
-      }
-      doc.moveDown(0.5);
-      doc.font('Helvetica-Bold').text('ASUNTO: ', { continued: true })
-        .font('Helvetica').text(documento.asunto);
+      generarOficio(doc, documento, copias);
     }
-
-    doc.moveDown(1);
-    doc.moveTo(60, doc.y).lineTo(552, doc.y).dash(3, { space: 3 }).stroke().undash();
-    doc.moveDown(1);
-
-    // ─── Cuerpo ───────────────────────────────────────────────────
-    doc.fontSize(10).font('Helvetica').text(htmlToText(documento.contenido), {
-      align: 'justify',
-      lineGap: 4,
-    });
-
-    doc.moveDown(2);
-
-    // ─── Firma ────────────────────────────────────────────────────
-    const firmaX = 300;
-    const firmaNombre = documento.firmante_nombre || 'DIRECTOR DEL HOSPITAL';
-    const firmaCargo  = documento.firmante_cargo  || '';
-    doc.moveTo(firmaX, doc.y).lineTo(firmaX + 200, doc.y).stroke();
-    doc.moveDown(0.3);
-    doc.fontSize(9).font('Helvetica-Bold')
-      .text(firmaNombre.toUpperCase(), firmaX, doc.y, { width: 200, align: 'center' });
-    if (firmaCargo) {
-      doc.font('Helvetica')
-        .text(firmaCargo, firmaX, doc.y, { width: 200, align: 'center' });
-    }
-    doc.font('Helvetica')
-      .text('HOSPITAL BÁSICO COMUNITARIO', firmaX, doc.y, { width: 200, align: 'center' })
-      .text('12 CAMAS, BERRIOZABAL, CHIS.', firmaX, doc.y, { width: 200, align: 'center' });
-
-    // ─── Vo. Bo. y Elaboró ───────────────────────────────────────
-    const tieneVobo    = !!documento.vobo_nombre;
-    const tieneElabora = !!documento.elaboro_nombre;
-    if (tieneVobo || tieneElabora) {
-      doc.moveDown(1.5);
-      const rowY = doc.y;
-      const lh = 11;
-
-      if (tieneVobo) {
-        doc.moveTo(60, rowY).lineTo(230, rowY).stroke();
-        doc.fontSize(8).font('Helvetica-Bold').text('Vo. Bo.', 60, rowY + 4, { width: 170, align: 'center' });
-        doc.font('Helvetica').text(documento.vobo_nombre.toUpperCase(), 60, rowY + 4 + lh, { width: 170, align: 'center' });
-        if (documento.vobo_cargo) doc.text(documento.vobo_cargo, 60, rowY + 4 + lh * 2, { width: 170, align: 'center' });
-      }
-
-      if (tieneElabora) {
-        doc.moveTo(330, rowY).lineTo(500, rowY).stroke();
-        doc.fontSize(8).font('Helvetica-Bold').text('Elaboró', 330, rowY + 4, { width: 170, align: 'center' });
-        doc.font('Helvetica').text(documento.elaboro_nombre.toUpperCase(), 330, rowY + 4 + lh, { width: 170, align: 'center' });
-        if (documento.elaboro_cargo) doc.text(documento.elaboro_cargo, 330, rowY + 4 + lh * 2, { width: 170, align: 'center' });
-      }
-
-      doc.x = 60;
-      doc.y = rowY + 4 + lh * 3 + 8;
-    }
-
-    // ─── C.c.p. ───────────────────────────────────────────────────
-    if (copias && copias.length > 0) {
-      doc.moveDown(1.5);
-      doc.fontSize(9).fillColor('black').font('Helvetica-Bold').text('C.c.p.');
-      copias.forEach(c => {
-        const linea = [c.nombre, c.cargo].filter(Boolean).join(', ');
-        doc.font('Helvetica').text('  ' + linea);
-      });
-    }
-
-    // ─── Pie de página ────────────────────────────────────────────
-    doc.fontSize(7).fillColor('gray')
-      .text(
-        `Documento generado el ${new Date().toLocaleString('es-MX')} — ${documento.numero_folio}`,
-        60, 720, { align: 'center', width: 492 }
-      );
 
     doc.end();
     stream.on('finish', () => resolve(ruta));
@@ -138,6 +20,189 @@ function generarOficioPDF(documento, ruta, copias = []) {
   });
 }
 
+// ════════════════════════════════════════════════════════════════
+//  OFICIO
+// ════════════════════════════════════════════════════════════════
+function generarOficio(doc, documento, copias) {
+
+  // ── Encabezado institucional ─────────────────────────────────
+  doc.fontSize(8).font('Helvetica-Bold')
+    .text('IMSS-BIENESTAR / SERVICIOS PÚBLICOS DE SALUD', { align: 'center' });
+  doc.fontSize(8).font('Helvetica')
+    .text('HOSPITAL BÁSICO COMUNITARIO 12 CAMAS, BERRIOZÁBAL, CHIAPAS', { align: 'center' });
+  doc.moveDown(0.4);
+  doc.moveTo(60, doc.y).lineTo(552, doc.y).stroke();
+  doc.moveDown(0.8);
+
+  // ── Bloque derecho: folio / fecha / asunto ───────────────────
+  doc.fontSize(10).font('Helvetica-Bold')
+    .text(`Oficio Número: ${documento.numero_folio}.`, { align: 'right' });
+  doc.font('Helvetica')
+    .text(`Berriozábal, Chiapas a ${formatearFecha(documento.fecha_emision)}.`, { align: 'right' });
+  doc.font('Helvetica-Bold')
+    .text(`Asunto: ${documento.asunto}.`, { align: 'right' });
+
+  doc.moveDown(1.4);
+
+  // ── Destinatario (izquierda, negritas, mayúsculas) ───────────
+  doc.fontSize(10).font('Helvetica-Bold')
+    .text(documento.destinatario.toUpperCase(), { width: 370 });
+  if (documento.cargo_destinatario) {
+    doc.text(documento.cargo_destinatario.toUpperCase(), { width: 370 });
+  }
+
+  // Con atención a (opcional)
+  if (documento.atencion_a) {
+    doc.moveDown(0.4);
+    doc.text(documento.atencion_a.toUpperCase(), { width: 370 });
+    if (documento.atencion_a_cargo) {
+      doc.text(documento.atencion_a_cargo.toUpperCase(), { width: 370 });
+    }
+  }
+
+  doc.moveDown(0.5);
+  doc.font('Helvetica-Bold').text('PRESENTE.', { width: 370 });
+  doc.moveDown(1.2);
+
+  // ── Cuerpo ───────────────────────────────────────────────────
+  doc.fontSize(10).font('Helvetica').text(htmlToText(documento.contenido), {
+    align: 'justify',
+    lineGap: 3,
+    width: 492,
+  });
+
+  doc.moveDown(2.5);
+
+  // ── Firmante (negritas, mayúsculas, sin línea) ────────────────
+  const firmaNombre = documento.firmante_nombre || '';
+  const firmaCargo  = documento.firmante_cargo  || '';
+  if (firmaNombre) {
+    doc.fontSize(10).font('Helvetica-Bold')
+      .text(firmaNombre.toUpperCase(), { width: 492 });
+  }
+  if (firmaCargo) {
+    doc.font('Helvetica-Bold')
+      .text(firmaCargo.toUpperCase(), { width: 492 });
+  }
+
+  doc.moveDown(1.2);
+
+  // ── C.c.p. ───────────────────────────────────────────────────
+  if (copias && copias.length > 0) {
+    copias.forEach(c => {
+      const linea = 'C.c.p. ' + c.nombre + (c.cargo ? '.- ' + c.cargo + '.' : '.');
+      doc.fontSize(8).font('Helvetica').fillColor('black').text(linea, { width: 492 });
+    });
+    doc.moveDown(0.3);
+  }
+
+  // ── Vo. Bo. ──────────────────────────────────────────────────
+  if (documento.vobo_nombre) {
+    const linea = 'Vo. Bo. ' + documento.vobo_nombre +
+      (documento.vobo_cargo ? '.- ' + documento.vobo_cargo + '.' : '.');
+    doc.fontSize(8).font('Helvetica').text(linea, { width: 492 });
+    doc.moveDown(0.3);
+  }
+
+  // ── Elaboró ──────────────────────────────────────────────────
+  if (documento.elaboro_nombre) {
+    const linea = 'Elaboró: ' + documento.elaboro_nombre +
+      (documento.elaboro_cargo ? '.- ' + documento.elaboro_cargo + '.' : '.');
+    doc.fontSize(8).font('Helvetica').text(linea, { width: 492 });
+  }
+
+  // ── Pie de página ─────────────────────────────────────────────
+  doc.fontSize(7).fillColor('gray')
+    .text(
+      'Gustavo E. Campa No. 54, Col. Guadalupe Inn, C.P. 01020, Alcaldía Álvaro Obregón, CDMX. (Tel: 55) 9160 8100 imssbienestar.gob.mx',
+      60, 728, { align: 'center', width: 492 }
+    );
+}
+
+// ════════════════════════════════════════════════════════════════
+//  MEMORÁNDUM
+// ════════════════════════════════════════════════════════════════
+function generarMemorandum(doc, documento, copias) {
+
+  // ── Encabezado ───────────────────────────────────────────────
+  doc.fontSize(8).font('Helvetica-Bold')
+    .text('IMSS-BIENESTAR / SERVICIOS PÚBLICOS DE SALUD', { align: 'center' });
+  doc.fontSize(8).font('Helvetica')
+    .text('HOSPITAL BÁSICO COMUNITARIO 12 CAMAS, BERRIOZÁBAL, CHIAPAS', { align: 'center' });
+  doc.moveDown(0.4);
+  doc.moveTo(60, doc.y).lineTo(552, doc.y).stroke();
+  doc.moveDown(0.8);
+
+  doc.fontSize(13).font('Helvetica-Bold')
+    .text('MEMORÁNDUM', { align: 'center' });
+  doc.fontSize(10).font('Helvetica')
+    .text(documento.numero_folio, { align: 'center' });
+  doc.moveDown(1);
+
+  // ── Encabezado interno ───────────────────────────────────────
+  doc.fontSize(10).font('Helvetica-Bold').text('PARA: ', { continued: true })
+    .font('Helvetica').text(documento.destinatario);
+  if (documento.cargo_destinatario) {
+    doc.font('Helvetica-Bold').text('CARGO: ', { continued: true })
+      .font('Helvetica').text(documento.cargo_destinatario);
+  }
+  doc.font('Helvetica-Bold').text('ASUNTO: ', { continued: true })
+    .font('Helvetica').text(documento.asunto);
+  doc.font('Helvetica-Bold').text('FECHA: ', { continued: true })
+    .font('Helvetica').text(formatearFecha(documento.fecha_emision));
+
+  doc.moveDown(1);
+  doc.moveTo(60, doc.y).lineTo(552, doc.y).dash(3, { space: 3 }).stroke().undash();
+  doc.moveDown(1);
+
+  // ── Cuerpo ───────────────────────────────────────────────────
+  doc.fontSize(10).font('Helvetica').text(htmlToText(documento.contenido), {
+    align: 'justify',
+    lineGap: 3,
+    width: 492,
+  });
+
+  doc.moveDown(2.5);
+
+  // ── Firmante ─────────────────────────────────────────────────
+  const firmaNombre = documento.firmante_nombre || '';
+  const firmaCargo  = documento.firmante_cargo  || '';
+  if (firmaNombre) {
+    doc.fontSize(10).font('Helvetica-Bold')
+      .text(firmaNombre.toUpperCase(), { width: 492 });
+  }
+  if (firmaCargo) {
+    doc.font('Helvetica-Bold').text(firmaCargo.toUpperCase(), { width: 492 });
+  }
+
+  doc.moveDown(1.2);
+
+  // ── Vo. Bo. ──────────────────────────────────────────────────
+  if (documento.vobo_nombre) {
+    const linea = 'Vo. Bo. ' + documento.vobo_nombre +
+      (documento.vobo_cargo ? '.- ' + documento.vobo_cargo + '.' : '.');
+    doc.fontSize(8).font('Helvetica').text(linea, { width: 492 });
+    doc.moveDown(0.3);
+  }
+
+  // ── Elaboró ──────────────────────────────────────────────────
+  if (documento.elaboro_nombre) {
+    const linea = 'Elaboró: ' + documento.elaboro_nombre +
+      (documento.elaboro_cargo ? '.- ' + documento.elaboro_cargo + '.' : '.');
+    doc.fontSize(8).font('Helvetica').text(linea, { width: 492 });
+  }
+
+  // ── Pie de página ─────────────────────────────────────────────
+  doc.fontSize(7).fillColor('gray')
+    .text(
+      'Gustavo E. Campa No. 54, Col. Guadalupe Inn, C.P. 01020, Alcaldía Álvaro Obregón, CDMX. (Tel: 55) 9160 8100 imssbienestar.gob.mx',
+      60, 728, { align: 'center', width: 492 }
+    );
+}
+
+// ════════════════════════════════════════════════════════════════
+//  UTILIDADES
+// ════════════════════════════════════════════════════════════════
 function htmlToText(html) {
   if (!html) return '';
   return html
