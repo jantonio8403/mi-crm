@@ -84,3 +84,7 @@ initDB()
     console.error('Error al conectar con la base de datos:', err.message);
     process.exit(1);
   });
+
+app.listen(PORT, () => {
+  console.log(`Servidor en puerto ${PORT}`);
+});
