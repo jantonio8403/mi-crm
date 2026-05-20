@@ -101,7 +101,7 @@ function generarOficio(doc, documento, copias) {
   if (copias && copias.length > 0) {
     copias.forEach(c => {
       const linea = 'C.c.p. ' + c.nombre + (c.cargo ? '.- ' + c.cargo + '.' : '.');
-      doc.fontSize(8).font('Helvetica').fillColor('black').text(linea, { width: 492 });
+      doc.fontSize(7).font('Helvetica').fillColor('black').text(linea, { width: 492 });
     });
     doc.moveDown(0.3);
   }
@@ -110,7 +110,7 @@ function generarOficio(doc, documento, copias) {
   if (documento.vobo_nombre) {
     const linea = 'Vo. Bo. ' + documento.vobo_nombre +
       (documento.vobo_cargo ? '.- ' + documento.vobo_cargo + '.' : '.');
-    doc.fontSize(8).font('Helvetica').text(linea, { width: 492 });
+    doc.fontSize(7).font('Helvetica').text(linea, { width: 492 });
     doc.moveDown(0.3);
   }
 
@@ -118,7 +118,7 @@ function generarOficio(doc, documento, copias) {
   if (documento.elaboro_nombre) {
     const linea = 'Elaboró: ' + documento.elaboro_nombre +
       (documento.elaboro_cargo ? '.- ' + documento.elaboro_cargo + '.' : '.');
-    doc.fontSize(8).font('Helvetica').text(linea, { width: 492 });
+    doc.fontSize(7).font('Helvetica').text(linea, { width: 492 });
   }
 
 }
@@ -180,7 +180,7 @@ function generarMemorandum(doc, documento, copias) {
   if (documento.vobo_nombre) {
     const linea = 'Vo. Bo. ' + documento.vobo_nombre +
       (documento.vobo_cargo ? '.- ' + documento.vobo_cargo + '.' : '.');
-    doc.fontSize(8).font('Helvetica').text(linea, { width: 492 });
+    doc.fontSize(7).font('Helvetica').text(linea, { width: 492 });
     doc.moveDown(0.3);
   }
 
@@ -188,7 +188,7 @@ function generarMemorandum(doc, documento, copias) {
   if (documento.elaboro_nombre) {
     const linea = 'Elaboró: ' + documento.elaboro_nombre +
       (documento.elaboro_cargo ? '.- ' + documento.elaboro_cargo + '.' : '.');
-    doc.fontSize(8).font('Helvetica').text(linea, { width: 492 });
+    doc.fontSize(7).font('Helvetica').text(linea, { width: 492 });
   }
 
 }
