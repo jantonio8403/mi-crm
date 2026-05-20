@@ -59,7 +59,8 @@
       <div class="card">
         <div class="card-header">
           <h3>Datos del documento</h3>
-          <span class="badge badge-<%= doc.tipo %>"><%= doc.tipo %></span>
+          <% var TIPO_LABEL = { oficio: 'Oficio', memorandum: 'Memorándum', circular: 'Circular' }; %>
+          <span class="badge badge-<%= doc.tipo %>"><%= TIPO_LABEL[doc.tipo] || doc.tipo %></span>
         </div>
         <div class="detalle-grid">
           <div class="detalle-item">

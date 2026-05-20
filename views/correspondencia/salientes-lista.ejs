@@ -15,6 +15,12 @@ function fmtFecha(d) {
   var meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   return parseInt(p[2]) + ' ' + meses[parseInt(p[1])-1] + ' ' + p[0];
 }
+var TIPO_LABEL = { oficio: 'Oficio', memorandum: 'Memorándum', circular: 'Circular' };
+function tipoLabel(t) { return TIPO_LABEL[t] || t; }
+var DEST_CIRCULAR = 'Personal Médico, Paramédico, Trabajo Social, Internos y Pasantes';
+function fmtDestinatario(d) {
+  return d.tipo === 'circular' ? DEST_CIRCULAR : d.destinatario;
+}
 %>
 <div class="main-wrapper">
   <div class="topbar">
@@ -71,9 +77,9 @@ function fmtFecha(d) {
           <% documentos.forEach(d => { %>
             <tr>
               <td><strong><%= d.numero_folio %></strong></td>
-              <td><span class="badge badge-<%= d.tipo %>"><%= d.tipo %></span></td>
+              <td><span class="badge badge-<%= d.tipo %>"><%= tipoLabel(d.tipo) %></span></td>
               <td><%= fmtFecha(d.fecha_emision) %></td>
-              <td class="truncate"><%= d.destinatario %></td>
+              <td class="truncate" title="<%= d.destinatario %>"><%= fmtDestinatario(d) %></td>
               <td class="truncate"><%= d.asunto %></td>
               <td class="text-sm text-gris"><%= d.area_nombre || '—' %></td>
               <td><span class="badge badge-<%= d.estatus %>"><%= d.estatus %></span></td>
