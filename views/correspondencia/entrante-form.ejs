@@ -61,16 +61,24 @@
 
         <div class="form-grid">
           <div class="form-group">
-            <label>Nombre del remitente *</label>
-            <input type="text" name="remitente_nombre" required placeholder="Nombre completo">
+            <label>Nombre del remitente *
+              <span style="font-weight:400;font-size:11px;color:var(--gris)"> — busca en directorio o escribe libremente</span>
+            </label>
+            <div style="position:relative">
+              <input type="text" name="remitente_nombre" id="inp-remitente" required
+                     autocomplete="off" placeholder="Buscar o escribir nombre...">
+              <div id="drop-remitente" class="dir-dropdown" style="display:none"></div>
+            </div>
           </div>
           <div class="form-group">
             <label>Cargo del remitente</label>
-            <input type="text" name="remitente_cargo" placeholder="Ej. Director de Salud Municipal">
+            <input type="text" name="remitente_cargo" id="inp-remitente-cargo"
+                   placeholder="Ej. Director de Salud Municipal">
           </div>
           <div class="form-group form-full">
             <label>Institución / Dependencia *</label>
-            <input type="text" name="remitente_institucion" required placeholder="Ej. Secretaría de Salud de Chiapas">
+            <input type="text" name="remitente_institucion" id="inp-remitente-inst" required
+                   placeholder="Ej. Secretaría de Salud de Chiapas">
           </div>
         </div>
 
@@ -141,5 +149,86 @@
     campo.querySelector('input').disabled = !chk.checked;
   });
   campo.querySelector('input').disabled = true;
+</script>
+<script>
+/* Autocomplete remitente — internos y externos, selección libre */
+(function () {
+  var inp   = document.getElementById('inp-remitente');
+  var drop  = document.getElementById('drop-remitente');
+  var cargo = document.getElementById('inp-remitente-cargo');
+  var inst  = document.getElementById('inp-remitente-inst');
+  if (!inp || !drop) return;
+
+  var timer = null;
+  var ultima = '';
+
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function ocultar() { drop.style.display = 'none'; }
+
+  function mostrar(lista) {
+    drop.innerHTML = '';
+    if (!lista || lista.length === 0) {
+      drop.innerHTML = '<div class="dir-no-results">Sin coincidencias — puedes escribir el nombre libremente.</div>';
+      drop.style.display = 'block';
+      return;
+    }
+    lista.forEach(function (f) {
+      var esInt  = f.tipo === 'interno';
+      var org    = esInt ? (f.area_nombre || 'HBC Berriozábal') : (f.institucion || '');
+      var linea2 = [f.cargo, org].filter(Boolean).join(' · ');
+      var el = document.createElement('div');
+      el.className = 'dir-item';
+      el.innerHTML =
+        '<div class="dir-item-tipo ' + (esInt ? 'int' : 'ext') + '">' + (esInt ? 'I' : 'E') + '</div>' +
+        '<div class="dir-item-info">' +
+          '<div class="dir-item-nombre">' + esc(f.nombre) + '</div>' +
+          '<div class="dir-item-sub">'   + esc(linea2 || '—') + '</div>' +
+        '</div>';
+      el.addEventListener('mousedown', function (ev) {
+        ev.preventDefault();
+        inp.value = f.nombre;
+        if (cargo) cargo.value = f.cargo || '';
+        if (inst)  inst.value  = esInt ? (f.area_nombre || 'HBC Berriozábal') : (f.institucion || '');
+        ocultar();
+      });
+      drop.appendChild(el);
+    });
+    drop.style.display = 'block';
+  }
+
+  function buscar(q) {
+    q = (q || '').trim();
+    if (q.length < 2) { ocultar(); return; }
+    ultima = q;
+    drop.innerHTML = '<div class="dir-no-results">Buscando...</div>';
+    drop.style.display = 'block';
+    fetch('/directorio/buscar?q=' + encodeURIComponent(q), {
+      credentials: 'include',
+      headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (data) { if (ultima === q) mostrar(data); })
+    .catch(function () {
+      drop.innerHTML = '<div class="dir-no-results" style="color:var(--rojo)">Error al buscar.</div>';
+      drop.style.display = 'block';
+    });
+  }
+
+  inp.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(function () { buscar(inp.value); }, 280);
+  });
+
+  inp.addEventListener('focus', function () {
+    if (inp.value.trim().length >= 2) buscar(inp.value);
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!inp.contains(e.target) && !drop.contains(e.target)) ocultar();
+  });
+}());
 </script>
 </body></html>
