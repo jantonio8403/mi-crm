@@ -26,11 +26,12 @@
       <a href="/correspondencia/salientes" class="btn btn-secondary">← Regresar</a>
       <% if (!documento) { %>
       <div class="flex gap-8">
-        <a href="/correspondencia/salientes/nuevo?tipo=oficio"
+        <% var raParam = locals.responde_a ? '&responde_a=' + locals.responde_a : ''; %>
+        <a href="/correspondencia/salientes/nuevo?tipo=oficio<%= raParam %>"
            class="btn <%= tipo==='oficio'?'btn-primary':'btn-secondary' %>">Oficio</a>
-        <a href="/correspondencia/salientes/nuevo?tipo=memorandum"
+        <a href="/correspondencia/salientes/nuevo?tipo=memorandum<%= raParam %>"
            class="btn <%= tipo==='memorandum'?'btn-primary':'btn-secondary' %>">Memorándum</a>
-        <a href="/correspondencia/salientes/nuevo?tipo=circular"
+        <a href="/correspondencia/salientes/nuevo?tipo=circular<%= raParam %>"
            class="btn <%= tipo==='circular'?'btn-primary':'btn-secondary' %>">Circular</a>
       </div>
       <% } else { %>
@@ -41,6 +42,7 @@
     <div class="card">
       <form method="POST" action="<%= accion %>">
         <input type="hidden" name="tipo" value="<%= tipo %>">
+        <% if (locals.responde_a) { %><input type="hidden" name="responde_a" value="<%= responde_a %>"><% } %>
         <div id="form-alert" class="alert alert-error" style="display:none;margin-bottom:16px"></div>
 
         <div style="background:var(--verde-fondo);border:1px solid var(--borde);border-radius:6px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">

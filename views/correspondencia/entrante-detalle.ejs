@@ -7,6 +7,28 @@
 </head>
 <body>
 <%- include('../layout/sidebar') %>
+<%
+function fmtFecha(d) {
+  if (!d) return '—';
+  var meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  var s = d instanceof Date ? d.toISOString().split('T')[0] : String(d).split('T')[0];
+  var p = s.split('-');
+  return parseInt(p[2]) + ' de ' + meses[parseInt(p[1])-1] + ' de ' + p[0];
+}
+function fmtFechaHora(d) {
+  if (!d) return '—';
+  var dt = d instanceof Date ? d : new Date(d);
+  return dt.toLocaleString('es-MX', { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+var TIPO_ENT_CLASS = {
+  'oficio': 'oficio', 'memorandum': 'memorandum', 'circular': 'circular',
+  'oficio-circular': 'circular', 'dictamen': 'dictamen', 'otro': 'otro'
+};
+var TIPO_ENT_LABEL = {
+  'oficio': 'Oficio', 'memorandum': 'Memorándum', 'circular': 'Circular',
+  'oficio-circular': 'Oficio-Circular', 'dictamen': 'Dictamen', 'otro': 'Otro'
+};
+%>
 <div class="main-wrapper">
   <div class="topbar">
     <h1>Correspondencia Recibida</h1>
@@ -30,7 +52,7 @@
       <div class="card">
         <div class="card-header">
           <h3>Datos del documento</h3>
-          <span class="badge badge-oficio"><%= doc.tipo %></span>
+          <span class="badge badge-<%= TIPO_ENT_CLASS[doc.tipo] || 'otro' %>"><%= TIPO_ENT_LABEL[doc.tipo] || doc.tipo %></span>
         </div>
         <div class="detalle-grid">
           <div class="detalle-item">
@@ -39,12 +61,12 @@
           </div>
           <div class="detalle-item">
             <label>Fecha de recepción</label>
-            <p><%= doc.fecha_recepcion %></p>
+            <p><%= fmtFecha(doc.fecha_recepcion) %></p>
           </div>
           <% if (doc.fecha_documento) { %>
           <div class="detalle-item">
             <label>Fecha del documento</label>
-            <p><%= doc.fecha_documento %></p>
+            <p><%= fmtFecha(doc.fecha_documento) %></p>
           </div>
           <% } %>
           <div class="detalle-item full">
@@ -88,7 +110,7 @@
           </div>
           <div class="detalle-item">
             <label>Fecha de registro</label>
-            <p><%= doc.creado_en %></p>
+            <p><%= fmtFechaHora(doc.creado_en) %></p>
           </div>
           <% if (doc.notas) { %>
           <div class="detalle-item full">
@@ -104,7 +126,7 @@
         <div class="card">
           <div class="card-header">
             <h3>Estatus</h3>
-            <span class="badge badge-<%= doc.estatus %>"><%= doc.estatus %></span>
+            <span class="badge badge-<%= doc.estatus %>"><%= doc.estatus.replace('_',' ') %></span>
           </div>
           <form method="POST" action="/correspondencia/entrante/<%= doc.id %>/estatus">
             <div class="form-group" style="margin-bottom:12px">
@@ -126,21 +148,46 @@
 
         <!-- Respuesta requerida -->
         <% if (doc.requiere_respuesta) { %>
-        <div class="card" style="border-color: <%= doc.fecha_limite_respuesta && doc.fecha_limite_respuesta <= new Date().toISOString().split('T')[0] ? '#dc2626' : 'var(--borde)' %>">
+        <%
+          var hoyStr = new Date().toISOString().split('T')[0];
+          var fechaLimStr = doc.fecha_limite_respuesta instanceof Date
+            ? doc.fecha_limite_respuesta.toISOString().split('T')[0]
+            : String(doc.fecha_limite_respuesta || '').split('T')[0];
+          var vencida = fechaLimStr && fechaLimStr <= hoyStr;
+        %>
+        <div class="card" style="border-color: <%= vencida ? '#dc2626' : 'var(--borde)' %>">
           <div class="card-header">
             <h3>Requiere respuesta</h3>
             <span class="badge badge-urgente">!</span>
           </div>
-          <% if (doc.fecha_limite_respuesta) { %>
+          <% if (fechaLimStr) { %>
             <p class="text-sm" style="margin-bottom:8px">
               <strong>Fecha límite:</strong>
-              <span style="color:<%= doc.fecha_limite_respuesta <= new Date().toISOString().split('T')[0] ? '#dc2626' : 'var(--texto)' %>">
-                <%= doc.fecha_limite_respuesta %>
+              <span style="color:<%= vencida ? '#dc2626' : 'var(--texto)' %>">
+                <%= fmtFecha(doc.fecha_limite_respuesta) %>
               </span>
             </p>
           <% } %>
-          <a href="/correspondencia/salientes/nuevo?tipo=oficio" class="btn btn-primary btn-sm">
-            Generar oficio de respuesta
+          <% if (respuesta) { %>
+            <div style="background:var(--verde-fondo);border:1px solid var(--borde);border-radius:6px;padding:10px 14px;margin-bottom:10px;font-size:13px">
+              <span style="font-weight:700;color:var(--verde)">Respondido</span> con
+              <a href="/correspondencia/salientes/<%= respuesta.id %>" style="color:var(--verde);font-weight:700"><%= respuesta.numero_folio %></a>
+            </div>
+          <% } else if (canRegister) { %>
+            <a href="/correspondencia/salientes/nuevo?tipo=oficio&responde_a=<%= doc.id %>" class="btn btn-primary btn-sm">
+              Generar oficio de respuesta
+            </a>
+          <% } %>
+        </div>
+        <% } %>
+
+        <!-- Respuesta vinculada (si no requería respuesta pero igual se vinculó) -->
+        <% if (!doc.requiere_respuesta && respuesta) { %>
+        <div class="card">
+          <div class="card-header"><h3>Documento de respuesta</h3></div>
+          <p class="text-sm text-gris" style="margin-bottom:8px">Esta correspondencia fue respondida con:</p>
+          <a href="/correspondencia/salientes/<%= respuesta.id %>" class="btn btn-secondary btn-sm">
+            <%= respuesta.numero_folio %>
           </a>
         </div>
         <% } %>

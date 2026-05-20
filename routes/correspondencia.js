@@ -26,6 +26,10 @@ const upload = multer({
 // ─── Destinatario fijo para circulares ───────────────────────────
 const DESTINATARIO_CIRCULAR = 'Personal Médico y Paramédico, Trabajo Social, Internos de Pregrado, Administrativos, Pasantes de servicio social que laboran y/o prestan servicio en esta unidad médica';
 
+// ─── Roles que pueden registrar correspondencia entrante ─────────
+const ROLES_REGISTRO_ENT = ['admin', 'director', 'secretaria', 'recepcion'];
+const ROLES_VER_TODO_ENT  = ['admin', 'director', 'secretaria', 'recepcion'];
+
 // ─── Helper folio ─────────────────────────────────────────────────
 async function siguienteFolio(tipo, area_id) {
   const anio = new Date().getFullYear();
@@ -140,6 +144,7 @@ router.get('/salientes/nuevo', requireAuth, async (req, res, next) => {
       if (a) areaNombre = a.nombre;
     }
     const titulos = { oficio: 'Nuevo Oficio', memorandum: 'Nuevo Memorándum', circular: 'Nueva Circular' };
+    const responde_a = req.query.responde_a ? parseInt(req.query.responde_a) : null;
     res.render('correspondencia/salientes-form', {
       titulo: titulos[tipo] || 'Nuevo Documento',
       documento: null, folio, tipo, areas,
@@ -147,6 +152,7 @@ router.get('/salientes/nuevo', requireAuth, async (req, res, next) => {
       director,
       areaFija, areaNombre,
       destinatarioCircular: DESTINATARIO_CIRCULAR,
+      responde_a,
       accion: '/correspondencia/salientes',
     });
   } catch (err) { next(err); }
@@ -169,7 +175,8 @@ router.post('/salientes', requireAuth, async (req, res, next) => {
             vobo_nombre, vobo_cargo,
             elaboro_nombre, elaboro_cargo } = req.body;
 
-    const redir = `/correspondencia/salientes/nuevo?tipo=${tipo}`;
+    const responde_a = req.body.responde_a ? parseInt(req.body.responde_a) : null;
+    const redir = `/correspondencia/salientes/nuevo?tipo=${tipo}${responde_a ? `&responde_a=${responde_a}` : ''}`;
 
     // ── Validación servidor ───────────────────────────────────────────────────
     // Circular: destinatario es fijo, no se valida contra el directorio
@@ -286,6 +293,14 @@ router.post('/salientes', requireAuth, async (req, res, next) => {
       }
     }
 
+    // Vincular a correspondencia entrante si aplica
+    if (responde_a) {
+      await query(
+        'UPDATE correspondencia_entrante SET respondido_con_id=? WHERE id=?',
+        [id, responde_a]
+      );
+    }
+
     try {
       const nombreArchivo = folioToFilename(numero_folio);
       const rutaPdf = path.join(__dirname, `../pdfs/${nombreArchivo}.pdf`);
@@ -298,7 +313,8 @@ router.post('/salientes', requireAuth, async (req, res, next) => {
       console.error('Error al generar PDF:', e.message);
     }
 
-    req.flash('success', `${tipo === 'oficio' ? 'Oficio' : 'Memorándum'} ${numero_folio} creado correctamente`);
+    const tipoLabel = tipo === 'oficio' ? 'Oficio' : tipo === 'circular' ? 'Circular' : 'Memorándum';
+    req.flash('success', `${tipoLabel} ${numero_folio} creado correctamente${responde_a ? ' y vinculado a la correspondencia recibida' : ''}`);
     res.redirect(`/correspondencia/salientes/${id}`);
   } catch (err) { next(err); }
 });
@@ -535,12 +551,23 @@ router.post('/salientes/:id/regenerar-pdf', requireAuth, async (req, res, next) 
 
 router.get('/entrante', requireAuth, async (req, res, next) => {
   try {
+    const u = req.session.usuario;
+    const canRegister = ROLES_REGISTRO_ENT.includes(u.rol);
+    const verTodo     = ROLES_VER_TODO_ENT.includes(u.rol);
+
     const { tipo, estatus, buscar, page = 1 } = req.query;
     const limit = 15;
     const offset = (parseInt(page) - 1) * limit;
 
     let where = '1=1';
     const params = [];
+
+    // jefe_area y otros roles no globales solo ven su área
+    if (!verTodo && u.area_id) {
+      where += ' AND ce.area_destinataria_id=?';
+      params.push(u.area_id);
+    }
+
     if (tipo) { where += ' AND ce.tipo=?'; params.push(tipo); }
     if (estatus) { where += ' AND ce.estatus=?'; params.push(estatus); }
     if (buscar) {
@@ -551,9 +578,10 @@ router.get('/entrante', requireAuth, async (req, res, next) => {
     const [totalRow] = await query(`SELECT COUNT(*) as c FROM correspondencia_entrante ce WHERE ${where}`, params);
     const total = totalRow.c;
     const documentos = await query(
-      `SELECT ce.*, a.nombre as area_nombre
+      `SELECT ce.*, a.nombre as area_nombre, ds.numero_folio as respondido_folio
        FROM correspondencia_entrante ce
        LEFT JOIN areas a ON ce.area_destinataria_id = a.id
+       LEFT JOIN documentos_salientes ds ON ce.respondido_con_id = ds.id
        WHERE ${where} ORDER BY ce.fecha_recepcion DESC, ce.creado_en DESC LIMIT ? OFFSET ?`,
       [...params, limit, offset]
     );
@@ -563,17 +591,24 @@ router.get('/entrante', requireAuth, async (req, res, next) => {
       documentos,
       filtros: { tipo, estatus, buscar },
       paginacion: { page: parseInt(page), total, limit, pages: Math.ceil(total / limit) },
+      canRegister,
     });
   } catch (err) { next(err); }
 });
 
 router.get('/entrante/nuevo', requireAuth, async (req, res, next) => {
   try {
+    const u = req.session.usuario;
+    if (!ROLES_REGISTRO_ENT.includes(u.rol)) {
+      req.flash('error', 'No tienes permiso para registrar correspondencia');
+      return res.redirect('/correspondencia/entrante');
+    }
     const areas = await query('SELECT * FROM areas WHERE activa=1 ORDER BY nombre');
     const hoy = new Date().toISOString().split('T')[0];
     res.render('correspondencia/entrante-form', {
       titulo: 'Registrar Correspondencia Recibida',
       documento: null, areas, hoy,
+      preAreaId: null,
       accion: '/correspondencia/entrante',
     });
   } catch (err) { next(err); }
@@ -581,6 +616,11 @@ router.get('/entrante/nuevo', requireAuth, async (req, res, next) => {
 
 router.post('/entrante', requireAuth, upload.single('archivo'), async (req, res, next) => {
   try {
+    const u = req.session.usuario;
+    if (!ROLES_REGISTRO_ENT.includes(u.rol)) {
+      req.flash('error', 'No tienes permiso para registrar correspondencia');
+      return res.redirect('/correspondencia/entrante');
+    }
     const { folio_externo, tipo, fecha_recepcion, fecha_documento,
             remitente_nombre, remitente_cargo, remitente_institucion,
             asunto, descripcion, area_destinataria_id,
@@ -609,17 +649,38 @@ router.post('/entrante', requireAuth, upload.single('archivo'), async (req, res,
 
 router.get('/entrante/:id', requireAuth, async (req, res, next) => {
   try {
+    const u = req.session.usuario;
+    const canRegister = ROLES_REGISTRO_ENT.includes(u.rol);
+    const verTodo     = ROLES_VER_TODO_ENT.includes(u.rol);
+
     const [doc] = await query(
-      `SELECT ce.*, a.nombre as area_nombre, u.nombre as registrado_nombre
+      `SELECT ce.*, a.nombre as area_nombre, us.nombre as registrado_nombre
        FROM correspondencia_entrante ce
        LEFT JOIN areas a ON ce.area_destinataria_id = a.id
-       LEFT JOIN usuarios u ON ce.registrado_por_id = u.id
+       LEFT JOIN usuarios us ON ce.registrado_por_id = us.id
        WHERE ce.id=?`, [req.params.id]
     );
     if (!doc) { req.flash('error', 'Documento no encontrado'); return res.redirect('/correspondencia/entrante'); }
+
+    // jefe_area solo puede ver docs de su área
+    if (!verTodo && u.area_id && doc.area_destinataria_id !== u.area_id) {
+      req.flash('error', 'No tienes acceso a este documento');
+      return res.redirect('/correspondencia/entrante');
+    }
+
+    // Respuesta vinculada
+    let respuesta = null;
+    if (doc.respondido_con_id) {
+      const [resp] = await query(
+        'SELECT id, numero_folio, tipo FROM documentos_salientes WHERE id=?',
+        [doc.respondido_con_id]
+      );
+      respuesta = resp || null;
+    }
+
     res.render('correspondencia/entrante-detalle', {
       titulo: `Correspondencia: ${doc.asunto}`,
-      doc,
+      doc, canRegister, respuesta,
     });
   } catch (err) { next(err); }
 });

@@ -246,6 +246,16 @@ async function initDB() {
     await query(`ALTER TABLE areas ADD CONSTRAINT fk_areas_responsable_id FOREIGN KEY (responsable_id) REFERENCES funcionarios(id) ON DELETE SET NULL`);
   }
 
+  // Migrar: agregar respondido_con_id en correspondencia_entrante
+  const [respConIdCol] = await query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='correspondencia_entrante' AND COLUMN_NAME='respondido_con_id'`
+  );
+  if (!respConIdCol) {
+    await query(`ALTER TABLE correspondencia_entrante ADD COLUMN respondido_con_id INT NULL AFTER notas`);
+    await query(`ALTER TABLE correspondencia_entrante ADD CONSTRAINT fk_entrante_respondido FOREIGN KEY (respondido_con_id) REFERENCES documentos_salientes(id) ON DELETE SET NULL`);
+  }
+
   // Migrar: agregar 'circular' al ENUM tipo de documentos_salientes
   const [tipoEnumInfo] = await query(
     `SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS

@@ -7,6 +7,23 @@
 </head>
 <body>
 <%- include('../layout/sidebar') %>
+<%
+function fmtFecha(d) {
+  if (!d) return '—';
+  var s = d instanceof Date ? d.toISOString().split('T')[0] : String(d).split('T')[0];
+  var p = s.split('-');
+  var meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return parseInt(p[2]) + ' ' + meses[parseInt(p[1])-1] + ' ' + p[0];
+}
+var TIPO_ENT_CLASS = {
+  'oficio': 'oficio', 'memorandum': 'memorandum', 'circular': 'circular',
+  'oficio-circular': 'circular', 'dictamen': 'dictamen', 'otro': 'otro'
+};
+var TIPO_ENT_LABEL = {
+  'oficio': 'Oficio', 'memorandum': 'Memorándum', 'circular': 'Circular',
+  'oficio-circular': 'Oficio-Circular', 'dictamen': 'Dictamen', 'otro': 'Otro'
+};
+%>
 <div class="main-wrapper">
   <div class="topbar">
     <h1><%= titulo %></h1>
@@ -20,7 +37,11 @@
     <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
 
     <div class="flex items-center justify-between mb-16">
-      <a href="/correspondencia/entrante/nuevo" class="btn btn-primary">+ Registrar correspondencia</a>
+      <% if (canRegister) { %>
+        <a href="/correspondencia/entrante/nuevo" class="btn btn-primary">+ Registrar correspondencia</a>
+      <% } else { %>
+        <span></span>
+      <% } %>
     </div>
 
     <form method="GET" class="filtros-bar">
@@ -61,15 +82,17 @@
           <% documentos.forEach(d => { %>
             <tr>
               <td><strong><%= d.folio_externo || '—' %></strong></td>
-              <td><span class="badge badge-oficio"><%= d.tipo %></span></td>
-              <td><%= d.fecha_recepcion %></td>
+              <td><span class="badge badge-<%= TIPO_ENT_CLASS[d.tipo] || 'otro' %>"><%= TIPO_ENT_LABEL[d.tipo] || d.tipo %></span></td>
+              <td><%= fmtFecha(d.fecha_recepcion) %></td>
               <td class="truncate"><%= d.remitente_nombre %></td>
               <td class="truncate text-sm text-gris"><%= d.remitente_institucion %></td>
               <td class="truncate"><%= d.asunto %></td>
               <td class="text-sm text-gris"><%= d.area_nombre || '—' %></td>
-              <td><span class="badge badge-<%= d.estatus %>"><%= d.estatus %></span></td>
+              <td><span class="badge badge-<%= d.estatus %>"><%= d.estatus.replace('_',' ') %></span></td>
               <td class="text-center">
-                <% if (d.requiere_respuesta) { %>
+                <% if (d.respondido_folio) { %>
+                  <span class="badge badge-atendido" title="Respondido con <%= d.respondido_folio %>">✓</span>
+                <% } else if (d.requiere_respuesta) { %>
                   <span class="badge badge-urgente" title="Requiere respuesta">!</span>
                 <% } else { %>—<% } %>
               </td>
