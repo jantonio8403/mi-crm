@@ -265,7 +265,14 @@ router.post('/:id/estatus', requireAuth, async (req, res, next) => {
       return res.redirect(`/tickets/${req.params.id}`);
     }
     const { estatus } = req.body;
-    await query('UPDATE tickets SET estatus=? WHERE id=?', [estatus, req.params.id]);
+    const esCierre = ['resuelto', 'cerrado'].includes(estatus);
+    const eraAbierto = !['resuelto', 'cerrado'].includes(ticket.estatus);
+    await query(
+      `UPDATE tickets SET estatus=?,
+        cerrado_en = CASE WHEN ? THEN IFNULL(cerrado_en, NOW()) ELSE NULL END
+       WHERE id=?`,
+      [estatus, esCierre, req.params.id]
+    );
     await query(
       'INSERT INTO ticket_comentarios (ticket_id, usuario_id, comentario, tipo) VALUES (?,?,?,?)',
       [req.params.id, u.id, `Estatus cambiado de "${ticket.estatus}" a "${estatus}"`, 'cambio_estado']

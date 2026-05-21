@@ -82,7 +82,7 @@
           <thead>
             <tr>
               <th>Folio</th><th>Prioridad</th><th>Título</th><th>Categoría</th>
-              <th>Solicita</th><th>Asignado a</th><th>Estatus</th><th>Fecha límite</th><th></th>
+              <th>Solicita</th><th>Asignado a</th><th>Estatus</th><th>Fecha límite</th><th>Fecha cierre</th><th></th>
             </tr>
           </thead>
           <tbody>
@@ -108,6 +108,9 @@
               </td>
               <td class="text-sm <%= t.fecha_limite && t.fecha_limite <= new Date().toISOString().split('T')[0] && !['resuelto','cerrado'].includes(t.estatus) ? 'text-rojo' : '' %>">
                 <%= t.fecha_limite || '—' %>
+              </td>
+              <td class="text-sm" style="white-space:nowrap">
+                <%= t.cerrado_en ? new Date(t.cerrado_en).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) : '—' %>
               </td>
               <td><a href="/tickets/<%= t.id %>" class="btn btn-sm btn-secondary">Ver</a></td>
             </tr>
