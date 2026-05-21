@@ -70,6 +70,11 @@
           </div>
 
           <div class="form-group">
+            <label>Responsable del área</label>
+            <input type="text" id="inp-responsable" disabled placeholder="Se mostrará al detectar el área">
+          </div>
+
+          <div class="form-group">
             <label>Fecha límite de resolución</label>
             <input type="date" name="fecha_limite">
           </div>
@@ -103,12 +108,14 @@
     mantenimiento:       ['mantenimiento','servicio general','servicios generales'],
     recursos_materiales: ['administracion','farmacia','recurso','material'],
   };
-  var AREAS = <%- JSON.stringify(areas.map(function(a){return{id:a.id,nombre:a.nombre};})) %>;
+  var AREAS  = <%- JSON.stringify(areas.map(function(a){return{id:a.id,nombre:a.nombre};})) %>;
+  var JEFES  = <%- JSON.stringify(jefes.map(function(j){return{area_id:j.area_id,nombre:j.nombre};})) %>;
 
-  var selArea   = document.getElementById('sel-area-asig');
-  var badgeArea = document.getElementById('badge-area');
-  var inpTitulo = document.querySelector('input[name="titulo"]');
-  var inpDesc   = document.querySelector('textarea[name="descripcion"]');
+  var selArea      = document.getElementById('sel-area-asig');
+  var inpRespons   = document.getElementById('inp-responsable');
+  var badgeArea    = document.getElementById('badge-area');
+  var inpTitulo    = document.querySelector('input[name="titulo"]');
+  var inpDesc      = document.querySelector('textarea[name="descripcion"]');
   if (!selArea || !inpTitulo) return;
 
   function norm(s) {
@@ -127,7 +134,12 @@
     var claves = AREA_MATCH[ganadora] || [];
     var match = null;
     AREAS.forEach(function(a) { var n=norm(a.nombre); if (!match && claves.some(function(c){return n.indexOf(norm(c))!==-1;})) match=a; });
-    if (match) { selArea.value = match.id; if (badgeArea) badgeArea.style.display = 'inline'; }
+    if (match) {
+      selArea.value = match.id;
+      if (badgeArea) badgeArea.style.display = 'inline';
+      var jefe = JEFES.find(function(j){ return j.area_id == match.id; });
+      if (inpRespons) inpRespons.value = jefe ? jefe.nombre : '— Sin jefe asignado —';
+    }
   }
 
   var t;
