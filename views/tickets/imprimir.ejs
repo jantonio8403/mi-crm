@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tickets — HBC Berriozabal</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #111; background: #fff; padding: 20px; }
+
+    .encabezado { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 2px solid #1a7a4a; }
+    .encabezado-left h1 { font-size: 15px; font-weight: 700; color: #1a7a4a; }
+    .encabezado-left p  { font-size: 10px; color: #555; margin-top: 2px; }
+    .encabezado-right   { text-align: right; font-size: 10px; color: #555; }
+
+    .filtros-resumen { background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 6px 10px; margin-bottom: 12px; font-size: 10px; color: #444; }
+    .filtros-resumen strong { color: #111; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #0b3320; color: #fff; padding: 6px 8px; text-align: left; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+    td { padding: 5px 8px; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+    tr:nth-child(even) td { background: #f9f9f9; }
+
+    .folio   { font-weight: 700; font-size: 10px; white-space: nowrap; }
+    .titulo  { max-width: 220px; }
+    .badge   { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 9px; font-weight: 600; }
+
+    .pie { margin-top: 16px; font-size: 9px; color: #888; text-align: right; }
+
+    @media print {
+      body { padding: 0; }
+      @page { margin: 15mm 12mm; size: landscape; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="encabezado">
+  <div class="encabezado-left">
+    <h1>Hospital Básico Comunitario 12 Camas — Berriozábal, Chiapas</h1>
+    <p>Reporte de Tickets Internos</p>
+  </div>
+  <div class="encabezado-right">
+    <p><strong>Generado:</strong> <%= generadoEn %></p>
+    <p><strong>Por:</strong> <%= generadoPor %></p>
+    <p><strong>Total:</strong> <%= tickets.length %> ticket<%= tickets.length !== 1 ? 's' : '' %></p>
+  </div>
+</div>
+
+<%
+  const etiquetas = [];
+  if (filtros.estatus)   etiquetas.push('Estatus: ' + filtros.estatus.replace('_',' '));
+  if (filtros.prioridad) etiquetas.push('Prioridad: ' + PRIORIDADES[filtros.prioridad].label);
+  if (filtros.categoria) etiquetas.push('Categoría: ' + CATEGORIAS[filtros.categoria]);
+  if (filtros.area) {
+    const areaEnc = areas.find(a => a.id == filtros.area);
+    if (areaEnc) etiquetas.push('Área: ' + areaEnc.nombre);
+  }
+  if (filtros.buscar)    etiquetas.push('Búsqueda: "' + filtros.buscar + '"');
+%>
+<div class="filtros-resumen">
+  <strong>Filtros aplicados:</strong>
+  <%= etiquetas.length ? etiquetas.join(' · ') : 'Ninguno (todos los tickets)' %>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Folio</th>
+      <th>Prioridad</th>
+      <th>Título</th>
+      <th>Área solicitante</th>
+      <th>Área responsable</th>
+      <th>Estatus</th>
+      <th>Fecha límite</th>
+      <th>Creado</th>
+    </tr>
+  </thead>
+  <tbody>
+  <% if (tickets.length === 0) { %>
+    <tr><td colspan="8" style="text-align:center;padding:20px;color:#888">Sin resultados para los filtros seleccionados</td></tr>
+  <% } %>
+  <% tickets.forEach(t => { %>
+    <%
+      const colPri = PRIORIDADES[t.prioridad].color;
+      const vencido = t.fecha_limite && t.fecha_limite <= new Date().toISOString().split('T')[0] && !['resuelto','cerrado'].includes(t.estatus);
+    %>
+    <tr>
+      <td class="folio"><%= t.folio %></td>
+      <td>
+        <span class="badge" style="background:<%= colPri %>22;color:<%= colPri %>;border:1px solid <%= colPri %>55">
+          <%= PRIORIDADES[t.prioridad].label %>
+        </span>
+      </td>
+      <td class="titulo"><%= t.titulo %></td>
+      <td><%= t.area_sol_nombre  || '—' %></td>
+      <td><%= t.area_asig_nombre || '—' %></td>
+      <td>
+        <span class="badge" style="background:#e5e7eb;color:#374151">
+          <%= t.estatus.replace('_',' ') %>
+        </span>
+      </td>
+      <td style="<%= vencido ? 'color:#dc2626;font-weight:700' : '' %>"><%= t.fecha_limite || '—' %></td>
+      <td style="white-space:nowrap"><%= t.creado_en %></td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table>
+
+<div class="pie">
+  Sistema AGORA · HBC Berriozábal · <%= generadoEn %>
+</div>
+
+<script>window.addEventListener('load', function(){ window.print(); });</script>
+</body>
+</html>

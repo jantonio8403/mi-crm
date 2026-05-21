@@ -72,6 +72,8 @@
       </select>
       <button type="submit" class="btn btn-secondary">Filtrar</button>
       <a href="/tickets" class="btn btn-secondary">Limpiar</a>
+      <a href="/tickets/imprimir?buscar=<%= encodeURIComponent(filtros.buscar||'') %>&estatus=<%= filtros.estatus||'' %>&prioridad=<%= filtros.prioridad||'' %>&categoria=<%= filtros.categoria||'' %>&area=<%= filtros.area||'' %>"
+         target="_blank" class="btn btn-secondary" style="margin-left:auto">🖨 Imprimir</a>
     </form>
 
     <div class="card">

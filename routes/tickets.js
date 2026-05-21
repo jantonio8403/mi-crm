@@ -42,6 +42,51 @@ async function siguienteFolioTicket() {
   return { consecutivo: siguiente, anio, folio: `TKT/${String(siguiente).padStart(4, '0')}/${anio}` };
 }
 
+// ── Imprimir ─────────────────────────────────────────────────────
+router.get('/imprimir', requireAuth, async (req, res, next) => {
+  try {
+    const { estatus, prioridad, categoria, area, buscar } = req.query;
+    const u = req.session.usuario;
+
+    let where = '1=1';
+    const params = [];
+
+    if (!['admin','director'].includes(u.rol) && u.area_id) {
+      where += ' AND (t.area_solicitante_id=? OR t.area_asignada_id=?)';
+      params.push(u.area_id, u.area_id);
+    }
+    if (estatus)   { where += ' AND t.estatus=?';                                        params.push(estatus); }
+    if (prioridad) { where += ' AND t.prioridad=?';                                      params.push(prioridad); }
+    if (categoria) { where += ' AND t.categoria=?';                                      params.push(categoria); }
+    if (area)      { where += ' AND (t.area_solicitante_id=? OR t.area_asignada_id=?)';  params.push(area, area); }
+    if (buscar)    { where += ' AND (t.folio LIKE ? OR t.titulo LIKE ?)';                params.push(`%${buscar}%`, `%${buscar}%`); }
+
+    const tickets = await query(`
+      SELECT t.*,
+             as1.nombre as area_sol_nombre, as2.nombre as area_asig_nombre,
+             u.nombre as solicitante_nombre
+      FROM tickets t
+      LEFT JOIN areas as1 ON t.area_solicitante_id = as1.id
+      LEFT JOIN areas as2 ON t.area_asignada_id = as2.id
+      LEFT JOIN usuarios u ON t.usuario_solicitante_id = u.id
+      WHERE ${where}
+      ORDER BY FIELD(t.prioridad,'urgente','alta','media','baja'),
+               FIELD(t.estatus,'abierto','en_proceso','resuelto','cerrado'),
+               t.creado_en DESC
+    `, params);
+
+    const areas = await query('SELECT * FROM areas WHERE activa=1 ORDER BY nombre');
+
+    res.render('tickets/imprimir', {
+      titulo: 'Tickets — Impresión',
+      tickets, areas, CATEGORIAS, PRIORIDADES,
+      filtros: { estatus, prioridad, categoria, area, buscar },
+      generadoPor: u.nombre,
+      generadoEn: new Date().toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' }),
+    });
+  } catch (err) { next(err); }
+});
+
 // ── Lista ────────────────────────────────────────────────────────
 router.get('/', requireAuth, async (req, res, next) => {
   try {
