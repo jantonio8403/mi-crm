@@ -2,6 +2,67 @@ const express = require('express');
 const router = express.Router();
 const { query } = require('../database/db');
 const { requireAuth, requireAdmin } = require('../controllers/authMiddleware');
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+
+const CAT_MAP = {
+  'mobiliario': 'mobiliario',
+  'equipo médico': 'equipo_medico', 'equipo medico': 'equipo_medico', 'equipo_medico': 'equipo_medico',
+  'equipo de cómputo': 'equipo_computo', 'equipo de computo': 'equipo_computo',
+  'equipo cómputo': 'equipo_computo', 'equipo computo': 'equipo_computo', 'equipo_computo': 'equipo_computo',
+  'instrumental médico': 'instrumental', 'instrumental medico': 'instrumental', 'instrumental': 'instrumental',
+  'vehículo': 'vehiculo', 'vehiculo': 'vehiculo', 'ambulancia': 'vehiculo',
+  'vehículo / ambulancia': 'vehiculo', 'vehiculo / ambulancia': 'vehiculo',
+  'equipo electromecánico': 'electromecanico', 'equipo electromecanico': 'electromecanico', 'electromecanico': 'electromecanico',
+};
+
+const ESTADO_MAP = {
+  'activo': 'activo',
+  'en mantenimiento': 'en_mantenimiento', 'en_mantenimiento': 'en_mantenimiento', 'mantenimiento': 'en_mantenimiento',
+  'en traslado': 'en_traslado', 'en_traslado': 'en_traslado', 'traslado': 'en_traslado',
+  'dado de baja': 'dado_de_baja', 'dado_de_baja': 'dado_de_baja', 'baja': 'dado_de_baja',
+};
+
+const CONDICION_MAP = {
+  'bueno': 'bueno', 'b': 'bueno',
+  'regular': 'regular', 'r': 'regular',
+  'malo': 'malo', 'm': 'malo',
+};
+
+function parseCSV(text) {
+  text = text.replace(/^﻿/, '');
+  const rows = [];
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const row = [];
+    let field = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') {
+        if (inQuotes && line[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = !inQuotes;
+      } else if (c === ',' && !inQuotes) {
+        row.push(field.trim());
+        field = '';
+      } else {
+        field += c;
+      }
+    }
+    row.push(field.trim());
+    rows.push(row);
+  }
+  return rows;
+}
+
+function parseFecha(str) {
+  if (!str || !str.trim()) return null;
+  const m1 = str.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m1) return `${m1[3]}-${m1[2].padStart(2, '0')}-${m1[1].padStart(2, '0')}`;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str.trim())) return str.trim();
+  return null;
+}
 
 const CATEGORIAS = {
   mobiliario:      'Mobiliario',
@@ -175,6 +236,106 @@ router.get('/imprimir', requireAuth, async (req, res, next) => {
       generadoPor: u.nombre,
       generadoEn: new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City', dateStyle: 'long', timeStyle: 'short' }),
     });
+  } catch (err) { next(err); }
+});
+
+// ── Importar — plantilla ──────────────────────────────────────────
+router.get('/importar/plantilla', requireAuth, requireAdmin, (req, res) => {
+  const headers = 'numero_inventario,nombre,categoria,area,resguardante,marca,modelo,numero_serie,numero_placas,estado,condicion,valor_adquisicion,proveedor,fecha_fabricacion,fecha_instalacion,observaciones';
+  const example = '"MED-001","Ultrasonido Portátil","Equipo Médico","Urgencias","Dr. García","Philips","CX50","SN123456","","Activo","Bueno","150000","Philips México","01/01/2020","15/03/2020","En uso constante"';
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="plantilla_inventario.csv"');
+  res.send('﻿' + headers + '\n' + example + '\n');
+});
+
+// ── Importar — formulario ─────────────────────────────────────────
+router.get('/importar', requireAuth, requireAdmin, (req, res) => {
+  res.render('inventario/importar', { titulo: 'Importar Inventario' });
+});
+
+// ── Importar — procesar ───────────────────────────────────────────
+router.post('/importar', requireAuth, requireAdmin, upload.single('archivo'), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      req.flash('error', 'No se seleccionó ningún archivo');
+      return res.redirect('/inventario/importar');
+    }
+
+    const text = req.file.buffer.toString('utf-8');
+    const rows = parseCSV(text);
+    if (rows.length < 2) {
+      req.flash('error', 'El archivo no contiene datos (mínimo encabezado + 1 fila)');
+      return res.redirect('/inventario/importar');
+    }
+
+    const headers = rows[0].map(h => h.toLowerCase().trim().replace(/\s+/g, '_'));
+    const col = (name) => { const j = headers.indexOf(name); return j >= 0 && rows._row && rows._row[j] ? rows._row[j].trim() : ''; };
+
+    const areas = await query('SELECT id, nombre FROM areas WHERE activa=1');
+
+    let importados = 0;
+    const errores = [];
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (row.every(c => !c)) continue;
+
+      const get = (name) => {
+        const j = headers.indexOf(name);
+        return (j >= 0 && row[j]) ? row[j].trim() : '';
+      };
+
+      const numero_inventario = get('numero_inventario');
+      const nombre = get('nombre');
+      if (!numero_inventario || !nombre) {
+        errores.push(`Fila ${i + 1}: falta número de inventario o nombre`);
+        continue;
+      }
+
+      const catRaw = get('categoria').toLowerCase();
+      const categoria = CAT_MAP[catRaw] || 'mobiliario';
+
+      const areaNombre = get('area').toLowerCase().trim();
+      const areaMatch = areas.find(a =>
+        a.nombre.toLowerCase() === areaNombre ||
+        a.nombre.toLowerCase().includes(areaNombre) ||
+        (areaNombre && areaNombre.includes(a.nombre.toLowerCase()))
+      );
+      const area_id = (areaNombre && areaMatch) ? areaMatch.id : null;
+
+      const estado   = ESTADO_MAP[get('estado').toLowerCase()]   || 'activo';
+      const condicion = CONDICION_MAP[get('condicion').toLowerCase()] || 'bueno';
+      const valorRaw  = get('valor_adquisicion').replace(/[$,\s]/g, '');
+
+      try {
+        await query(
+          `INSERT INTO bienes (numero_inventario, consecutivo, anio, nombre, categoria, area_id,
+           resguardante, marca, modelo, numero_serie, numero_placas, estado, condicion,
+           valor_adquisicion, proveedor, fecha_fabricacion, fecha_instalacion, observaciones)
+           VALUES (?,0,0,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          [numero_inventario, nombre, categoria, area_id,
+           get('resguardante') || null, get('marca') || null, get('modelo') || null,
+           get('numero_serie') || null, get('numero_placas') || null,
+           estado, condicion,
+           valorRaw ? parseFloat(valorRaw) : null,
+           get('proveedor') || null,
+           parseFecha(get('fecha_fabricacion')),
+           parseFecha(get('fecha_instalacion')),
+           get('observaciones') || null]
+        );
+        importados++;
+      } catch (e) {
+        if (e.code === 'ER_DUP_ENTRY') {
+          errores.push(`Fila ${i + 1}: "${numero_inventario}" ya existe en el sistema`);
+        } else {
+          errores.push(`Fila ${i + 1} (${numero_inventario}): ${e.message}`);
+        }
+      }
+    }
+
+    req.flash('success', `Importación completada: ${importados} bien(es) importados${errores.length ? `, ${errores.length} con error` : ''}`);
+    if (errores.length) req.flash('error', errores.slice(0, 15).join(' · ') + (errores.length > 15 ? ` …y ${errores.length - 15} más` : ''));
+    res.redirect('/inventario');
   } catch (err) { next(err); }
 });
 

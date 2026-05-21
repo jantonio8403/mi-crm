@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Importar Inventario — HBC Berriozabal</title>
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css?v=10">
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1>Importar Inventario</h1>
+    <div class="topbar-user"><span><%= usuario.nombre %></span></div>
+  </div>
+  <div class="page-content">
+    <% if (success && success.length) { %><div class="alert alert-success">✓ <%= success[0] %></div><% } %>
+    <% if (error && error.length) { %><div class="alert alert-error" style="white-space:pre-wrap">✕ <%= error[0] %></div><% } %>
+
+    <div class="flex items-center mb-16">
+      <a href="/inventario" class="btn btn-secondary">← Regresar</a>
+    </div>
+
+    <div class="two-col" style="align-items:start">
+
+      <!-- Formulario de carga -->
+      <div class="card">
+        <div class="card-header"><h3>Subir archivo CSV</h3></div>
+        <p class="text-sm text-gris" style="margin-bottom:16px">
+          Sube tu base de datos en formato CSV. Descarga primero la plantilla para ver el formato esperado.
+        </p>
+        <a href="/inventario/importar/plantilla" class="btn btn-secondary" style="margin-bottom:20px;display:inline-block">
+          ⬇ Descargar plantilla CSV
+        </a>
+        <form method="POST" action="/inventario/importar" enctype="multipart/form-data">
+          <div class="form-group" style="margin-bottom:16px">
+            <label>Archivo CSV *</label>
+            <input type="file" name="archivo" accept=".csv,text/csv" required>
+            <p class="text-sm text-gris" style="margin-top:4px">Tamaño máximo: 5 MB · Codificación: UTF-8</p>
+          </div>
+          <button type="submit" class="btn btn-primary">Importar registros</button>
+        </form>
+      </div>
+
+      <!-- Instrucciones y columnas -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <div class="card-header"><h3>Pasos para importar desde Excel</h3></div>
+          <ol style="padding-left:20px;font-size:13px;line-height:2.2">
+            <li>Descarga la <strong>plantilla CSV</strong> (botón de arriba)</li>
+            <li>Abre la plantilla en Excel y pega tus 800 registros debajo del encabezado</li>
+            <li>Guarda el archivo como <strong>CSV UTF-8</strong>:<br>
+              <span class="text-gris text-sm">Archivo → Guardar como → CSV UTF-8 (delimitado por comas)</span></li>
+            <li>Sube el archivo aquí y haz clic en <strong>Importar</strong></li>
+          </ol>
+          <div style="margin-top:12px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:10px 12px;font-size:12px;color:#92400e">
+            <strong>Nota:</strong> Los números de inventario existentes se conservan tal como están.
+            Si un número ya existe en el sistema, esa fila se omite y se reporta como error.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>Columnas del CSV</h3></div>
+          <table style="font-size:11px;width:100%;border-collapse:collapse">
+            <thead>
+              <tr>
+                <th style="text-align:left;padding:5px 8px;background:#f3f4f6;border-bottom:1px solid #e5e7eb">Columna</th>
+                <th style="text-align:left;padding:5px 8px;background:#f3f4f6;border-bottom:1px solid #e5e7eb">Valores aceptados</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td style="padding:5px 8px;font-weight:700">numero_inventario <span style="color:#dc2626">*</span></td><td style="padding:5px 8px">Tu número existente (ej. MED-001, INV-0045)</td></tr>
+              <tr style="background:#f9fafb"><td style="padding:5px 8px;font-weight:700">nombre <span style="color:#dc2626">*</span></td><td style="padding:5px 8px">Nombre descriptivo del bien</td></tr>
+              <tr><td style="padding:5px 8px;font-weight:700">categoria <span style="color:#dc2626">*</span></td><td style="padding:5px 8px">Mobiliario · Equipo Médico · Equipo de Cómputo · Instrumental Médico · Vehículo / Ambulancia · Equipo Electromecánico</td></tr>
+              <tr style="background:#f9fafb"><td style="padding:5px 8px">area</td><td style="padding:5px 8px">Nombre del área (debe existir en el sistema)</td></tr>
+              <tr><td style="padding:5px 8px">resguardante</td><td style="padding:5px 8px">Nombre del responsable del bien</td></tr>
+              <tr style="background:#f9fafb"><td style="padding:5px 8px">marca</td><td style="padding:5px 8px">Marca del fabricante</td></tr>
+              <tr><td style="padding:5px 8px">modelo</td><td style="padding:5px 8px"></td></tr>
+              <tr style="background:#f9fafb"><td style="padding:5px 8px">numero_serie</td><td style="padding:5px 8px"></td></tr>
+              <tr><td style="padding:5px 8px">numero_placas</td><td style="padding:5px 8px">Solo para vehículos</td></tr>
+              <tr style="background:#f9fafb"><td style="padding:5px 8px">estado</td><td style="padding:5px 8px">Activo · En mantenimiento · En traslado · Dado de baja<br><span class="text-gris">Default: Activo</span></td></tr>
+              <tr><td style="padding:5px 8px">condicion</td><td style="padding:5px 8px">Bueno · Regular · Malo<br><span class="text-gris">Default: Bueno</span></td></tr>
+              <tr style="background:#f9fafb"><td style="padding:5px 8px">valor_adquisicion</td><td style="padding:5px 8px">Número (ej. 15000 o 15000.50)</td></tr>
+              <tr><td style="padding:5px 8px">proveedor</td><td style="padding:5px 8px"></td></tr>
+              <tr style="background:#f9fafb"><td style="padding:5px 8px">fecha_fabricacion</td><td style="padding:5px 8px">DD/MM/AAAA o AAAA-MM-DD</td></tr>
+              <tr><td style="padding:5px 8px">fecha_instalacion</td><td style="padding:5px 8px">DD/MM/AAAA o AAAA-MM-DD</td></tr>
+              <tr style="background:#f9fafb"><td style="padding:5px 8px">observaciones</td><td style="padding:5px 8px">Texto libre</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+</body></html>
