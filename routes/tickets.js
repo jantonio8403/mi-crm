@@ -173,7 +173,11 @@ router.get('/nuevo', requireAuth, async (req, res, next) => {
   try {
     const u = req.session.usuario;
     const areas = await query('SELECT * FROM areas WHERE activa=1 ORDER BY nombre');
-    const jefes = await query('SELECT id, nombre, area_id FROM usuarios WHERE rol=\'jefe_area\' AND activo=1');
+    const jefes = await query(`
+      SELECT id, nombre, area_id, rol FROM usuarios
+      WHERE activo=1 AND area_id IS NOT NULL AND rol IN ('jefe_area','admin','director','secretaria')
+      ORDER BY FIELD(rol,'jefe_area','admin','director','secretaria')
+    `);
     const folio = await siguienteFolioTicket();
     res.render('tickets/form', {
       titulo: 'Nuevo Ticket', ticket: null, areas, jefes, folio, CATEGORIAS, PRIORIDADES,
