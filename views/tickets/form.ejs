@@ -4,7 +4,7 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title><%= titulo %> — HBC Berriozabal</title>
   <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/css/app.css?v=9">
+  <link rel="stylesheet" href="/css/app.css?v=10">
 </head>
 <body>
 <%- include('../layout/sidebar') %>
@@ -35,7 +35,7 @@
           </div>
 
           <div class="form-group">
-            <label>Categoría *</label>
+            <label>Categoría * <span id="badge-categoria" style="display:none;font-size:10px;font-weight:600;color:var(--verde);margin-left:4px">✦ sugerido</span></label>
             <select name="categoria" required id="sel-categoria">
               <% Object.entries(CATEGORIAS).forEach(([v,l]) => { %>
                 <option value="<%= v %>"><%= l %></option>
@@ -69,8 +69,8 @@
 
           <% if (canElegirAreas) { %>
           <div class="form-group">
-            <label>Área a atender</label>
-            <select name="area_asignada_id">
+            <label>Área a atender <span id="badge-area" style="display:none;font-size:10px;font-weight:600;color:var(--verde);margin-left:4px">✦ sugerido</span></label>
+            <select name="area_asignada_id" id="sel-area-asig">
               <option value="">— Sin asignar —</option>
               <% areas.forEach(a => { %>
                 <option value="<%= a.id %>"><%= a.nombre %></option>
@@ -100,4 +100,119 @@
   </div>
 </div>
 <script src="/js/app.js"></script>
+<script>
+window._AREAS = <%- JSON.stringify(areas.map(function(a){return{id:a.id,nombre:a.nombre};})) %>;
+(function () {
+  var KEYWORDS = {
+    informatica: [
+      'computadora','computadoras','pc','laptop','laptops','impresora','impresoras',
+      'toner','red','internet','sistema','sistemas','correo','pantalla','teclado',
+      'raton','mouse','cable','wifi','servidor','monitor','usb','disco','escaner',
+      'proyector','software','programa','aplicacion','contraseña','acceso','clave',
+      'equipo','tecnologia','computo','celular','telefono','soporte','tecnico',
+      'red local','disco duro','memoria','actualizacion','antivirus','base de datos'
+    ],
+    mantenimiento: [
+      'fuga','tuberia','luz','foco','electrico','electricidad','plomeria','puerta',
+      'ventana','techo','piso','pintura','instalacion','gotear','goteo','humedad',
+      'cisterna','drenaje','desague','llave','grifo','lampara','apagador','contacto',
+      'tomacorriente','aire acondicionado','calefaccion','gas','extractor','ventilador',
+      'barda','pared','grieta','gotera','inundacion','corto','corto circuito','falla electrica'
+    ],
+    recursos_materiales: [
+      'material','materiales','insumo','insumos','medicamento','medicamentos','medicina',
+      'instrumento','camilla','silla','mesa','mueble','suministro','compra','adquisicion',
+      'falta','escasez','abasto','inventario','papeleria','papel','tinta','cartucho',
+      'guante','cubrebocas','mascarilla','jeringa','aguja','venda','gasa','alcohol',
+      'jabón','desinfectante','reactivo','reactivos','equipo medico','material de curacion',
+      'lanceta','cateter','solucion','soluciones','ampolleta'
+    ],
+    servicios_generales: [
+      'limpieza','basura','baño','jardin','cafeteria','cocina','uniforme','sanitario',
+      'aseo','desinfeccion','plaga','fumigacion','residuo','comedor','lavanderia',
+      'ropa','sabana','almohada','colchon','suciedad','sucio','mancha','olor',
+      'intendencia','desperdicios','contenedor','residuos peligrosos','rppbi'
+    ]
+  };
+
+  var AREA_MATCH = {
+    informatica:         ['informatic','sistem','computo','tecnolog'],
+    mantenimiento:       ['mantenimiento'],
+    recursos_materiales: ['recurso','material','almacen','abastec'],
+    servicios_generales: ['servicio','general','intendencia','limpieza']
+  };
+
+  var selCategoria = document.getElementById('sel-categoria');
+  var selArea      = document.getElementById('sel-area-asig');
+  var inpTitulo    = document.querySelector('input[name="titulo"]');
+  var inpDesc      = document.querySelector('textarea[name="descripcion"]');
+  var badgeCat     = document.getElementById('badge-categoria');
+  var badgeArea    = document.getElementById('badge-area');
+  if (!selCategoria || !inpTitulo) return;
+
+  var areas = window._AREAS || [];
+
+  function norm(s) {
+    return String(s).toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g,'')
+      .replace(/[^a-z0-9 ]/g,' ');
+  }
+
+  function puntaje(texto) {
+    var t = norm(texto);
+    var scores = {};
+    Object.keys(KEYWORDS).forEach(function(cat) {
+      scores[cat] = 0;
+      KEYWORDS[cat].forEach(function(p) {
+        if (t.indexOf(norm(p)) !== -1) scores[cat] += p.length > 6 ? 2 : 1;
+      });
+    });
+    return scores;
+  }
+
+  function sugerir() {
+    var texto = (inpTitulo.value + ' ' + (inpDesc ? inpDesc.value : '')).trim();
+    if (texto.length < 6) return;
+
+    var scores  = puntaje(texto);
+    var entries = Object.keys(scores).map(function(k){ return [k, scores[k]]; })
+                        .sort(function(a,b){ return b[1]-a[1]; });
+    var maxScore = entries[0][1];
+    if (maxScore === 0) return;
+
+    var ganadora = entries[0][0];
+
+    if (selCategoria.value !== ganadora) {
+      selCategoria.value = ganadora;
+      if (badgeCat) badgeCat.style.display = 'inline';
+    }
+
+    if (selArea && areas.length) {
+      var keys = AREA_MATCH[ganadora] || [];
+      var match = null;
+      areas.forEach(function(a) {
+        var n = norm(a.nombre);
+        if (!match && keys.some(function(k){ return n.indexOf(k) !== -1; })) match = a;
+      });
+      if (match && selArea.value != match.id) {
+        selArea.value = match.id;
+        if (badgeArea) badgeArea.style.display = 'inline';
+      }
+    }
+  }
+
+  var timer;
+  function debounce(fn, ms) { clearTimeout(timer); timer = setTimeout(fn, ms); }
+
+  inpTitulo.addEventListener('input', function(){ debounce(sugerir, 500); });
+  if (inpDesc) inpDesc.addEventListener('input', function(){ debounce(sugerir, 700); });
+
+  selCategoria.addEventListener('change', function(){
+    if (badgeCat) badgeCat.style.display = 'none';
+  });
+  if (selArea) selArea.addEventListener('change', function(){
+    if (badgeArea) badgeArea.style.display = 'none';
+  });
+}());
+</script>
 </body></html>
