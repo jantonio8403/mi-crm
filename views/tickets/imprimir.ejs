@@ -94,8 +94,8 @@
           <%= t.estatus.replace('_',' ') %>
         </span>
       </td>
-      <td style="white-space:nowrap"><%= t.creado_en %></td>
-      <td style="white-space:nowrap"><%= t.cerrado_en ? new Date(t.cerrado_en).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) : '—' %></td>
+      <td style="white-space:nowrap"><%= fmtFecha(t.creado_en) %></td>
+      <td style="white-space:nowrap"><%= fmtFecha(t.cerrado_en, false) %></td>
     </tr>
   <% }) %>
   </tbody>

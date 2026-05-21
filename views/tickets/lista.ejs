@@ -109,9 +109,7 @@
               <td class="text-sm <%= t.fecha_limite && t.fecha_limite <= new Date().toISOString().split('T')[0] && !['resuelto','cerrado'].includes(t.estatus) ? 'text-rojo' : '' %>">
                 <%= t.fecha_limite || '—' %>
               </td>
-              <td class="text-sm" style="white-space:nowrap">
-                <%= t.cerrado_en ? new Date(t.cerrado_en).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) : '—' %>
-              </td>
+              <td class="text-sm" style="white-space:nowrap"><%= fmtFecha(t.cerrado_en, false) %></td>
               <td><a href="/tickets/<%= t.id %>" class="btn btn-sm btn-secondary">Ver</a></td>
             </tr>
           <% }) %>

@@ -32,6 +32,15 @@ app.use((req, res, next) => {
   res.locals.success = req.flash('success');
   res.locals.error = req.flash('error');
   res.locals.tickets_badge = 0;
+  res.locals.fmtFecha = function (d, conHora = true) {
+    if (!d) return '—';
+    const opts = {
+      timeZone: 'America/Mexico_City',
+      day: '2-digit', month: 'short', year: 'numeric',
+    };
+    if (conHora) { opts.hour = '2-digit'; opts.minute = '2-digit'; }
+    return new Date(d).toLocaleString('es-MX', opts);
+  };
   next();
 });
 

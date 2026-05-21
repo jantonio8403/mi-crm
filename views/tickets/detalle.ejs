@@ -70,7 +70,7 @@
             </div>
             <div class="detalle-item">
               <label>Creado</label>
-              <p><%= ticket.creado_en %></p>
+              <p><%= fmtFecha(ticket.creado_en) %></p>
             </div>
             <div class="detalle-item">
               <label>Fecha límite</label>
@@ -98,7 +98,7 @@
               <div class="comentario-meta">
                 <strong><%= c.usuario_nombre %></strong> ·
                 <%= c.tipo === 'cambio_estado' ? '🔄 Cambio de estatus' : c.tipo === 'asignacion' ? '📌 Asignación' : '💬 Comentario' %> ·
-                <%= c.creado_en %>
+                <%= fmtFecha(c.creado_en) %>
               </div>
               <div class="comentario-body"><%= c.comentario %></div>
             </div>
