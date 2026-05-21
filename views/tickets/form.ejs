@@ -34,14 +34,7 @@
             <input type="text" name="titulo" required placeholder="Describe brevemente el problema o solicitud">
           </div>
 
-          <div class="form-group">
-            <label>Categoría * <span id="badge-categoria" style="display:none;font-size:10px;font-weight:600;color:var(--verde);margin-left:4px">✦ sugerido</span></label>
-            <select name="categoria" required id="sel-categoria">
-              <% Object.entries(CATEGORIAS).forEach(([v,l]) => { %>
-                <option value="<%= v %>"><%= l %></option>
-              <% }) %>
-            </select>
-          </div>
+          <input type="hidden" name="categoria" id="sel-categoria" value="otro">
 
           <div class="form-group">
             <label>Prioridad *</label>
