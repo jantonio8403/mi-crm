@@ -62,7 +62,7 @@
             <label>Área responsable *</label>
             <select name="area_asignada_id" id="sel-area-asig" required>
               <option value="">— Seleccionar área —</option>
-              <% areas.forEach(a => { %>
+              <% areas.filter(a => !/administraci[oó]n|direcci[oó]n/i.test(a.nombre)).forEach(a => { %>
                 <option value="<%= a.id %>"><%= a.nombre %></option>
               <% }) %>
             </select>
