@@ -35,68 +35,6 @@ function puedeEditar(u, ticket) {
   return false;
 }
 
-const KEYWORDS_SERVIDOR = {
-  informatica: [
-    'computadora','pc','laptop','impresora','toner','red','internet','sistema',
-    'correo','pantalla','teclado','raton','mouse','cable','wifi','servidor',
-    'monitor','usb','disco','escaner','proyector','software','programa',
-    'aplicacion','contrasena','acceso','clave','tecnologia','computo','celular',
-    'telefono','soporte','tecnico','red local','disco duro','memoria',
-    'actualizacion','antivirus','base de datos',
-  ],
-  mantenimiento: [
-    'fuga','tuberia','luz','foco','electrico','electricidad','plomeria','puerta',
-    'ventana','techo','piso','pintura','instalacion','gotear','goteo','humedad',
-    'cisterna','drenaje','desague','llave','grifo','lampara','apagador','contacto',
-    'tomacorriente','aire acondicionado','calefaccion','gas','extractor',
-    'ventilador','barda','pared','grieta','gotera','inundacion','corto circuito',
-    'falla electrica',
-  ],
-  recursos_materiales: [
-    'material','insumo','medicamento','medicina','instrumento','camilla','silla',
-    'mesa','mueble','suministro','compra','adquisicion','falta','escasez',
-    'abasto','inventario','papeleria','papel','tinta','cartucho','guante',
-    'cubrebocas','mascarilla','jeringa','aguja','venda','gasa','alcohol',
-    'desinfectante','reactivo','equipo medico','material de curacion',
-    'lanceta','cateter','solucion','ampolleta','farmacia',
-  ],
-};
-
-const AREA_MATCH_SERVIDOR = {
-  informatica:         ['informatic'],
-  mantenimiento:       ['mantenimiento','servicio general','servicios generales'],
-  recursos_materiales: ['administracion','farmacia','recurso','material'],
-};
-
-function normTexto(s) {
-  return String(s || '').toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9 ]/g, ' ');
-}
-
-function detectarCategoria(titulo, descripcion) {
-  const texto = normTexto(titulo + ' ' + descripcion);
-  const scores = {};
-  for (const [cat, palabras] of Object.entries(KEYWORDS_SERVIDOR)) {
-    scores[cat] = 0;
-    for (const p of palabras) {
-      if (texto.includes(normTexto(p))) scores[cat] += p.length > 6 ? 2 : 1;
-    }
-  }
-  const [ganadora, max] = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
-  return max > 0 ? ganadora : 'otro';
-}
-
-function asignarArea(categoria, areas) {
-  const claves = AREA_MATCH_SERVIDOR[categoria] || [];
-  for (const area of areas) {
-    const n = normTexto(area.nombre);
-    if (claves.some(c => n.includes(normTexto(c)))) return area.id;
-  }
-  const admin = areas.find(a => normTexto(a.nombre).includes('administracion'));
-  return admin ? admin.id : null;
-}
-
 async function siguienteFolioTicket() {
   const anio = new Date().getFullYear();
   const [row] = await query('SELECT MAX(consecutivo) as max FROM tickets WHERE anio=?', [anio]);
@@ -193,10 +131,7 @@ router.post('/', requireAuth, async (req, res, next) => {
     const { titulo, descripcion, prioridad, fecha_limite } = req.body;
 
     const area_solicitante_id = puedeAsignar(u) ? (req.body.area_solicitante_id || null) : (u.area_id || null);
-
-    const areas = await query('SELECT * FROM areas WHERE activa=1');
-    const categoria = detectarCategoria(titulo, descripcion);
-    const area_asignada_id = asignarArea(categoria, areas);
+    const area_asignada_id = req.body.area_asignada_id || null;
 
     const { consecutivo, anio, folio } = await siguienteFolioTicket();
 
@@ -204,7 +139,7 @@ router.post('/', requireAuth, async (req, res, next) => {
       `INSERT INTO tickets (folio, consecutivo, anio, titulo, descripcion, categoria, prioridad,
        area_solicitante_id, area_asignada_id, usuario_solicitante_id, fecha_limite)
        VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-      [folio, consecutivo, anio, titulo, descripcion, categoria, prioridad,
+      [folio, consecutivo, anio, titulo, descripcion, 'otro', prioridad,
        area_solicitante_id || null, area_asignada_id || null,
        u.id, fecha_limite || null]
     );

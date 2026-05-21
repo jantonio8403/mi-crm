@@ -59,19 +59,18 @@
           </div>
 
           <div class="form-group">
-            <label>Área responsable <span id="badge-area" style="display:none;font-size:10px;font-weight:600;color:var(--verde);margin-left:4px">✦ detectado</span></label>
-            <select id="sel-area-asig" disabled>
-              <option value="">Se asigna automáticamente al guardar</option>
+            <label>Área responsable *</label>
+            <select name="area_asignada_id" id="sel-area-asig" required>
+              <option value="">— Seleccionar área —</option>
               <% areas.forEach(a => { %>
                 <option value="<%= a.id %>"><%= a.nombre %></option>
               <% }) %>
             </select>
-            <span style="font-size:11px;color:var(--gris)">El sistema detecta el área según el contenido del ticket.</span>
           </div>
 
           <div class="form-group">
             <label>Responsable del área</label>
-            <input type="text" id="inp-responsable" disabled placeholder="Se mostrará al detectar el área">
+            <input type="text" id="inp-responsable" disabled placeholder="Se mostrará al seleccionar el área">
           </div>
 
           <div class="form-group">
@@ -96,55 +95,15 @@
 </div>
 <script src="/js/app.js"></script>
 <script>
-/* Vista previa del área — solo informativo, la asignación real la hace el servidor */
 (function () {
-  var KEYWORDS = {
-    informatica:         ['computadora','pc','laptop','impresora','toner','red','internet','sistema','correo','pantalla','teclado','raton','mouse','cable','wifi','servidor','monitor','usb','disco','escaner','software','programa','aplicacion','computo','celular','telefono','soporte','tecnico','antivirus'],
-    mantenimiento:       ['fuga','tuberia','luz','foco','electrico','electricidad','plomeria','puerta','ventana','techo','piso','pintura','gotear','goteo','humedad','cisterna','drenaje','desague','llave','grifo','lampara','apagador','contacto','tomacorriente','aire acondicionado','gas','extractor','pared','grieta','gotera','inundacion','corto circuito'],
-    recursos_materiales: ['material','insumo','medicamento','medicina','instrumento','camilla','suministro','compra','adquisicion','falta','escasez','abasto','papel','tinta','cartucho','guante','cubrebocas','mascarilla','jeringa','aguja','venda','gasa','alcohol','desinfectante','reactivo','lanceta','cateter','solucion','ampolleta'],
-  };
-  var AREA_MATCH = {
-    informatica:         ['informatica','sistemas','computo','tecnolog'],
-    mantenimiento:       ['mantenimiento','servicio general','servicios generales'],
-    recursos_materiales: ['administracion','farmacia','recurso','material'],
-  };
-  var AREAS  = <%- JSON.stringify(areas.map(function(a){return{id:a.id,nombre:a.nombre};})) %>;
-  var JEFES  = <%- JSON.stringify(jefes.map(function(j){return{area_id:j.area_id,nombre:j.nombre};})) %>;
-
-  var selArea      = document.getElementById('sel-area-asig');
-  var inpRespons   = document.getElementById('inp-responsable');
-  var badgeArea    = document.getElementById('badge-area');
-  var inpTitulo    = document.querySelector('input[name="titulo"]');
-  var inpDesc      = document.querySelector('textarea[name="descripcion"]');
-  if (!selArea || !inpTitulo) return;
-
-  function norm(s) {
-    return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,' ');
-  }
-  function detectar() {
-    var texto = norm(inpTitulo.value + ' ' + (inpDesc ? inpDesc.value : ''));
-    if (texto.trim().length < 6) return;
-    var scores = {};
-    Object.keys(KEYWORDS).forEach(function(cat) {
-      scores[cat] = 0;
-      KEYWORDS[cat].forEach(function(p) { if (texto.indexOf(norm(p)) !== -1) scores[cat] += p.length > 6 ? 2 : 1; });
-    });
-    var ganadora = Object.keys(scores).sort(function(a,b){ return scores[b]-scores[a]; })[0];
-    if (!scores[ganadora]) return;
-    var claves = AREA_MATCH[ganadora] || [];
-    var match = null;
-    AREAS.forEach(function(a) { var n=norm(a.nombre); if (!match && claves.some(function(c){return n.indexOf(norm(c))!==-1;})) match=a; });
-    if (match) {
-      selArea.value = match.id;
-      if (badgeArea) badgeArea.style.display = 'inline';
-      var jefe = JEFES.find(function(j){ return j.area_id == match.id; });
-      if (inpRespons) inpRespons.value = jefe ? jefe.nombre : '— Sin jefe asignado —';
-    }
-  }
-
-  var t;
-  inpTitulo.addEventListener('input', function(){ clearTimeout(t); t=setTimeout(detectar,500); });
-  if (inpDesc) inpDesc.addEventListener('input', function(){ clearTimeout(t); t=setTimeout(detectar,700); });
+  var JEFES = <%- JSON.stringify(jefes.map(function(j){return{area_id:j.area_id,nombre:j.nombre};})) %>;
+  var selArea    = document.getElementById('sel-area-asig');
+  var inpRespons = document.getElementById('inp-responsable');
+  if (!selArea || !inpRespons) return;
+  selArea.addEventListener('change', function () {
+    var jefe = JEFES.find(function (j) { return j.area_id == selArea.value; });
+    inpRespons.value = jefe ? jefe.nombre : '— Sin responsable asignado —';
+  });
 }());
 </script>
 </body></html>
