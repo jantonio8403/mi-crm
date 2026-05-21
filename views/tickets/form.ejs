@@ -4,7 +4,7 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title><%= titulo %> — HBC Berriozabal</title>
   <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/css/app.css?v=8">
+  <link rel="stylesheet" href="/css/app.css?v=9">
 </head>
 <body>
 <%- include('../layout/sidebar') %>
@@ -54,23 +54,30 @@
 
           <div class="form-group">
             <label>Área solicitante</label>
-            <select name="area_solicitante_id">
-              <option value="">— Seleccionar área —</option>
-              <% areas.forEach(a => { %>
-                <option value="<%= a.id %>" <%= usuario.area_id == a.id ? 'selected' : '' %>><%= a.nombre %></option>
-              <% }) %>
-            </select>
+            <% if (canElegirAreas) { %>
+              <select name="area_solicitante_id">
+                <option value="">— Seleccionar área —</option>
+                <% areas.forEach(a => { %>
+                  <option value="<%= a.id %>" <%= usuario.area_id == a.id ? 'selected' : '' %>><%= a.nombre %></option>
+                <% }) %>
+              </select>
+            <% } else { %>
+              <input type="hidden" name="area_solicitante_id" value="<%= usuario.area_id || '' %>">
+              <input type="text" value="<%= areas.find(a => a.id == usuario.area_id)?.nombre || '—' %>" disabled>
+            <% } %>
           </div>
 
+          <% if (canElegirAreas) { %>
           <div class="form-group">
             <label>Área a atender</label>
-            <select name="area_asignada_id" id="sel-area-asig">
+            <select name="area_asignada_id">
               <option value="">— Sin asignar —</option>
               <% areas.forEach(a => { %>
                 <option value="<%= a.id %>"><%= a.nombre %></option>
               <% }) %>
             </select>
           </div>
+          <% } %>
 
           <div class="form-group">
             <label>Fecha límite de resolución</label>

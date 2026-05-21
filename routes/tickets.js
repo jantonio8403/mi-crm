@@ -18,12 +18,22 @@ const PRIORIDADES = {
   urgente: { label: 'Urgente', color: '#7c3aed' },
 };
 
-const AREA_CATEGORIA = {
-  informatica:         'Administración',
-  servicios_generales: 'Administración',
-  recursos_materiales: 'Administración',
-  mantenimiento:       'Administración',
-};
+const ROLES_ADMIN = ['admin', 'director'];
+
+function puedeAsignar(u) {
+  return ROLES_ADMIN.includes(u.rol);
+}
+function puedeCambiarEstatus(u, ticket) {
+  if (ROLES_ADMIN.includes(u.rol)) return true;
+  if (u.rol === 'jefe_area') return ticket.area_asignada_id == u.area_id || ticket.area_solicitante_id == u.area_id;
+  return false;
+}
+function puedeEditar(u, ticket) {
+  if (ROLES_ADMIN.includes(u.rol)) return true;
+  if (u.rol === 'jefe_area' && ['abierto','en_proceso'].includes(ticket.estatus))
+    return ticket.area_asignada_id == u.area_id || ticket.area_solicitante_id == u.area_id;
+  return false;
+}
 
 async function siguienteFolioTicket() {
   const anio = new Date().getFullYear();
@@ -99,18 +109,28 @@ router.get('/', requireAuth, async (req, res, next) => {
 // ── Nuevo ────────────────────────────────────────────────────────
 router.get('/nuevo', requireAuth, async (req, res, next) => {
   try {
+    const u = req.session.usuario;
     const areas = await query('SELECT * FROM areas WHERE activa=1 ORDER BY nombre');
     const folio = await siguienteFolioTicket();
     res.render('tickets/form', {
       titulo: 'Nuevo Ticket', ticket: null, areas, folio, CATEGORIAS, PRIORIDADES,
       accion: '/tickets',
+      canElegirAreas: puedeAsignar(u),
     });
   } catch (err) { next(err); }
 });
 
 router.post('/', requireAuth, async (req, res, next) => {
   try {
-    const { titulo, descripcion, categoria, prioridad, area_solicitante_id, area_asignada_id, fecha_limite } = req.body;
+    const u = req.session.usuario;
+    const { titulo, descripcion, categoria, prioridad, fecha_limite } = req.body;
+    let { area_solicitante_id, area_asignada_id } = req.body;
+
+    if (!puedeAsignar(u)) {
+      area_solicitante_id = u.area_id || null;
+      area_asignada_id = null;
+    }
+
     const { consecutivo, anio, folio } = await siguienteFolioTicket();
 
     const result = await query(
@@ -119,12 +139,12 @@ router.post('/', requireAuth, async (req, res, next) => {
        VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
       [folio, consecutivo, anio, titulo, descripcion, categoria, prioridad,
        area_solicitante_id || null, area_asignada_id || null,
-       req.session.usuario.id, fecha_limite || null]
+       u.id, fecha_limite || null]
     );
 
     await query(
       `INSERT INTO ticket_comentarios (ticket_id, usuario_id, comentario, tipo) VALUES (?,?,?,?)`,
-      [result.insertId, req.session.usuario.id, `Ticket creado con prioridad ${PRIORIDADES[prioridad].label}`, 'cambio_estado']
+      [result.insertId, u.id, `Ticket creado con prioridad ${PRIORIDADES[prioridad].label}`, 'cambio_estado']
     );
 
     req.flash('success', `Ticket ${folio} creado correctamente`);
@@ -159,10 +179,14 @@ router.get('/:id', requireAuth, async (req, res, next) => {
 
     const areas    = await query('SELECT * FROM areas WHERE activa=1 ORDER BY nombre');
     const usuarios = await query('SELECT id, nombre, cargo FROM usuarios WHERE activo=1 ORDER BY nombre');
+    const u = req.session.usuario;
 
     res.render('tickets/detalle', {
       titulo: `Ticket ${ticket.folio}`,
       ticket, comentarios, areas, usuarios, CATEGORIAS, PRIORIDADES,
+      canAsignar: puedeAsignar(u),
+      canCambiarEstatus: puedeCambiarEstatus(u, ticket),
+      canEditar: puedeEditar(u, ticket),
     });
   } catch (err) { next(err); }
 });
@@ -182,13 +206,18 @@ router.post('/:id/comentar', requireAuth, async (req, res, next) => {
 
 router.post('/:id/estatus', requireAuth, async (req, res, next) => {
   try {
+    const u = req.session.usuario;
+    const [ticket] = await query('SELECT * FROM tickets WHERE id=?', [req.params.id]);
+    if (!ticket) return res.redirect('/tickets');
+    if (!puedeCambiarEstatus(u, ticket)) {
+      req.flash('error', 'No tienes permiso para cambiar el estatus de este ticket');
+      return res.redirect(`/tickets/${req.params.id}`);
+    }
     const { estatus } = req.body;
-    const [ticket] = await query('SELECT estatus FROM tickets WHERE id=?', [req.params.id]);
     await query('UPDATE tickets SET estatus=? WHERE id=?', [estatus, req.params.id]);
     await query(
       'INSERT INTO ticket_comentarios (ticket_id, usuario_id, comentario, tipo) VALUES (?,?,?,?)',
-      [req.params.id, req.session.usuario.id,
-       `Estatus cambiado de "${ticket.estatus}" a "${estatus}"`, 'cambio_estado']
+      [req.params.id, u.id, `Estatus cambiado de "${ticket.estatus}" a "${estatus}"`, 'cambio_estado']
     );
     req.flash('success', 'Estatus actualizado');
     res.redirect(`/tickets/${req.params.id}`);
@@ -197,6 +226,10 @@ router.post('/:id/estatus', requireAuth, async (req, res, next) => {
 
 router.post('/:id/asignar', requireAuth, async (req, res, next) => {
   try {
+    if (!puedeAsignar(req.session.usuario)) {
+      req.flash('error', 'No tienes permiso para asignar tickets');
+      return res.redirect(`/tickets/${req.params.id}`);
+    }
     const { area_asignada_id, usuario_asignado_id } = req.body;
     await query(
       'UPDATE tickets SET area_asignada_id=?, usuario_asignado_id=? WHERE id=?',
@@ -218,18 +251,30 @@ router.post('/:id/asignar', requireAuth, async (req, res, next) => {
 // ── Editar ticket ────────────────────────────────────────────────
 router.get('/:id/editar', requireAuth, async (req, res, next) => {
   try {
+    const u = req.session.usuario;
     const [ticket] = await query('SELECT * FROM tickets WHERE id=?', [req.params.id]);
     if (!ticket) { req.flash('error', 'Ticket no encontrado'); return res.redirect('/tickets'); }
+    if (!puedeEditar(u, ticket)) {
+      req.flash('error', 'No tienes permiso para editar este ticket');
+      return res.redirect(`/tickets/${req.params.id}`);
+    }
     const areas = await query('SELECT * FROM areas WHERE activa=1 ORDER BY nombre');
     res.render('tickets/edit', {
       titulo: `Editar Ticket ${ticket.folio}`,
       ticket, areas, CATEGORIAS, PRIORIDADES,
+      canElegirAreas: puedeAsignar(u),
     });
   } catch (err) { next(err); }
 });
 
 router.post('/:id/editar', requireAuth, async (req, res, next) => {
   try {
+    const u = req.session.usuario;
+    const [ticket] = await query('SELECT * FROM tickets WHERE id=?', [req.params.id]);
+    if (!ticket || !puedeEditar(u, ticket)) {
+      req.flash('error', 'No tienes permiso para editar este ticket');
+      return res.redirect('/tickets');
+    }
     const { titulo, descripcion, categoria, prioridad, area_solicitante_id, area_asignada_id, fecha_limite } = req.body;
     const [before] = await query('SELECT titulo, prioridad FROM tickets WHERE id=?', [req.params.id]);
     await query(

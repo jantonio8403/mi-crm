@@ -4,7 +4,7 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title><%= titulo %> — HBC Berriozabal</title>
   <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/css/app.css?v=8">
+  <link rel="stylesheet" href="/css/app.css?v=9">
   <style>
     .comentario { background:#f9fafb;border:1px solid var(--borde);border-radius:8px;padding:12px 14px;margin-bottom:10px; }
     .comentario.cambio_estado { background:#eff6ff;border-color:#bfdbfe; }
@@ -28,7 +28,7 @@
 
     <div class="flex items-center mb-16" style="gap:8px">
       <a href="/tickets" class="btn btn-secondary">← Regresar</a>
-      <% if (!['resuelto','cerrado'].includes(ticket.estatus)) { %>
+      <% if (canEditar) { %>
         <a href="/tickets/<%= ticket.id %>/editar" class="btn btn-secondary">✏ Editar</a>
       <% } %>
     </div>
@@ -118,7 +118,7 @@
 
       <!-- Panel lateral -->
       <div style="display:flex;flex-direction:column;gap:16px">
-        <!-- Cambiar estatus -->
+        <!-- Estatus: visible para quien puede cambiarlo -->
         <div class="card">
           <div class="card-header">
             <h3>Estatus</h3>
@@ -126,6 +126,7 @@
               <%= ticket.estatus.replace('_',' ') %>
             </span>
           </div>
+          <% if (canCambiarEstatus && !['resuelto','cerrado'].includes(ticket.estatus)) { %>
           <form method="POST" action="/tickets/<%= ticket.id %>/estatus">
             <div class="form-group" style="margin-bottom:10px">
               <label>Cambiar a</label>
@@ -138,9 +139,13 @@
             </div>
             <button type="submit" class="btn btn-secondary btn-sm">Actualizar</button>
           </form>
+          <% } else if (!canCambiarEstatus) { %>
+            <p class="text-sm text-gris" style="margin-top:8px">Solo el área responsable puede cambiar el estatus.</p>
+          <% } %>
         </div>
 
-        <!-- Asignar -->
+        <!-- Asignar: solo admin/director -->
+        <% if (canAsignar) { %>
         <div class="card">
           <div class="card-header"><h3>Asignación</h3></div>
           <form method="POST" action="/tickets/<%= ticket.id %>/asignar">
@@ -165,6 +170,7 @@
             <button type="submit" class="btn btn-secondary btn-sm">Guardar asignación</button>
           </form>
         </div>
+        <% } %>
       </div>
     </div>
   </div>
