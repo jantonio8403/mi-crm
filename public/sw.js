@@ -1,4 +1,4 @@
-const CACHE = 'agora-v1';
+const CACHE = 'agora-v2';
 
 // Recursos estáticos que se cachean al instalar
 const PRECACHE = [

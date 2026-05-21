@@ -18,6 +18,7 @@ body {
   background: var(--gris-claro);
   color: var(--texto);
   font-size: 14px;
+  -webkit-text-size-adjust: 100%;
 }
 
 /* ── Sidebar ─────────────────────────────────────────── */
@@ -26,6 +27,7 @@ body {
   width: 240px; background: linear-gradient(160deg, #0b3320 0%, #1a7a4a 100%);
   color: #fff; display: flex; flex-direction: column;
   z-index: 100; overflow-y: auto;
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 .sidebar-header {
@@ -89,6 +91,7 @@ body {
 .sidebar-logout {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 16px;
+  padding-bottom: max(10px, calc(10px + env(safe-area-inset-bottom, 0px)));
   color: rgba(255,255,255,.6); text-decoration: none;
   font-size: 12px; border-top: 1px solid rgba(255,255,255,.08);
   border-left: 3px solid transparent;
@@ -105,11 +108,12 @@ body {
 }
 
 /* ── Layout principal ────────────────────────────────── */
-.main-wrapper { margin-left: 240px; min-height: 100vh; }
+.main-wrapper { margin-left: 240px; min-height: 100vh; min-height: 100dvh; }
 
 .topbar {
   background: #fff; border-bottom: 1px solid var(--borde);
-  padding: 0 24px; height: 52px;
+  padding: env(safe-area-inset-top, 0px) 24px 0;
+  height: calc(52px + env(safe-area-inset-top, 0px));
   display: flex; align-items: center; justify-content: space-between;
   position: sticky; top: 0; z-index: 50;
 }
@@ -401,6 +405,8 @@ a { color: var(--verde); }
   background: rgba(0,0,0,.45);
   z-index: 99;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
 }
 .overlay.visible { display: block; }
 
@@ -423,15 +429,16 @@ a { color: var(--verde); }
   .main-wrapper { margin-left: 0; }
 
   .topbar {
-    padding: 0 14px;
-    padding-left: max(14px, env(safe-area-inset-left));
-    padding-right: max(14px, env(safe-area-inset-right));
+    padding: env(safe-area-inset-top, 0px) 14px 0;
+    padding-left: max(14px, env(safe-area-inset-left, 0px));
+    padding-right: max(14px, env(safe-area-inset-right, 0px));
+    height: calc(52px + env(safe-area-inset-top, 0px));
   }
   .topbar h1 { font-size: 15px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .page-content {
     padding: 16px;
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    padding-bottom: max(16px, calc(16px + env(safe-area-inset-bottom, 0px)));
   }
 
   .two-col { grid-template-columns: 1fr; }
