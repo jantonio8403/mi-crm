@@ -71,31 +71,20 @@
   <thead>
     <tr>
       <th>Folio</th>
-      <th>Prioridad</th>
       <th>Título</th>
       <th>Área solicitante</th>
       <th>Área responsable</th>
       <th>Estatus</th>
-      <th>Fecha límite</th>
       <th>Creado</th>
     </tr>
   </thead>
   <tbody>
   <% if (tickets.length === 0) { %>
-    <tr><td colspan="8" style="text-align:center;padding:20px;color:#888">Sin resultados para los filtros seleccionados</td></tr>
+    <tr><td colspan="6" style="text-align:center;padding:20px;color:#888">Sin resultados para los filtros seleccionados</td></tr>
   <% } %>
   <% tickets.forEach(t => { %>
-    <%
-      const colPri = PRIORIDADES[t.prioridad].color;
-      const vencido = t.fecha_limite && t.fecha_limite <= new Date().toISOString().split('T')[0] && !['resuelto','cerrado'].includes(t.estatus);
-    %>
     <tr>
       <td class="folio"><%= t.folio %></td>
-      <td>
-        <span class="badge" style="background:<%= colPri %>22;color:<%= colPri %>;border:1px solid <%= colPri %>55">
-          <%= PRIORIDADES[t.prioridad].label %>
-        </span>
-      </td>
       <td class="titulo"><%= t.titulo %></td>
       <td><%= t.area_sol_nombre  || '—' %></td>
       <td><%= t.area_asig_nombre || '—' %></td>
@@ -104,7 +93,6 @@
           <%= t.estatus.replace('_',' ') %>
         </span>
       </td>
-      <td style="<%= vencido ? 'color:#dc2626;font-weight:700' : '' %>"><%= t.fecha_limite || '—' %></td>
       <td style="white-space:nowrap"><%= t.creado_en %></td>
     </tr>
   <% }) %>
