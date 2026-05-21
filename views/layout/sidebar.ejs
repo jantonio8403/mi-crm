@@ -31,6 +31,9 @@
   </div>
   <div class="sidebar-section">
     <p class="sidebar-label">Inventario</p>
+    <% if (usuario && ['admin','director'].includes(usuario.rol)) { %>
+      <a href="/verificaciones"><span class="icon">🔍</span> Verificaciones QR</a>
+    <% } %>
     <% if (usuario && usuario.rol === 'admin') { %>
       <a href="/inventario/nuevo"><span class="icon">➕</span> Registrar Bien</a>
       <a href="/inventario/importar"><span class="icon">⬆</span> Importar CSV</a>

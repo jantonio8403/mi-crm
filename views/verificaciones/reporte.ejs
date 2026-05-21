@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Reporte Verificación — HBC Berriozabal</title>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:Arial,sans-serif; font-size:11px; color:#111; background:#fff; padding:20px; }
+    .encabezado { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; padding-bottom:10px; border-bottom:2px solid #1a7a4a; }
+    .encabezado-right { text-align:right; font-size:10px; color:#555; }
+    .titulo-sesion { font-size:15px; font-weight:800; color:#0b3320; margin-bottom:4px; }
+    .subtitulo { font-size:10px; color:#555; }
+    .resumen { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+    .resumen-card { border-radius:6px; padding:10px 14px; text-align:center; }
+    .resumen-num { font-size:22px; font-weight:900; }
+    .resumen-lbl { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; margin-top:2px; }
+    .card-verde { background:#f0fdf4; border:1px solid #bbf7d0; }
+    .card-rojo  { background:#fef2f2; border:1px solid #fecaca; }
+    .card-gris  { background:#f9fafb; border:1px solid #e5e7eb; }
+    .seccion { margin-bottom:20px; }
+    .seccion h4 { font-size:10px; font-weight:700; text-transform:uppercase; color:#555; letter-spacing:.06em; padding:6px 0; border-bottom:2px solid #e5e7eb; margin-bottom:8px; }
+    .seccion h4.verde { border-color:#16a34a; color:#15803d; }
+    .seccion h4.rojo  { border-color:#dc2626; color:#b91c1c; }
+    table { width:100%; border-collapse:collapse; font-size:10px; }
+    th { background:#0b3320; color:#fff; padding:5px 7px; text-align:left; font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
+    td { padding:4px 7px; border-bottom:1px solid #f0f0f0; vertical-align:top; }
+    tr:nth-child(even) td { background:#f9fafb; }
+    .badge { display:inline-block; padding:1px 6px; border-radius:3px; font-size:9px; font-weight:700; }
+    .pie { margin-top:16px; font-size:9px; color:#888; text-align:center; border-top:1px solid #ddd; padding-top:8px; }
+    .no-print-btn { margin-bottom:16px; }
+    @media print {
+      .no-print-btn { display:none; }
+      body { padding:0; }
+      @page { margin:12mm 10mm; size:letter; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Encabezado AGORA -->
+<div class="encabezado">
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <div style="width:26px;height:26px;background:#1a7a4a;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#fff">A</div>
+      <span style="font-size:18px;font-weight:800;color:#1a7a4a;letter-spacing:2px">GORA</span>
+      <span style="font-size:10px;color:#555;border-left:1px solid #ccc;padding-left:8px;line-height:1.3">Sistema de Gestión Administrativa<br>H.B.C. 12 Camas · Berriozábal, Chiapas</span>
+    </div>
+    <div class="titulo-sesion"><%= sesion.nombre %></div>
+    <div class="subtitulo">
+      Verificación de inventario ·
+      <%= sesion.alcance === 'area' ? ('Área: ' + (sesion.area_nombre_sesion || '—')) : 'Todo el hospital' %>
+    </div>
+  </div>
+  <div class="encabezado-right">
+    <p><strong>Inicio:</strong> <%= fmtFecha(sesion.fecha_inicio, false) %></p>
+    <% if (sesion.fecha_cierre) { %><p><strong>Cierre:</strong> <%= fmtFecha(sesion.fecha_cierre, false) %></p><% } %>
+    <p><strong>Generado por:</strong> <%= generadoPor %></p>
+    <p><strong>Fecha:</strong> <%= generadoEn %></p>
+  </div>
+</div>
+
+<div class="no-print-btn">
+  <a href="/verificaciones" style="margin-right:10px;font-size:12px;color:#0b3320;text-decoration:none">← Volver</a>
+  <button onclick="window.print()" style="padding:6px 14px;background:#0b3320;color:#fff;border:none;border-radius:5px;font-size:12px;cursor:pointer">🖨 Imprimir reporte</button>
+</div>
+
+<!-- Resumen -->
+<div class="resumen">
+  <div class="resumen-card card-verde">
+    <div class="resumen-num" style="color:#16a34a"><%= presentes.length %></div>
+    <div class="resumen-lbl" style="color:#15803d">Localizados ✓</div>
+  </div>
+  <div class="resumen-card card-rojo">
+    <div class="resumen-num" style="color:#dc2626"><%= ausentes.length %></div>
+    <div class="resumen-lbl" style="color:#b91c1c">No localizados ✗</div>
+  </div>
+  <div class="resumen-card card-gris">
+    <div class="resumen-num" style="color:#374151"><%= presentes.length + ausentes.length %></div>
+    <div class="resumen-lbl" style="color:#6b7280">Total en alcance</div>
+  </div>
+</div>
+
+<!-- Bienes localizados -->
+<% if (presentes.length > 0) { %>
+<div class="seccion">
+  <h4 class="verde">✓ Bienes localizados (<%= presentes.length %>)</h4>
+  <table>
+    <thead>
+      <tr><th>N° Inventario</th><th>Nombre</th><th>Categoría</th><th>Área</th><th>Resguardante</th><th>Escaneado</th><th>Por</th></tr>
+    </thead>
+    <tbody>
+    <% presentes.forEach(b => { %>
+      <tr>
+        <td style="font-weight:700;white-space:nowrap"><%= b.numero_inventario %></td>
+        <td><%= b.nombre %></td>
+        <td><%= CATEGORIAS[b.categoria] || b.categoria %></td>
+        <td><%= b.area_nombre || '—' %></td>
+        <td><%= b.resguardante || '—' %></td>
+        <td style="white-space:nowrap"><%= fmtFecha(b.verificado_en) %></td>
+        <td><%= b.escaneado_por || '—' %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+
+<!-- Bienes no localizados -->
+<% if (ausentes.length > 0) { %>
+<div class="seccion">
+  <h4 class="rojo">✗ Bienes no localizados (<%= ausentes.length %>)</h4>
+  <table>
+    <thead>
+      <tr><th>N° Inventario</th><th>Nombre</th><th>Categoría</th><th>Área asignada</th><th>Resguardante</th></tr>
+    </thead>
+    <tbody>
+    <% ausentes.forEach(b => { %>
+      <tr>
+        <td style="font-weight:700;white-space:nowrap"><%= b.numero_inventario %></td>
+        <td><%= b.nombre %></td>
+        <td><%= CATEGORIAS[b.categoria] || b.categoria %></td>
+        <td><%= b.area_nombre || '—' %></td>
+        <td><%= b.resguardante || '—' %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+
+<div class="pie">Sistema AGORA · HBC Berriozábal · Reporte generado el <%= generadoEn %></div>
+</body></html>

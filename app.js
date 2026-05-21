@@ -69,6 +69,7 @@ app.use('/areas', require('./routes/areas'));
 app.use('/perfil', require('./routes/perfil'));
 app.use('/directorio', require('./routes/directorio'));
 app.use('/inventario', require('./routes/inventario'));
+app.use('/verificaciones', require('./routes/verificaciones'));
 
 app.get('/', (req, res) => {
   if (req.session.usuario) return res.redirect('/dashboard');

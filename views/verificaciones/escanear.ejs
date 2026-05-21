@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Escanear — <%= sesion.nombre %></title>
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #0b3320; color: #fff; min-height: 100dvh; display: flex; flex-direction: column; }
+
+    .header { padding: 14px 16px 10px; background: #0b3320; }
+    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .header-title { font-size: 14px; font-weight: 700; color: #6ee7b7; letter-spacing: .03em; }
+    .btn-cerrar { background: #dc2626; color: #fff; border: none; border-radius: 6px; padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; }
+
+    .progreso { background: #1a4a30; border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; }
+    .progreso-num { font-size: 22px; font-weight: 900; color: #34d399; }
+    .progreso-label { font-size: 11px; color: #6ee7b7; margin-top: 1px; }
+    .progreso-bar-wrap { flex: 1; margin: 0 16px; height: 8px; background: #0b3320; border-radius: 4px; overflow: hidden; }
+    .progreso-bar { height: 100%; background: #34d399; border-radius: 4px; transition: width .4s; }
+
+    .visor-wrap { position: relative; flex: 1; display: flex; flex-direction: column; }
+    video { width: 100%; flex: 1; object-fit: cover; display: block; }
+    canvas { display: none; }
+
+    .overlay-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -55%);
+      width: 220px; height: 220px; border: 3px solid #34d399; border-radius: 16px; pointer-events: none; }
+    .overlay-frame::before, .overlay-frame::after { content: ''; position: absolute; width: 30px; height: 30px; border-color: #34d399; border-style: solid; }
+    .overlay-frame::before { top: -3px; left: -3px; border-width: 4px 0 0 4px; border-radius: 13px 0 0 0; }
+    .overlay-frame::after  { bottom: -3px; right: -3px; border-width: 0 4px 4px 0; border-radius: 0 0 13px 0; }
+
+    .resultado { padding: 10px 16px; min-height: 72px; }
+    .resultado-item { border-radius: 10px; padding: 10px 14px; font-size: 13px; animation: fadeIn .2s; }
+    .resultado-item.ok   { background: #065f46; border: 1px solid #34d399; }
+    .resultado-item.dup  { background: #78350f; border: 1px solid #fbbf24; }
+    .resultado-item.err  { background: #7f1d1d; border: 1px solid #f87171; }
+    .resultado-nombre { font-weight: 700; font-size: 14px; }
+    .resultado-meta   { font-size: 11px; color: #a7f3d0; margin-top: 3px; }
+
+    .instruccion { text-align: center; font-size: 12px; color: #6ee7b7; padding: 8px 16px 16px; }
+
+    .no-camara { display: none; flex-direction: column; align-items: center; justify-content: center;
+      flex: 1; padding: 32px; text-align: center; gap: 12px; }
+    .no-camara p { color: #fca5a5; font-size: 14px; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="header-title">📷 <%= sesion.nombre %></div>
+    <% if (canCerrar) { %>
+    <form method="POST" action="/verificaciones/<%= sesion.id %>/cerrar"
+          onsubmit="return confirm('¿Cerrar la sesión y generar el reporte?')">
+      <button type="submit" class="btn-cerrar">Cerrar sesión</button>
+    </form>
+    <% } %>
+  </div>
+  <div class="progreso">
+    <div>
+      <div class="progreso-num" id="cnt-escaneados"><%= escaneados %></div>
+      <div class="progreso-label">escaneados</div>
+    </div>
+    <div class="progreso-bar-wrap">
+      <div class="progreso-bar" id="barra-progreso"
+           style="width:<%= total > 0 ? Math.round(escaneados/total*100) : 0 %>%"></div>
+    </div>
+    <div style="text-align:right">
+      <div class="progreso-num" style="color:#fff"><%= total %></div>
+      <div class="progreso-label">total</div>
+    </div>
+  </div>
+</div>
+
+<div class="visor-wrap" id="visor-wrap">
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="canvas"></canvas>
+  <div class="overlay-frame"></div>
+</div>
+
+<div class="resultado" id="resultado-zona">
+  <div class="instruccion" id="instruccion">Apunta la cámara al código QR del bien</div>
+</div>
+
+<div class="no-camara" id="no-camara">
+  <div style="font-size:48px">📵</div>
+  <p id="no-camara-msg">No se pudo acceder a la cámara.</p>
+  <p style="font-size:12px;color:#6ee7b7">Verifica que hayas dado permiso de cámara al navegador.</p>
+  <% if (canCerrar) { %>
+  <form method="POST" action="/verificaciones/<%= sesion.id %>/cerrar"
+        onsubmit="return confirm('¿Cerrar la sesión y generar el reporte?')" style="margin-top:8px">
+    <button type="submit" class="btn-cerrar">Cerrar sesión y ver reporte</button>
+  </form>
+  <% } %>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+(function () {
+  var SESION_ID   = <%= sesion.id %>;
+  var TOTAL       = <%= total %>;
+  var escaneados  = <%= escaneados %>;
+  var video       = document.getElementById('video');
+  var canvas      = document.getElementById('canvas');
+  var ctx         = canvas.getContext('2d');
+  var cntEl       = document.getElementById('cnt-escaneados');
+  var barraEl     = document.getElementById('barra-progreso');
+  var resZona     = document.getElementById('resultado-zona');
+  var instrEl     = document.getElementById('instruccion');
+
+  var cooldown    = false;
+  var lastBienId  = null;
+
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .then(function (stream) {
+      video.srcObject = stream;
+      video.play();
+      requestAnimationFrame(tick);
+    })
+    .catch(function (err) {
+      document.getElementById('visor-wrap').style.display = 'none';
+      var noC = document.getElementById('no-camara');
+      noC.style.display = 'flex';
+      document.getElementById('no-camara-msg').textContent =
+        'No se pudo acceder a la cámara: ' + (err.message || err);
+    });
+
+  function tick() {
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      canvas.width  = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      var img  = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      var code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+      if (code && !cooldown) {
+        var m = code.data.match(/\/inventario\/(\d+)/);
+        if (m) procesarBien(m[1]);
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function procesarBien(bienId) {
+    if (cooldown) return;
+    cooldown = true;
+    lastBienId = bienId;
+
+    fetch('/verificaciones/' + SESION_ID + '/registrar', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ bien_id: bienId }),
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (!data.ok) {
+        mostrarResultado('err', '✕ ' + (data.msg || 'Error'), '');
+        setTimeout(function () { cooldown = false; }, 2000);
+        return;
+      }
+      if (data.duplicado) {
+        mostrarResultado('dup', '↩ Ya escaneado', data.bien.nombre + ' · ' + data.bien.numero_inventario);
+        setTimeout(function () { cooldown = false; }, 1500);
+        return;
+      }
+      escaneados = data.escaneados;
+      cntEl.textContent = escaneados;
+      barraEl.style.width = (TOTAL > 0 ? Math.round(escaneados / TOTAL * 100) : 0) + '%';
+      mostrarResultado('ok',
+        '✓ ' + data.bien.nombre,
+        data.bien.numero_inventario + ' · ' + data.bien.area_nombre);
+      setTimeout(function () { cooldown = false; }, 1800);
+    })
+    .catch(function () {
+      mostrarResultado('err', '✕ Error de conexión', '');
+      setTimeout(function () { cooldown = false; }, 2000);
+    });
+  }
+
+  function mostrarResultado(tipo, titulo, meta) {
+    resZona.innerHTML =
+      '<div class="resultado-item ' + tipo + '">' +
+        '<div class="resultado-nombre">' + escapeHtml(titulo) + '</div>' +
+        (meta ? '<div class="resultado-meta">' + escapeHtml(meta) + '</div>' : '') +
+      '</div>';
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+}());
+</script>
+</body></html>

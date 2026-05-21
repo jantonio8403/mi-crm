@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Verificaciones — HBC Berriozabal</title>
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css?v=10">
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1>Verificaciones de Inventario</h1>
+    <div class="topbar-user"><span><%= usuario.nombre %></span></div>
+  </div>
+  <div class="page-content">
+    <% if (success && success.length) { %><div class="alert alert-success">✓ <%= success[0] %></div><% } %>
+    <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+
+    <div class="two-col" style="align-items:start">
+
+      <!-- Lista de sesiones -->
+      <div class="card">
+        <div class="card-header"><h3>Sesiones registradas</h3></div>
+        <% if (sesiones.length === 0) { %>
+          <p class="text-gris text-sm">No hay sesiones de verificación registradas.</p>
+        <% } %>
+        <% sesiones.forEach(s => { %>
+          <div style="padding:12px 0;border-bottom:1px solid var(--borde);display:flex;justify-content:space-between;align-items:start;gap:12px">
+            <div>
+              <div style="font-weight:600;font-size:14px"><%= s.nombre %></div>
+              <div class="text-sm text-gris" style="margin-top:3px">
+                <%= s.alcance === 'area' ? (s.area_nombre || 'Área') : 'Todo el hospital' %> ·
+                Iniciada: <%= fmtFecha(s.fecha_inicio, false) %>
+                <% if (s.fecha_cierre) { %> · Cerrada: <%= fmtFecha(s.fecha_cierre, false) %><% } %>
+              </div>
+              <div class="text-sm" style="margin-top:4px">
+                <strong><%= s.total_escaneados %></strong> bien(es) escaneado(s)
+                <% if (s.creado_por_nombre) { %> · Por: <%= s.creado_por_nombre %><% } %>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+              <% if (s.estado === 'en_progreso') { %>
+                <span class="badge badge-en_proceso" style="text-align:center">En progreso</span>
+                <a href="/verificaciones/<%= s.id %>/escanear" class="btn btn-sm btn-primary">Continuar</a>
+              <% } else { %>
+                <span class="badge badge-archivado" style="text-align:center">Cerrada</span>
+                <a href="/verificaciones/<%= s.id %>/reporte" class="btn btn-sm btn-secondary">Reporte</a>
+              <% } %>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+
+      <!-- Nueva sesión -->
+      <div class="card">
+        <div class="card-header"><h3>Nueva sesión de verificación</h3></div>
+        <form method="POST" action="/verificaciones">
+          <div class="form-group" style="margin-bottom:12px">
+            <label>Nombre de la sesión *</label>
+            <input type="text" name="nombre" required placeholder="Ej. Levantamiento Junio 2026">
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label>Alcance *</label>
+            <select name="alcance" id="sel-alcance" required>
+              <option value="global">Todo el hospital</option>
+              <option value="area">Área específica</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:16px;display:none" id="grp-area">
+            <label>Área</label>
+            <select name="area_id">
+              <option value="">— Seleccionar área —</option>
+              <% areas.forEach(a => { %>
+                <option value="<%= a.id %>"><%= a.nombre %></option>
+              <% }) %>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary">Iniciar sesión</button>
+        </form>
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--borde);font-size:12px;color:var(--gris);line-height:1.8">
+          <strong>¿Cómo funciona?</strong><br>
+          1. Crea una sesión y comparte la URL con el responsable.<br>
+          2. El responsable abre la URL en su celular.<br>
+          3. Apunta la cámara al código QR de cada bien.<br>
+          4. Al terminar, cierra la sesión para generar el reporte.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+  document.getElementById('sel-alcance').addEventListener('change', function () {
+    document.getElementById('grp-area').style.display = this.value === 'area' ? 'block' : 'none';
+  });
+</script>
+</body></html>

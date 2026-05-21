@@ -30,6 +30,7 @@
       <% if (canEditar) { %>
         <a href="/inventario/<%= bien.id %>/editar" class="btn btn-secondary">✏ Editar</a>
       <% } %>
+      <a href="/inventario/<%= bien.id %>/etiqueta" target="_blank" class="btn btn-secondary">📷 Etiqueta QR</a>
     </div>
 
     <div class="two-col" style="align-items:start">
@@ -74,6 +75,7 @@
             <div class="detalle-item"><label>Categoría</label><p><%= CATEGORIAS[bien.categoria] %></p></div>
             <div class="detalle-item"><label>Área</label><p><%= bien.area_nombre || '—' %></p></div>
             <div class="detalle-item"><label>Resguardante</label><p><%= bien.resguardante || '—' %></p></div>
+            <div class="detalle-item"><label>Última verificación</label><p><%= bien.ultima_verificacion_en ? fmtFecha(bien.ultima_verificacion_en, false) : '—' %></p></div>
             <div class="detalle-item"><label>Estado</label>
               <p><span class="badge badge-<%= bien.estado==='activo'?'enviado':bien.estado==='en_mantenimiento'?'en_proceso':bien.estado==='en_traslado'?'recibido':'archivado' %>">
                 <%= ESTADOS[bien.estado] %>

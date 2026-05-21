@@ -266,6 +266,29 @@ router.get('/imprimir', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ── Etiquetas QR — lote (con filtros de lista) ────────────────────
+router.get('/etiquetas', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const { categoria, estado, condicion, area, buscar } = req.query;
+    let where = 'b.activo=1';
+    const params = [];
+    if (categoria) { where += ' AND b.categoria=?'; params.push(categoria); }
+    if (estado)    { where += ' AND b.estado=?';    params.push(estado); }
+    if (condicion) { where += ' AND b.condicion=?'; params.push(condicion); }
+    if (area)      { where += ' AND b.area_id=?';   params.push(area); }
+    if (buscar)    {
+      where += ' AND (b.numero_inventario LIKE ? OR b.nombre LIKE ?)';
+      params.push(`%${buscar}%`, `%${buscar}%`);
+    }
+    const bienes = await query(`
+      SELECT b.*, a.nombre as area_nombre FROM bienes b
+      LEFT JOIN areas a ON b.area_id=a.id
+      WHERE ${where} ORDER BY b.categoria, b.nombre`, params);
+    const baseUrl = req.protocol + '://' + req.get('host');
+    res.render('inventario/etiqueta', { titulo: 'Etiquetas QR', bienes, baseUrl });
+  } catch (err) { next(err); }
+});
+
 // ── Importar — plantilla ──────────────────────────────────────────
 router.get('/importar/plantilla', requireAuth, requireAdmin, (req, res) => {
   const headers = 'numero_inventario,nombre,categoria,area,resguardante,marca,modelo,numero_serie,numero_placas,estado,condicion,valor_adquisicion,proveedor,fecha_fabricacion,fecha_instalacion,observaciones';
@@ -399,6 +422,18 @@ router.get('/:id', requireAuth, async (req, res, next) => {
       CATEGORIAS, ESTADOS, CONDICIONES, TIPOS_MOV,
       canEditar: ['admin', 'director'].includes(req.session.usuario.rol),
     });
+  } catch (err) { next(err); }
+});
+
+// ── Etiqueta QR — individual ──────────────────────────────────────
+router.get('/:id/etiqueta', requireAuth, async (req, res, next) => {
+  try {
+    const [bien] = await query(`
+      SELECT b.*, a.nombre as area_nombre FROM bienes b
+      LEFT JOIN areas a ON b.area_id=a.id WHERE b.id=?`, [req.params.id]);
+    if (!bien) return res.redirect('/inventario');
+    const baseUrl = req.protocol + '://' + req.get('host');
+    res.render('inventario/etiqueta', { titulo: 'Etiqueta QR', bienes: [bien], baseUrl });
   } catch (err) { next(err); }
 });
 

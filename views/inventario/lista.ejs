@@ -75,6 +75,10 @@
       <a href="/inventario" class="btn btn-secondary">Limpiar</a>
       <a href="/inventario/imprimir?buscar=<%= encodeURIComponent(filtros.buscar||'') %>&categoria=<%= filtros.categoria||'' %>&estado=<%= filtros.estado||'' %>&condicion=<%= filtros.condicion||'' %>&area=<%= filtros.area||'' %>"
          target="_blank" class="btn btn-secondary" style="margin-left:auto">🖨 Imprimir</a>
+      <% if (['admin','director'].includes(usuario.rol)) { %>
+      <a href="/inventario/etiquetas?buscar=<%= encodeURIComponent(filtros.buscar||'') %>&categoria=<%= filtros.categoria||'' %>&estado=<%= filtros.estado||'' %>&condicion=<%= filtros.condicion||'' %>&area=<%= filtros.area||'' %>"
+         target="_blank" class="btn btn-secondary">📷 Etiquetas QR</a>
+      <% } %>
     </form>
 
     <div class="card">
