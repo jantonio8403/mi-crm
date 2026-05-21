@@ -39,7 +39,7 @@ async function siguienteFolioTicket() {
   const anio = new Date().getFullYear();
   const [row] = await query('SELECT MAX(consecutivo) as max FROM tickets WHERE anio=?', [anio]);
   const siguiente = (row.max || 0) + 1;
-  return { consecutivo: siguiente, anio, folio: `TKT/${anio}/${String(siguiente).padStart(4, '0')}` };
+  return { consecutivo: siguiente, anio, folio: `TKT/${String(siguiente).padStart(4, '0')}/${anio}` };
 }
 
 // ── Lista ────────────────────────────────────────────────────────
