@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css?v=10">
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1>Inventario de Bienes</h1>
+    <div class="topbar-user"><span><%= usuario.nombre %></span></div>
+  </div>
+  <div class="page-content">
+    <% if (success && success.length) { %><div class="alert alert-success">✓ <%= success[0] %></div><% } %>
+    <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+
+    <!-- Stats -->
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+      <div class="stat-card">
+        <div class="num" style="color:var(--verde)"><%= stats.activo %></div>
+        <div class="label">Activos</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="color:var(--azul)"><%= stats.en_mantenimiento %></div>
+        <div class="label">En mantenimiento</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="color:#d97706"><%= stats.en_traslado %></div>
+        <div class="label">En traslado</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="color:var(--gris)"><%= stats.dado_de_baja %></div>
+        <div class="label">Dados de baja</div>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between mb-16">
+      <% if (['admin','director'].includes(usuario.rol)) { %>
+        <a href="/inventario/nuevo" class="btn btn-primary">+ Registrar Bien</a>
+      <% } else { %>
+        <span></span>
+      <% } %>
+    </div>
+
+    <form method="GET" class="filtros-bar">
+      <input type="search" name="buscar" placeholder="Buscar por folio, nombre, marca o serie..." value="<%= filtros.buscar||'' %>">
+      <select name="categoria">
+        <option value="">Todas las categorías</option>
+        <% Object.entries(CATEGORIAS).forEach(([v,l]) => { %>
+          <option value="<%= v %>" <%= filtros.categoria===v?'selected':'' %>><%= l %></option>
+        <% }) %>
+      </select>
+      <select name="estado">
+        <option value="">Todos los estados</option>
+        <% Object.entries(ESTADOS).forEach(([v,l]) => { %>
+          <option value="<%= v %>" <%= filtros.estado===v?'selected':'' %>><%= l %></option>
+        <% }) %>
+      </select>
+      <select name="condicion">
+        <option value="">Toda condición</option>
+        <% Object.entries(CONDICIONES).forEach(([v,c]) => { %>
+          <option value="<%= v %>" <%= filtros.condicion===v?'selected':'' %>><%= c.label %></option>
+        <% }) %>
+      </select>
+      <select name="area">
+        <option value="">Todas las áreas</option>
+        <% areas.forEach(a => { %>
+          <option value="<%= a.id %>" <%= filtros.area==a.id?'selected':'' %>><%= a.nombre %></option>
+        <% }) %>
+      </select>
+      <button type="submit" class="btn btn-secondary">Filtrar</button>
+      <a href="/inventario" class="btn btn-secondary">Limpiar</a>
+      <a href="/inventario/imprimir?buscar=<%= encodeURIComponent(filtros.buscar||'') %>&categoria=<%= filtros.categoria||'' %>&estado=<%= filtros.estado||'' %>&condicion=<%= filtros.condicion||'' %>&area=<%= filtros.area||'' %>"
+         target="_blank" class="btn btn-secondary" style="margin-left:auto">🖨 Imprimir</a>
+    </form>
+
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>N° Inventario</th><th>Nombre</th><th>Categoría</th>
+              <th>Área</th><th>Estado</th><th>Condición</th>
+              <th>Último mant.</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+          <% if (bienes.length === 0) { %>
+            <tr><td colspan="8" class="text-center text-gris" style="padding:30px">Sin bienes registrados</td></tr>
+          <% } %>
+          <% bienes.forEach(b => { %>
+            <tr>
+              <td><strong style="font-size:12px"><%= b.numero_inventario %></strong></td>
+              <td>
+                <div style="font-weight:600;font-size:13px"><%= b.nombre %></div>
+                <% if (b.marca || b.modelo) { %>
+                  <div class="text-sm text-gris"><%= [b.marca, b.modelo].filter(Boolean).join(' · ') %></div>
+                <% } %>
+              </td>
+              <td class="text-sm"><%= CATEGORIAS[b.categoria] %></td>
+              <td class="text-sm"><%= b.area_nombre || '—' %></td>
+              <td>
+                <span class="badge badge-<%= b.estado==='activo'?'enviado':b.estado==='en_mantenimiento'?'en_proceso':b.estado==='en_traslado'?'recibido':'archivado' %>">
+                  <%= ESTADOS[b.estado] %>
+                </span>
+              </td>
+              <td>
+                <span class="badge" style="background:<%= CONDICIONES[b.condicion].color %>20;color:<%= CONDICIONES[b.condicion].color %>">
+                  <%= CONDICIONES[b.condicion].label %>
+                </span>
+              </td>
+              <td class="text-sm"><%= b.fecha_ultimo_mant ? fmtFecha(b.fecha_ultimo_mant, false) : '—' %></td>
+              <td><a href="/inventario/<%= b.id %>" class="btn btn-sm btn-secondary">Ver</a></td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <% if (paginacion.pages > 1) { %>
+      <div class="pagination mt-16">
+        <% if (paginacion.page > 1) { %>
+          <a href="?page=<%= paginacion.page-1 %>&buscar=<%= filtros.buscar||'' %>&categoria=<%= filtros.categoria||'' %>&estado=<%= filtros.estado||'' %>&condicion=<%= filtros.condicion||'' %>&area=<%= filtros.area||'' %>">‹</a>
+        <% } %>
+        <% for(let i=1;i<=paginacion.pages;i++){ %>
+          <a href="?page=<%= i %>&buscar=<%= filtros.buscar||'' %>&categoria=<%= filtros.categoria||'' %>&estado=<%= filtros.estado||'' %>&condicion=<%= filtros.condicion||'' %>&area=<%= filtros.area||'' %>"
+             class="<%= i===paginacion.page?'activo':'' %>"><%= i %></a>
+        <% } %>
+        <% if (paginacion.page < paginacion.pages) { %>
+          <a href="?page=<%= paginacion.page+1 %>&buscar=<%= filtros.buscar||'' %>&categoria=<%= filtros.categoria||'' %>&estado=<%= filtros.estado||'' %>&condicion=<%= filtros.condicion||'' %>&area=<%= filtros.area||'' %>">›</a>
+        <% } %>
+      </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+</body></html>

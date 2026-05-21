@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Comprobante de Salida — HBC Berriozabal</title>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:Arial,sans-serif; font-size:12px; color:#111; background:#fff; padding:30px; max-width:800px; margin:auto; }
+    .encabezado { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; padding-bottom:12px; border-bottom:2px solid #1a7a4a; }
+    .titulo-doc { text-align:center; font-size:14px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#0b3320; margin-bottom:20px; border:1px solid #0b3320; padding:8px; border-radius:4px; }
+    .seccion { margin-bottom:18px; }
+    .seccion h4 { font-size:10px; font-weight:700; text-transform:uppercase; color:#555; letter-spacing:.05em; margin-bottom:8px; border-bottom:1px solid #e5e5e5; padding-bottom:4px; }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px 24px; }
+    .campo label { font-size:10px; color:#888; font-weight:700; text-transform:uppercase; display:block; margin-bottom:2px; }
+    .campo p { font-size:12px; font-weight:600; }
+    .insumos-tabla { width:100%; border-collapse:collapse; font-size:11px; }
+    .insumos-tabla th { background:#0b3320; color:#fff; padding:5px 8px; text-align:left; }
+    .insumos-tabla td { padding:4px 8px; border-bottom:1px solid #e5e5e5; }
+    .firmas { display:grid; grid-template-columns:1fr 1fr; gap:40px; margin-top:40px; }
+    .firma-box { text-align:center; }
+    .firma-linea { border-top:1px solid #111; margin-top:50px; padding-top:6px; font-size:11px; }
+    .pie { margin-top:20px; font-size:9px; color:#888; text-align:center; border-top:1px solid #ddd; padding-top:8px; }
+    @media print { body { padding:15mm; } @page { margin:10mm; size:letter; } }
+  </style>
+</head>
+<body>
+
+<div class="encabezado">
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+      <div style="width:26px;height:26px;background:#1a7a4a;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#fff">A</div>
+      <span style="font-size:18px;font-weight:800;color:#1a7a4a;letter-spacing:2px">GORA</span>
+      <span style="font-size:10px;color:#555;border-left:1px solid #ccc;padding-left:8px;line-height:1.3">Sistema de Gestión Administrativa<br>H.B.C. 12 Camas · Berriozábal, Chiapas</span>
+    </div>
+  </div>
+  <div style="text-align:right;font-size:10px;color:#555">
+    <p><strong>Fecha:</strong> <%= generadoEn %></p>
+    <p><strong>Registrado por:</strong> <%= generadoPor %></p>
+  </div>
+</div>
+
+<div class="titulo-doc">Comprobante de <%= TIPOS_MOV[mov.tipo] %> de Bien</div>
+
+<!-- Datos del bien -->
+<div class="seccion">
+  <h4>Datos del bien</h4>
+  <div class="grid2">
+    <div class="campo"><label>N° Inventario</label><p><%= bien.numero_inventario %></p></div>
+    <div class="campo"><label>Categoría</label><p><%= CATEGORIAS[bien.categoria] %></p></div>
+    <div class="campo" style="grid-column:1/-1"><label>Nombre</label><p><%= bien.nombre %></p></div>
+    <div class="campo"><label>Marca</label><p><%= bien.marca || '—' %></p></div>
+    <div class="campo"><label>Modelo</label><p><%= bien.modelo || '—' %></p></div>
+    <div class="campo"><label>N° de serie</label><p><%= bien.numero_serie || '—' %></p></div>
+    <% if (bien.numero_placas) { %>
+    <div class="campo"><label>Placas</label><p><%= bien.numero_placas %></p></div>
+    <% } %>
+    <div class="campo"><label>Área de origen</label><p><%= bien.area_nombre || '—' %></p></div>
+  </div>
+</div>
+
+<!-- Datos del movimiento -->
+<div class="seccion">
+  <h4>Datos del movimiento</h4>
+  <div class="grid2">
+    <div class="campo"><label>Tipo</label><p><%= TIPOS_MOV[mov.tipo] %></p></div>
+    <div class="campo"><label>Fecha</label><p><%= fmtFecha(mov.fecha, false) %></p></div>
+    <div class="campo" style="grid-column:1/-1"><label>Destino</label><p><%= mov.destino || '—' %></p></div>
+    <div class="campo"><label>Responsable del traslado</label><p><%= mov.responsable_nombre || '—' %></p></div>
+    <div class="campo"><label>Cargo</label><p><%= mov.responsable_cargo || '—' %></p></div>
+    <% if (mov.motivo) { %>
+    <div class="campo" style="grid-column:1/-1"><label>Motivo</label><p><%= mov.motivo %></p></div>
+    <% } %>
+    <% if (mov.observaciones) { %>
+    <div class="campo" style="grid-column:1/-1"><label>Observaciones</label><p><%= mov.observaciones %></p></div>
+    <% } %>
+  </div>
+</div>
+
+<!-- Insumos si aplica -->
+<% if (insumos.length > 0) { %>
+<div class="seccion">
+  <h4>Insumos que acompañan al bien</h4>
+  <table class="insumos-tabla">
+    <thead><tr><th>Insumo</th><th>Unidad</th><th>Cantidad mínima</th><th>Proveedor sugerido</th></tr></thead>
+    <tbody>
+    <% insumos.forEach(ins => { %>
+      <tr><td><%= ins.nombre %></td><td><%= ins.unidad||'—' %></td><td><%= ins.cantidad_minima %></td><td><%= ins.proveedor_sugerido||'—' %></td></tr>
+    <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+
+<!-- Firmas -->
+<div class="firmas">
+  <div class="firma-box">
+    <div class="firma-linea">
+      <strong><%= mov.responsable_nombre || '_______________________________' %></strong><br>
+      <%= mov.responsable_cargo || 'Responsable del traslado' %>
+    </div>
+  </div>
+  <div class="firma-box">
+    <div class="firma-linea">
+      <strong>_______________________________</strong><br>
+      Responsable de recepción
+    </div>
+  </div>
+</div>
+
+<div class="pie">Sistema AGORA · HBC Berriozábal · Documento generado el <%= generadoEn %></div>
+
+<script>window.addEventListener('load', function(){ window.print(); });</script>
+</body></html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css?v=10">
+  <style>
+    .historial-item { background:#f9fafb;border:1px solid var(--borde);border-radius:8px;padding:12px 14px;margin-bottom:8px; }
+    .historial-item.correctivo { background:#fff7ed;border-color:#fed7aa; }
+    .historial-meta { font-size:11px;color:var(--gris);margin-bottom:4px; }
+    .mov-item { background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;margin-bottom:8px; }
+    .mov-item.baja { background:#fef2f2;border-color:#fecaca; }
+    .mov-item.en_traslado { background:#eff6ff;border-color:#bfdbfe; }
+  </style>
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1>Bien <%= bien.numero_inventario %></h1>
+    <div class="topbar-user"><span><%= usuario.nombre %></span></div>
+  </div>
+  <div class="page-content">
+    <% if (success && success.length) { %><div class="alert alert-success">✓ <%= success[0] %></div><% } %>
+    <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+
+    <div class="flex items-center mb-16" style="gap:8px">
+      <a href="/inventario" class="btn btn-secondary">← Regresar</a>
+      <% if (canEditar) { %>
+        <a href="/inventario/<%= bien.id %>/editar" class="btn btn-secondary">✏ Editar</a>
+      <% } %>
+    </div>
+
+    <div class="two-col" style="align-items:start">
+      <!-- Columna principal -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <!-- Datos generales -->
+        <div class="card">
+          <div class="card-header">
+            <h3><%= bien.nombre %></h3>
+            <span class="badge" style="background:<%= CONDICIONES[bien.condicion].color %>20;color:<%= CONDICIONES[bien.condicion].color %>">
+              <%= CONDICIONES[bien.condicion].label %>
+            </span>
+          </div>
+          <div class="detalle-grid">
+            <div class="detalle-item"><label>N° Inventario</label><p><strong><%= bien.numero_inventario %></strong></p></div>
+            <div class="detalle-item"><label>Categoría</label><p><%= CATEGORIAS[bien.categoria] %></p></div>
+            <div class="detalle-item"><label>Área</label><p><%= bien.area_nombre || '—' %></p></div>
+            <div class="detalle-item"><label>Estado</label>
+              <p><span class="badge badge-<%= bien.estado==='activo'?'enviado':bien.estado==='en_mantenimiento'?'en_proceso':bien.estado==='en_traslado'?'recibido':'archivado' %>">
+                <%= ESTADOS[bien.estado] %>
+              </span></p>
+            </div>
+            <div class="detalle-item"><label>Marca</label><p><%= bien.marca || '—' %></p></div>
+            <div class="detalle-item"><label>Modelo</label><p><%= bien.modelo || '—' %></p></div>
+            <div class="detalle-item"><label>N° de serie</label><p><%= bien.numero_serie || '—' %></p></div>
+            <% if (bien.numero_placas) { %>
+            <div class="detalle-item"><label>Placas</label><p><%= bien.numero_placas %></p></div>
+            <% } %>
+            <div class="detalle-item"><label>Fecha fabricación</label><p><%= bien.fecha_fabricacion ? fmtFecha(bien.fecha_fabricacion, false) : '—' %></p></div>
+            <div class="detalle-item"><label>Fecha instalación</label><p><%= bien.fecha_instalacion ? fmtFecha(bien.fecha_instalacion, false) : '—' %></p></div>
+            <div class="detalle-item"><label>Último mantenimiento</label><p><%= bien.fecha_ultimo_mant ? fmtFecha(bien.fecha_ultimo_mant, false) : '—' %></p></div>
+            <div class="detalle-item"><label>Proveedor</label><p><%= bien.proveedor || '—' %></p></div>
+            <% if (bien.valor_adquisicion) { %>
+            <div class="detalle-item"><label>Valor adquisición</label><p>$<%= parseFloat(bien.valor_adquisicion).toLocaleString('es-MX') %></p></div>
+            <% } %>
+          </div>
+          <% if (bien.descripcion) { %>
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--borde)">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gris)">Descripción</label>
+            <p style="font-size:13px;margin-top:6px;white-space:pre-wrap"><%= bien.descripcion %></p>
+          </div>
+          <% } %>
+        </div>
+
+        <!-- Insumos requeridos -->
+        <% if (insumos.length > 0) { %>
+        <div class="card">
+          <div class="card-header"><h3>Insumos requeridos (<%= insumos.length %>)</h3></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Insumo</th><th>Unidad</th><th>Cant. mínima</th><th>Proveedor sugerido</th><th>Observaciones</th></tr></thead>
+              <tbody>
+              <% insumos.forEach(ins => { %>
+                <tr>
+                  <td style="font-weight:600"><%= ins.nombre %></td>
+                  <td class="text-sm"><%= ins.unidad || '—' %></td>
+                  <td class="text-sm"><%= ins.cantidad_minima %></td>
+                  <td class="text-sm"><%= ins.proveedor_sugerido || '—' %></td>
+                  <td class="text-sm text-gris"><%= ins.observaciones || '—' %></td>
+                </tr>
+              <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <% } %>
+
+        <!-- Historial de mantenimientos -->
+        <div class="card">
+          <div class="card-header"><h3>Historial de mantenimientos (<%= mantenimientos.length %>)</h3></div>
+          <% if (mantenimientos.length === 0) { %>
+            <p class="text-gris text-sm">Sin mantenimientos registrados.</p>
+          <% } %>
+          <% mantenimientos.forEach(m => { %>
+            <div class="historial-item <%= m.tipo %>">
+              <div class="historial-meta">
+                <strong><%= m.tipo === 'preventivo' ? '🔧 Preventivo' : '🚨 Correctivo' %></strong> ·
+                <%= fmtFecha(m.fecha, false) %>
+                <% if (m.responsable) { %> · <%= m.responsable %><% } %>
+                <% if (m.condicion_resultado) { %>
+                  · Condición resultante:
+                  <span style="color:<%= CONDICIONES[m.condicion_resultado].color %>;font-weight:600">
+                    <%= CONDICIONES[m.condicion_resultado].label %>
+                  </span>
+                <% } %>
+                <% if (m.costo) { %> · $<%= parseFloat(m.costo).toLocaleString('es-MX') %><% } %>
+              </div>
+              <div style="font-size:13px"><%= m.descripcion %></div>
+              <% if (m.proximo_mantenimiento) { %>
+                <div style="font-size:11px;color:var(--gris);margin-top:4px">Próximo: <%= fmtFecha(m.proximo_mantenimiento, false) %></div>
+              <% } %>
+            </div>
+          <% }) %>
+        </div>
+
+        <!-- Historial de movimientos -->
+        <div class="card">
+          <div class="card-header"><h3>Movimientos (<%= movimientos.length %>)</h3></div>
+          <% if (movimientos.length === 0) { %>
+            <p class="text-gris text-sm">Sin movimientos registrados.</p>
+          <% } %>
+          <% movimientos.forEach(m => { %>
+            <div class="mov-item <%= m.tipo === 'baja' ? 'baja' : ['salida','traslado_externo'].includes(m.tipo) ? 'en_traslado' : '' %>">
+              <div class="historial-meta" style="display:flex;justify-content:space-between;align-items:center">
+                <span><strong><%= TIPOS_MOV[m.tipo] %></strong> · <%= fmtFecha(m.fecha, false) %></span>
+                <a href="/inventario/<%= bien.id %>/movimiento/<%= m.id %>/salida" target="_blank"
+                   class="btn btn-sm btn-secondary" style="font-size:10px;padding:2px 8px">🖨 Comprobante</a>
+              </div>
+              <% if (m.destino) { %><div style="font-size:13px"><strong>Destino:</strong> <%= m.destino %></div><% } %>
+              <% if (m.responsable_nombre) { %>
+                <div style="font-size:13px"><strong>Responsable:</strong> <%= m.responsable_nombre %><% if(m.responsable_cargo){ %> · <%= m.responsable_cargo %><% } %></div>
+              <% } %>
+              <% if (m.motivo) { %><div style="font-size:12px;color:var(--gris);margin-top:2px"><%= m.motivo %></div><% } %>
+            </div>
+          <% }) %>
+        </div>
+
+      </div>
+
+      <!-- Panel lateral -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <!-- Registrar mantenimiento -->
+        <div class="card">
+          <div class="card-header"><h3>Registrar mantenimiento</h3></div>
+          <form method="POST" action="/inventario/<%= bien.id %>/mantenimiento">
+            <div class="form-group" style="margin-bottom:10px">
+              <label>Fecha *</label>
+              <input type="date" name="fecha" required value="<%= new Date().toISOString().split('T')[0] %>">
+            </div>
+            <div class="form-group" style="margin-bottom:10px">
+              <label>Tipo *</label>
+              <select name="tipo" required>
+                <option value="preventivo">Preventivo</option>
+                <option value="correctivo">Correctivo</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:10px">
+              <label>Descripción *</label>
+              <textarea name="descripcion" rows="3" required placeholder="Qué se hizo en el mantenimiento..."></textarea>
+            </div>
+            <div class="form-group" style="margin-bottom:10px">
+              <label>Responsable</label>
+              <input type="text" name="responsable" placeholder="Nombre del técnico o empresa">
+            </div>
+            <div class="form-group" style="margin-bottom:10px">
+              <label>Condición resultante</label>
+              <select name="condicion_resultado">
+                <option value="">— Sin cambio —</option>
+                <% Object.entries(CONDICIONES).forEach(([v,c]) => { %>
+                  <option value="<%= v %>"><%= c.label %></option>
+                <% }) %>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:10px">
+              <label>Costo ($)</label>
+              <input type="number" name="costo" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <div class="form-group" style="margin-bottom:10px">
+              <label>Próximo mantenimiento</label>
+              <input type="date" name="proximo_mantenimiento">
+            </div>
+            <button type="submit" class="btn btn-secondary btn-sm">Guardar mantenimiento</button>
+          </form>
+        </div>
+
+        <!-- Registrar movimiento -->
+        <div class="card">
+          <div class="card-header"><h3>Registrar movimiento</h3></div>
+          <form method="POST" action="/inventario/<%= bien.id %>/movimiento">
+            <div class="form-group" style="margin-bottom:10px">
+              <label>Tipo *</label>
+              <select name="tipo" required>
+                <option value="salida">Salida</option>
+                <option value="traslado_interno">Traslado interno</option>
+                <option value="traslado_externo">Traslado externo</option>
+                <option value="retorno">Retorno</option>
+                <option value="baja">Baja</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:10px">
+              <label>Fecha *</label>
+              <input type="date" name="fecha" required value="<%= new Date().toISOString().split('T')[0] %>">
+            </div>
+            <div class="form-group" style="margin-bottom:10px">
+              <label>Destino / Lugar</label>
+              <input type="text" name="destino" placeholder="Ej. IMSS Tuxtla, Almacén central...">
+            </div>
+            <div class="form-group" style="margin-bottom:10px">
+              <label>Responsable del traslado</label>
+              <input type="text" name="responsable_nombre" placeholder="Nombre completo">
+            </div>
+            <div class="form-group" style="margin-bottom:10px">
+              <label>Cargo</label>
+              <input type="text" name="responsable_cargo" placeholder="Cargo o puesto">
+            </div>
+            <div class="form-group" style="margin-bottom:10px">
+              <label>Motivo</label>
+              <textarea name="motivo" rows="2" placeholder="Motivo del movimiento..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-secondary btn-sm">Registrar movimiento</button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+</body></html>

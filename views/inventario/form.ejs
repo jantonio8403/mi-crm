@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css?v=10">
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1><%= titulo %></h1>
+    <div class="topbar-user"><span><%= usuario.nombre %></span></div>
+  </div>
+  <div class="page-content">
+    <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+    <div class="flex items-center mb-16">
+      <a href="<%= bien ? '/inventario/' + bien.id : '/inventario' %>" class="btn btn-secondary">← Regresar</a>
+    </div>
+
+    <form method="POST" action="<%= accion %>">
+      <!-- Folio -->
+      <div style="background:var(--verde-fondo);border:1px solid var(--borde);border-radius:6px;padding:10px 16px;margin-bottom:20px;max-width:900px">
+        <strong>N° Inventario:</strong>
+        <span style="font-size:16px;font-weight:700;color:var(--verde);margin-left:8px"><%= folio.numero_inventario %></span>
+      </div>
+
+      <!-- Identificación -->
+      <div class="card" style="max-width:900px;margin-bottom:16px">
+        <h4 style="margin-bottom:16px;color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em">Identificación del bien</h4>
+        <div class="form-grid">
+          <div class="form-group form-full">
+            <label>Nombre del bien *</label>
+            <input type="text" name="nombre" required value="<%= bien ? bien.nombre : '' %>" placeholder="Ej. Silla de ruedas, Ultrasonido, Laptop Dell...">
+          </div>
+          <div class="form-group">
+            <label>Categoría *</label>
+            <select name="categoria" required>
+              <% Object.entries(CATEGORIAS).forEach(([v,l]) => { %>
+                <option value="<%= v %>" <%= bien && bien.categoria===v ? 'selected' : '' %>><%= l %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Área de ubicación</label>
+            <select name="area_id">
+              <option value="">— Sin área asignada —</option>
+              <% areas.forEach(a => { %>
+                <option value="<%= a.id %>" <%= bien && bien.area_id==a.id ? 'selected' : '' %>><%= a.nombre %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Marca</label>
+            <input type="text" name="marca" value="<%= bien ? (bien.marca||'') : '' %>" placeholder="Ej. Philips, Dell, Toyota">
+          </div>
+          <div class="form-group">
+            <label>Modelo</label>
+            <input type="text" name="modelo" value="<%= bien ? (bien.modelo||'') : '' %>">
+          </div>
+          <div class="form-group">
+            <label>Número de serie</label>
+            <input type="text" name="numero_serie" value="<%= bien ? (bien.numero_serie||'') : '' %>">
+          </div>
+          <div class="form-group">
+            <label>Número de placas <span class="text-gris text-sm">(vehículos)</span></label>
+            <input type="text" name="numero_placas" value="<%= bien ? (bien.numero_placas||'') : '' %>">
+          </div>
+          <div class="form-group form-full">
+            <label>Descripción</label>
+            <textarea name="descripcion" rows="3" placeholder="Características adicionales del bien..."><%= bien ? (bien.descripcion||'') : '' %></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fechas y estado -->
+      <div class="card" style="max-width:900px;margin-bottom:16px">
+        <h4 style="margin-bottom:16px;color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em">Fechas y estado</h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Fecha de fabricación</label>
+            <input type="date" name="fecha_fabricacion" value="<%= bien ? (bien.fecha_fabricacion||'') : '' %>">
+          </div>
+          <div class="form-group">
+            <label>Fecha de instalación en el hospital</label>
+            <input type="date" name="fecha_instalacion" value="<%= bien ? (bien.fecha_instalacion||'') : '' %>">
+          </div>
+          <div class="form-group">
+            <label>Estado *</label>
+            <select name="estado" required>
+              <% Object.entries(ESTADOS).forEach(([v,l]) => { %>
+                <option value="<%= v %>" <%= bien && bien.estado===v ? 'selected' : (!bien && v==='activo' ? 'selected' : '') %>><%= l %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Condición *</label>
+            <select name="condicion" required>
+              <% Object.entries(CONDICIONES).forEach(([v,c]) => { %>
+                <option value="<%= v %>" <%= bien && bien.condicion===v ? 'selected' : (!bien && v==='bueno' ? 'selected' : '') %>><%= c.label %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Datos de adquisición -->
+      <div class="card" style="max-width:900px;margin-bottom:16px">
+        <h4 style="margin-bottom:16px;color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em">Adquisición</h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Proveedor</label>
+            <input type="text" name="proveedor" value="<%= bien ? (bien.proveedor||'') : '' %>">
+          </div>
+          <div class="form-group">
+            <label>Valor de adquisición ($)</label>
+            <input type="number" name="valor_adquisicion" step="0.01" min="0"
+                   value="<%= bien ? (bien.valor_adquisicion||'') : '' %>" placeholder="0.00">
+          </div>
+          <div class="form-group form-full">
+            <label>Observaciones generales</label>
+            <textarea name="observaciones" rows="2"><%= bien ? (bien.observaciones||'') : '' %></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Insumos requeridos -->
+      <div class="card" style="max-width:900px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <h4 style="color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin:0">Insumos requeridos</h4>
+          <button type="button" id="btn-add-insumo" class="btn btn-secondary btn-sm">+ Agregar insumo</button>
+        </div>
+        <div id="insumos-lista">
+          <% const insumosIniciales = (typeof insumos !== 'undefined' && insumos) ? insumos : []; %>
+          <% if (insumosIniciales.length === 0) { %>
+            <p class="text-gris text-sm" id="sin-insumos">Este bien no requiere insumos específicos.</p>
+          <% } %>
+          <% insumosIniciales.forEach((ins, i) => { %>
+          <div class="insumo-row" style="display:grid;grid-template-columns:2fr 1fr 80px 2fr 1fr auto;gap:8px;margin-bottom:8px;align-items:start">
+            <input type="text" name="insumo_nombre[]" value="<%= ins.nombre %>" placeholder="Nombre del insumo" required>
+            <input type="text" name="insumo_unidad[]" value="<%= ins.unidad||'' %>" placeholder="Unidad (pieza, rollo...)">
+            <input type="number" name="insumo_cantidad[]" value="<%= ins.cantidad_minima||1 %>" min="1" placeholder="Min.">
+            <input type="text" name="insumo_proveedor[]" value="<%= ins.proveedor_sugerido||'' %>" placeholder="Proveedor sugerido">
+            <input type="text" name="insumo_obs[]" value="<%= ins.observaciones||'' %>" placeholder="Observaciones">
+            <button type="button" class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:none" onclick="this.closest('.insumo-row').remove();checkVacio()">✕</button>
+          </div>
+          <% }) %>
+        </div>
+      </div>
+
+      <div class="flex gap-8 mt-16" style="max-width:900px">
+        <button type="submit" class="btn btn-primary"><%= bien ? 'Guardar cambios' : 'Registrar bien' %></button>
+        <a href="<%= bien ? '/inventario/' + bien.id : '/inventario' %>" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+function checkVacio() {
+  var rows = document.querySelectorAll('.insumo-row');
+  var msg = document.getElementById('sin-insumos');
+  if (msg) msg.style.display = rows.length ? 'none' : 'block';
+}
+document.getElementById('btn-add-insumo').addEventListener('click', function () {
+  var msg = document.getElementById('sin-insumos');
+  if (msg) msg.style.display = 'none';
+  var row = document.createElement('div');
+  row.className = 'insumo-row';
+  row.style.cssText = 'display:grid;grid-template-columns:2fr 1fr 80px 2fr 1fr auto;gap:8px;margin-bottom:8px;align-items:start';
+  row.innerHTML = '<input type="text" name="insumo_nombre[]" placeholder="Nombre del insumo" required>' +
+    '<input type="text" name="insumo_unidad[]" placeholder="Unidad (pieza, rollo...)">' +
+    '<input type="number" name="insumo_cantidad[]" value="1" min="1" placeholder="Min.">' +
+    '<input type="text" name="insumo_proveedor[]" placeholder="Proveedor sugerido">' +
+    '<input type="text" name="insumo_obs[]" placeholder="Observaciones">' +
+    '<button type="button" class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:none" onclick="this.closest(\'.insumo-row\').remove();checkVacio()">✕</button>';
+  document.getElementById('insumos-lista').appendChild(row);
+  row.querySelector('input').focus();
+});
+</script>
+</body></html>

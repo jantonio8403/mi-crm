@@ -29,6 +29,11 @@
       <% } %>
     </a>
   </div>
+  <div class="sidebar-section">
+    <p class="sidebar-label">Inventario</p>
+    <a href="/inventario/nuevo"><span class="icon">➕</span> Registrar Bien</a>
+    <a href="/inventario"><span class="icon">📦</span> Ver Inventario</a>
+  </div>
   <% if (usuario && usuario.rol === 'admin') { %>
   <div class="sidebar-section">
     <p class="sidebar-label">Administración</p>
