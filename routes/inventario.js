@@ -1,9 +1,32 @@
 const express = require('express');
 const router = express.Router();
+const path  = require('path');
+const fs    = require('fs');
 const { query } = require('../database/db');
 const { requireAuth, requireAdmin } = require('../controllers/authMiddleware');
 const multer = require('multer');
+
+// Multer memoria — solo para importación CSV
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+
+// Multer disco — para fotos de bienes
+const multerFotos = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      const dir = path.join(__dirname, '../uploads/inventario');
+      fs.mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+      const ext = (path.extname(file.originalname) || '.jpg').toLowerCase();
+      cb(null, `bien_${Date.now()}_${Math.random().toString(36).slice(2, 7)}${ext}`);
+    },
+  }),
+  fileFilter: (req, file, cb) => {
+    cb(null, file.mimetype.startsWith('image/'));
+  },
+  limits: { fileSize: 8 * 1024 * 1024, files: 10 },
+});
 
 const CAT_MAP = {
   'mobiliario': 'mobiliario',
@@ -159,7 +182,7 @@ router.get('/nuevo', requireAuth, requireAdmin, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-router.post('/', requireAuth, requireAdmin, async (req, res, next) => {
+router.post('/', requireAuth, requireAdmin, multerFotos.array('fotos', 10), async (req, res, next) => {
   try {
     const {
       nombre, descripcion, categoria, marca, modelo, numero_serie, numero_placas,
@@ -195,6 +218,10 @@ router.post('/', requireAuth, requireAdmin, async (req, res, next) => {
          (req.body['insumo_proveedor[]'] || req.body.insumo_proveedor || [])[i] || null,
          (req.body['insumo_obs[]'] || req.body.insumo_obs || [])[i] || null]
       );
+    }
+
+    for (const f of (req.files || [])) {
+      await query('INSERT INTO bien_fotos (bien_id, filename) VALUES (?,?)', [result.insertId, f.filename]);
     }
 
     req.flash('success', `Bien ${numero_inventario} registrado correctamente`);
@@ -361,11 +388,14 @@ router.get('/:id', requireAuth, async (req, res, next) => {
     const insumos = await query(
       'SELECT * FROM bien_insumos WHERE bien_id=? AND activo=1 ORDER BY nombre', [req.params.id]);
 
+    const fotos = await query(
+      'SELECT * FROM bien_fotos WHERE bien_id=? ORDER BY orden, creado_en', [req.params.id]);
+
     const areas = await query('SELECT * FROM areas WHERE activa=1 ORDER BY nombre');
 
     res.render('inventario/detalle', {
       titulo: `Bien ${bien.numero_inventario}`,
-      bien, mantenimientos, movimientos, insumos, areas,
+      bien, mantenimientos, movimientos, insumos, fotos, areas,
       CATEGORIAS, ESTADOS, CONDICIONES, TIPOS_MOV,
       canEditar: ['admin', 'director'].includes(req.session.usuario.rol),
     });
@@ -388,7 +418,7 @@ router.get('/:id/editar', requireAuth, requireAdmin, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-router.post('/:id', requireAuth, requireAdmin, async (req, res, next) => {
+router.post('/:id', requireAuth, requireAdmin, multerFotos.array('fotos', 10), async (req, res, next) => {
   try {
     const {
       nombre, descripcion, categoria, marca, modelo, numero_serie, numero_placas,
@@ -423,6 +453,10 @@ router.post('/:id', requireAuth, requireAdmin, async (req, res, next) => {
          (req.body['insumo_proveedor[]'] || req.body.insumo_proveedor || [])[i] || null,
          (req.body['insumo_obs[]'] || req.body.insumo_obs || [])[i] || null]
       );
+    }
+
+    for (const f of (req.files || [])) {
+      await query('INSERT INTO bien_fotos (bien_id, filename) VALUES (?,?)', [req.params.id, f.filename]);
     }
 
     req.flash('success', 'Bien actualizado correctamente');
@@ -475,6 +509,20 @@ router.post('/:id/movimiento', requireAuth, async (req, res, next) => {
 
     req.flash('success', 'Movimiento registrado');
     res.redirect(`/inventario/${id}`);
+  } catch (err) { next(err); }
+});
+
+// ── Eliminar foto ─────────────────────────────────────────────────
+router.post('/:id/foto/:fotoId/eliminar', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const [foto] = await query(
+      'SELECT * FROM bien_fotos WHERE id=? AND bien_id=?', [req.params.fotoId, req.params.id]);
+    if (foto) {
+      const filePath = path.join(__dirname, '../uploads/inventario', foto.filename);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      await query('DELETE FROM bien_fotos WHERE id=?', [foto.id]);
+    }
+    res.redirect(`/inventario/${req.params.id}`);
   } catch (err) { next(err); }
 });
 

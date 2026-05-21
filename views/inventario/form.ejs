@@ -19,7 +19,7 @@
       <a href="<%= bien ? '/inventario/' + bien.id : '/inventario' %>" class="btn btn-secondary">← Regresar</a>
     </div>
 
-    <form method="POST" action="<%= accion %>">
+    <form method="POST" action="<%= accion %>" enctype="multipart/form-data">
       <!-- Folio -->
       <div style="background:var(--verde-fondo);border:1px solid var(--borde);border-radius:6px;padding:10px 16px;margin-bottom:20px;max-width:900px">
         <strong>N° Inventario:</strong>
@@ -153,6 +153,17 @@
         </div>
       </div>
 
+      <!-- Fotografías -->
+      <div class="card" style="max-width:900px;margin-bottom:16px">
+        <h4 style="margin-bottom:12px;color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em">Fotografías del bien</h4>
+        <% const fotosForm = (typeof insumos !== 'undefined' && typeof bien !== 'undefined' && bien) ? [] : []; %>
+        <div class="form-group">
+          <label>Seleccionar fotos <span class="text-gris text-sm">(mínimo 2 recomendadas · máx. 8 MB c/u)</span></label>
+          <input type="file" name="fotos" accept="image/*" multiple id="inp-fotos">
+        </div>
+        <div id="fotos-preview" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px"></div>
+      </div>
+
       <div class="flex gap-8 mt-16" style="max-width:900px">
         <button type="submit" class="btn btn-primary"><%= bien ? 'Guardar cambios' : 'Registrar bien' %></button>
         <a href="<%= bien ? '/inventario/' + bien.id : '/inventario' %>" class="btn btn-secondary">Cancelar</a>
@@ -162,6 +173,22 @@
 </div>
 <script src="/js/app.js"></script>
 <script>
+// Preview de fotos seleccionadas
+document.getElementById('inp-fotos').addEventListener('change', function () {
+  var preview = document.getElementById('fotos-preview');
+  preview.innerHTML = '';
+  Array.from(this.files).forEach(function (f) {
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var img = document.createElement('img');
+      img.src = e.target.result;
+      img.style.cssText = 'width:100px;height:100px;object-fit:cover;border-radius:6px;border:1px solid var(--borde)';
+      preview.appendChild(img);
+    };
+    reader.readAsDataURL(f);
+  });
+});
+
 function checkVacio() {
   var rows = document.querySelectorAll('.insumo-row');
   var msg = document.getElementById('sin-insumos');

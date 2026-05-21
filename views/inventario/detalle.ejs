@@ -36,6 +36,31 @@
       <!-- Columna principal -->
       <div style="display:flex;flex-direction:column;gap:16px">
 
+        <!-- Fotografías -->
+        <% if (fotos.length > 0) { %>
+        <div class="card">
+          <div class="card-header"><h3>Fotografías (<%= fotos.length %>)</h3></div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            <% fotos.forEach(f => { %>
+              <div style="position:relative">
+                <a href="/uploads/inventario/<%= f.filename %>" target="_blank">
+                  <img src="/uploads/inventario/<%= f.filename %>"
+                       style="width:120px;height:120px;object-fit:cover;border-radius:8px;border:1px solid var(--borde);display:block">
+                </a>
+                <% if (canEditar) { %>
+                <form method="POST" action="/inventario/<%= bien.id %>/foto/<%= f.id %>/eliminar"
+                      onsubmit="return confirm('¿Eliminar esta fotografía?')"
+                      style="position:absolute;top:4px;right:4px">
+                  <button type="submit"
+                          style="background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:11px;cursor:pointer;line-height:1">✕</button>
+                </form>
+                <% } %>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+        <% } %>
+
         <!-- Datos generales -->
         <div class="card">
           <div class="card-header">
@@ -153,6 +178,35 @@
 
       <!-- Panel lateral -->
       <div style="display:flex;flex-direction:column;gap:16px">
+
+        <!-- Agregar fotografías -->
+        <% if (canEditar) { %>
+        <div class="card">
+          <div class="card-header"><h3>Agregar fotografías</h3></div>
+          <form method="POST" action="/inventario/<%= bien.id %>" enctype="multipart/form-data">
+            <input type="hidden" name="_fotosOnly" value="1">
+            <input type="hidden" name="nombre" value="<%= bien.nombre %>">
+            <input type="hidden" name="categoria" value="<%= bien.categoria %>">
+            <input type="hidden" name="area_id" value="<%= bien.area_id || '' %>">
+            <input type="hidden" name="resguardante" value="<%= bien.resguardante || '' %>">
+            <input type="hidden" name="marca" value="<%= bien.marca || '' %>">
+            <input type="hidden" name="modelo" value="<%= bien.modelo || '' %>">
+            <input type="hidden" name="numero_serie" value="<%= bien.numero_serie || '' %>">
+            <input type="hidden" name="numero_placas" value="<%= bien.numero_placas || '' %>">
+            <input type="hidden" name="estado" value="<%= bien.estado %>">
+            <input type="hidden" name="condicion" value="<%= bien.condicion %>">
+            <input type="hidden" name="proveedor" value="<%= bien.proveedor || '' %>">
+            <input type="hidden" name="valor_adquisicion" value="<%= bien.valor_adquisicion || '' %>">
+            <input type="hidden" name="fecha_fabricacion" value="<%= bien.fecha_fabricacion || '' %>">
+            <input type="hidden" name="fecha_instalacion" value="<%= bien.fecha_instalacion || '' %>">
+            <div class="form-group" style="margin-bottom:10px">
+              <label>Seleccionar fotos</label>
+              <input type="file" name="fotos" accept="image/*" multiple required>
+            </div>
+            <button type="submit" class="btn btn-secondary btn-sm">Guardar fotos</button>
+          </form>
+        </div>
+        <% } %>
 
         <!-- Registrar mantenimiento -->
         <div class="card">
