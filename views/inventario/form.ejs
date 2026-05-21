@@ -52,6 +52,10 @@
             </select>
           </div>
           <div class="form-group">
+            <label>Resguardante</label>
+            <input type="text" name="resguardante" value="<%= bien ? (bien.resguardante||'') : '' %>" placeholder="Nombre del responsable del bien">
+          </div>
+          <div class="form-group">
             <label>Marca</label>
             <input type="text" name="marca" value="<%= bien ? (bien.marca||'') : '' %>" placeholder="Ej. Philips, Dell, Toyota">
           </div>

@@ -102,7 +102,7 @@ router.post('/', requireAuth, requireAdmin, async (req, res, next) => {
   try {
     const {
       nombre, descripcion, categoria, marca, modelo, numero_serie, numero_placas,
-      area_id, fecha_fabricacion, fecha_instalacion, estado, condicion,
+      area_id, resguardante, fecha_fabricacion, fecha_instalacion, estado, condicion,
       valor_adquisicion, proveedor, observaciones,
     } = req.body;
 
@@ -110,13 +110,13 @@ router.post('/', requireAuth, requireAdmin, async (req, res, next) => {
 
     const result = await query(
       `INSERT INTO bienes (numero_inventario, consecutivo, anio, nombre, descripcion,
-       categoria, marca, modelo, numero_serie, numero_placas, area_id,
+       categoria, marca, modelo, numero_serie, numero_placas, area_id, resguardante,
        fecha_fabricacion, fecha_instalacion, estado, condicion,
        valor_adquisicion, proveedor, observaciones)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [numero_inventario, consecutivo, anio, nombre, descripcion || null,
        categoria, marca || null, modelo || null, numero_serie || null, numero_placas || null,
-       area_id || null, fecha_fabricacion || null, fecha_instalacion || null,
+       area_id || null, resguardante || null, fecha_fabricacion || null, fecha_instalacion || null,
        estado, condicion, valor_adquisicion || null, proveedor || null, observaciones || null]
     );
 
@@ -231,18 +231,18 @@ router.post('/:id', requireAuth, requireAdmin, async (req, res, next) => {
   try {
     const {
       nombre, descripcion, categoria, marca, modelo, numero_serie, numero_placas,
-      area_id, fecha_fabricacion, fecha_instalacion, estado, condicion,
+      area_id, resguardante, fecha_fabricacion, fecha_instalacion, estado, condicion,
       valor_adquisicion, proveedor, observaciones,
     } = req.body;
 
     await query(
       `UPDATE bienes SET nombre=?, descripcion=?, categoria=?, marca=?, modelo=?,
-       numero_serie=?, numero_placas=?, area_id=?, fecha_fabricacion=?,
+       numero_serie=?, numero_placas=?, area_id=?, resguardante=?, fecha_fabricacion=?,
        fecha_instalacion=?, estado=?, condicion=?, valor_adquisicion=?,
        proveedor=?, observaciones=? WHERE id=?`,
       [nombre, descripcion || null, categoria, marca || null, modelo || null,
        numero_serie || null, numero_placas || null, area_id || null,
-       fecha_fabricacion || null, fecha_instalacion || null,
+       resguardante || null, fecha_fabricacion || null, fecha_instalacion || null,
        estado, condicion, valor_adquisicion || null,
        proveedor || null, observaciones || null, req.params.id]
     );

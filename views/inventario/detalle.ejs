@@ -48,6 +48,7 @@
             <div class="detalle-item"><label>N° Inventario</label><p><strong><%= bien.numero_inventario %></strong></p></div>
             <div class="detalle-item"><label>Categoría</label><p><%= CATEGORIAS[bien.categoria] %></p></div>
             <div class="detalle-item"><label>Área</label><p><%= bien.area_nombre || '—' %></p></div>
+            <div class="detalle-item"><label>Resguardante</label><p><%= bien.resguardante || '—' %></p></div>
             <div class="detalle-item"><label>Estado</label>
               <p><span class="badge badge-<%= bien.estado==='activo'?'enviado':bien.estado==='en_mantenimiento'?'en_proceso':bien.estado==='en_traslado'?'recibido':'archivado' %>">
                 <%= ESTADOS[bien.estado] %>

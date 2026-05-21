@@ -52,7 +52,7 @@
   <thead>
     <tr>
       <th>N° Inventario</th><th>Nombre</th><th>Categoría</th>
-      <th>Marca / Modelo</th><th>N° Serie</th><th>Área</th>
+      <th>Marca / Modelo</th><th>N° Serie</th><th>Área</th><th>Resguardante</th>
       <th>Estado</th><th>Condición</th><th>Último mant.</th>
     </tr>
   </thead>
@@ -68,6 +68,7 @@
       <td style="font-size:10px"><%= [b.marca, b.modelo].filter(Boolean).join(' / ') || '—' %></td>
       <td style="font-size:10px"><%= b.numero_serie || '—' %></td>
       <td style="font-size:10px"><%= b.area_nombre || '—' %></td>
+      <td style="font-size:10px"><%= b.resguardante || '—' %></td>
       <td><span class="badge" style="background:#e5e7eb;color:#374151"><%= ESTADOS[b.estado] %></span></td>
       <td><span class="badge" style="background:<%= CONDICIONES[b.condicion].color %>22;color:<%= CONDICIONES[b.condicion].color %>"><%= CONDICIONES[b.condicion].label %></span></td>
       <td style="font-size:10px;white-space:nowrap"><%= b.fecha_ultimo_mant ? fmtFecha(b.fecha_ultimo_mant, false) : '—' %></td>
