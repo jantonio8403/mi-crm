@@ -128,19 +128,12 @@ window._AREAS = <%- JSON.stringify(areas.map(function(a){return{id:a.id,nombre:a
       'jabón','desinfectante','reactivo','reactivos','equipo medico','material de curacion',
       'lanceta','cateter','solucion','soluciones','ampolleta'
     ],
-    servicios_generales: [
-      'limpieza','basura','baño','jardin','cafeteria','cocina','uniforme','sanitario',
-      'aseo','desinfeccion','plaga','fumigacion','residuo','comedor','lavanderia',
-      'ropa','sabana','almohada','colchon','suciedad','sucio','mancha','olor',
-      'intendencia','desperdicios','contenedor','residuos peligrosos','rppbi'
-    ]
   };
 
   var AREA_MATCH = {
     informatica:         ['informatic','sistem','computo','tecnolog'],
     mantenimiento:       ['mantenimiento'],
     recursos_materiales: ['recurso','material','almacen','abastec'],
-    servicios_generales: ['servicio','general','intendencia','limpieza']
   };
 
   var selCategoria = document.getElementById('sel-categoria');
