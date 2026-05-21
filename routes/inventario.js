@@ -425,6 +425,39 @@ router.get('/:id', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ── Actualización rápida (móvil) ──────────────────────────────────
+router.get('/:id/actualizar', requireAuth, async (req, res, next) => {
+  try {
+    const [bien] = await query(`
+      SELECT b.*, a.nombre as area_nombre FROM bienes b
+      LEFT JOIN areas a ON b.area_id=a.id WHERE b.id=?`, [req.params.id]);
+    if (!bien) { req.flash('error', 'Bien no encontrado'); return res.redirect('/inventario'); }
+    const fotos = await query(
+      'SELECT * FROM bien_fotos WHERE bien_id=? ORDER BY orden, creado_en', [req.params.id]);
+    res.render('inventario/actualizar', {
+      titulo: `Actualizar ${bien.numero_inventario}`,
+      bien, fotos, CONDICIONES, ESTADOS,
+    });
+  } catch (err) { next(err); }
+});
+
+router.post('/:id/actualizar', requireAuth, multerFotos.array('fotos', 10), async (req, res, next) => {
+  try {
+    const { condicion, resguardante, estado, observaciones } = req.body;
+    const id = req.params.id;
+    await query(
+      `UPDATE bienes SET condicion=?, resguardante=?, estado=?,
+       observaciones=?, actualizado_en=NOW() WHERE id=?`,
+      [condicion, resguardante || null, estado, observaciones || null, id]
+    );
+    for (const f of (req.files || [])) {
+      await query('INSERT INTO bien_fotos (bien_id, filename) VALUES (?,?)', [id, f.filename]);
+    }
+    req.flash('success', 'Registro actualizado correctamente');
+    res.redirect(`/inventario/${id}/actualizar`);
+  } catch (err) { next(err); }
+});
+
 // ── Etiqueta QR — individual ──────────────────────────────────────
 router.get('/:id/etiqueta', requireAuth, async (req, res, next) => {
   try {

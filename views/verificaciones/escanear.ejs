@@ -156,13 +156,13 @@
     .then(function (r) { return r.json(); })
     .then(function (data) {
       if (!data.ok) {
-        mostrarResultado('err', '✕ ' + (data.msg || 'Error'), '');
+        mostrarResultado('err', '✕ ' + (data.msg || 'Error'), '', null);
         setTimeout(function () { cooldown = false; }, 2000);
         return;
       }
       if (data.duplicado) {
-        mostrarResultado('dup', '↩ Ya escaneado', data.bien.nombre + ' · ' + data.bien.numero_inventario);
-        setTimeout(function () { cooldown = false; }, 1500);
+        mostrarResultado('dup', '↩ Ya escaneado', data.bien.nombre + ' · ' + data.bien.numero_inventario, bienId);
+        setTimeout(function () { cooldown = false; }, 2500);
         return;
       }
       escaneados = data.escaneados;
@@ -170,20 +170,24 @@
       barraEl.style.width = (TOTAL > 0 ? Math.round(escaneados / TOTAL * 100) : 0) + '%';
       mostrarResultado('ok',
         '✓ ' + data.bien.nombre,
-        data.bien.numero_inventario + ' · ' + data.bien.area_nombre);
+        data.bien.numero_inventario + ' · ' + data.bien.area_nombre, bienId);
       setTimeout(function () { cooldown = false; }, 1800);
     })
     .catch(function () {
-      mostrarResultado('err', '✕ Error de conexión', '');
+      mostrarResultado('err', '✕ Error de conexión', '', null);
       setTimeout(function () { cooldown = false; }, 2000);
     });
   }
 
-  function mostrarResultado(tipo, titulo, meta) {
+  function mostrarResultado(tipo, titulo, meta, bienId) {
+    var editLink = (tipo === 'ok' || tipo === 'dup') && bienId
+      ? '<a href="/inventario/' + bienId + '/actualizar" style="display:inline-block;margin-top:8px;padding:5px 12px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:6px;font-size:11px;color:#fff;text-decoration:none">✏ Actualizar datos</a>'
+      : '';
     resZona.innerHTML =
       '<div class="resultado-item ' + tipo + '">' +
         '<div class="resultado-nombre">' + escapeHtml(titulo) + '</div>' +
         (meta ? '<div class="resultado-meta">' + escapeHtml(meta) + '</div>' : '') +
+        editLink +
       '</div>';
   }
 
