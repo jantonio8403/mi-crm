@@ -69,13 +69,14 @@
 
           <div class="form-group">
             <label>Área responsable <span id="badge-area" style="display:none;font-size:10px;font-weight:600;color:var(--verde);margin-left:4px">✦ sugerido</span></label>
-            <select name="area_asignada_id" id="sel-area-asig" <%= canElegirAreas ? '' : 'disabled' %>>
+            <select id="sel-area-asig" <%= canElegirAreas ? 'name="area_asignada_id"' : '' %>>
               <option value="">— Sin asignar —</option>
               <% areas.forEach(a => { %>
                 <option value="<%= a.id %>"><%= a.nombre %></option>
               <% }) %>
             </select>
             <% if (!canElegirAreas) { %>
+              <input type="hidden" id="hdn-area-asig" name="area_asignada_id" value="">
               <span style="font-size:11px;color:var(--gris)">El área responsable será asignada por dirección o administración.</span>
             <% } %>
           </div>
@@ -131,18 +132,23 @@ window._AREAS = <%- JSON.stringify(areas.map(function(a){return{id:a.id,nombre:a
   };
 
   var AREA_MATCH = {
-    informatica:         ['informatic','sistem','computo','tecnolog'],
-    mantenimiento:       ['mantenimiento'],
-    recursos_materiales: ['recurso','material','almacen','abastec'],
+    informatica:         ['informatica','sistemas','computo','tecnolog'],
+    mantenimiento:       ['mantenimiento','servicio general','servicios generales'],
+    recursos_materiales: ['administracion','farmacia','recurso','material'],
   };
 
   var selCategoria = document.getElementById('sel-categoria');
   var selArea      = document.getElementById('sel-area-asig');
+  var hdnArea      = document.getElementById('hdn-area-asig');
   var inpTitulo    = document.querySelector('input[name="titulo"]');
   var inpDesc      = document.querySelector('textarea[name="descripcion"]');
   var badgeCat     = document.getElementById('badge-categoria');
   var badgeArea    = document.getElementById('badge-area');
   if (!selCategoria || !inpTitulo) return;
+
+  if (selArea && hdnArea) {
+    selArea.addEventListener('change', function(){ hdnArea.value = selArea.value; });
+  }
 
   var areas = window._AREAS || [];
 
@@ -190,6 +196,7 @@ window._AREAS = <%- JSON.stringify(areas.map(function(a){return{id:a.id,nombre:a
       });
       if (match && selArea.value != match.id) {
         selArea.value = match.id;
+        if (hdnArea) hdnArea.value = match.id;
         if (badgeArea) badgeArea.style.display = 'inline';
       }
     }
