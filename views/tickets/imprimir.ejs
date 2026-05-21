@@ -77,11 +77,12 @@
       <th>Estatus</th>
       <th>Creado</th>
       <th>Fecha cierre</th>
+      <th>Comentario de resolución</th>
     </tr>
   </thead>
   <tbody>
   <% if (tickets.length === 0) { %>
-    <tr><td colspan="7" style="text-align:center;padding:20px;color:#888">Sin resultados para los filtros seleccionados</td></tr>
+    <tr><td colspan="8" style="text-align:center;padding:20px;color:#888">Sin resultados para los filtros seleccionados</td></tr>
   <% } %>
   <% tickets.forEach(t => { %>
     <tr>
@@ -96,6 +97,7 @@
       </td>
       <td style="white-space:nowrap"><%= fmtFecha(t.creado_en) %></td>
       <td style="white-space:nowrap"><%= fmtFecha(t.cerrado_en, false) %></td>
+      <td style="font-size:10px;color:#444"><%= t.comentario_resolucion || '—' %></td>
     </tr>
   <% }) %>
   </tbody>

@@ -64,7 +64,10 @@ router.get('/imprimir', requireAuth, async (req, res, next) => {
     const tickets = await query(`
       SELECT t.*,
              as1.nombre as area_sol_nombre, as2.nombre as area_asig_nombre,
-             u.nombre as solicitante_nombre
+             u.nombre as solicitante_nombre,
+             (SELECT tc.comentario FROM ticket_comentarios tc
+              WHERE tc.ticket_id = t.id AND tc.tipo = 'comentario'
+              ORDER BY tc.creado_en DESC LIMIT 1) as comentario_resolucion
       FROM tickets t
       LEFT JOIN areas as1 ON t.area_solicitante_id = as1.id
       LEFT JOIN areas as2 ON t.area_asignada_id = as2.id
