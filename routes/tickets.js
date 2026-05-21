@@ -226,7 +226,11 @@ router.get('/:id', requireAuth, async (req, res, next) => {
       SELECT t.*,
              as1.nombre as area_sol_nombre, as2.nombre as area_asig_nombre,
              us.nombre as solicitante_nombre,
-             ua.nombre as asignado_nombre
+             ua.nombre as asignado_nombre,
+             (SELECT u2.nombre FROM usuarios u2
+              WHERE u2.area_id = t.area_asignada_id AND u2.activo = 1
+              ORDER BY FIELD(u2.rol,'jefe_area','admin','director','secretaria') LIMIT 1
+             ) as responsable_area_nombre
       FROM tickets t
       LEFT JOIN areas as1 ON t.area_solicitante_id = as1.id
       LEFT JOIN areas as2 ON t.area_asignada_id = as2.id
