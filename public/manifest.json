@@ -1,0 +1,46 @@
+{
+  "name": "AGORA — HBC Berriozábal",
+  "short_name": "AGORA",
+  "description": "Sistema de Gestión Administrativa · Hospital Básico Comunitario 12 Camas",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0b3320",
+  "theme_color": "#1a7a4a",
+  "lang": "es-MX",
+  "icons": [
+    {
+      "src": "/img/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ver Inventario",
+      "short_name": "Inventario",
+      "url": "/inventario",
+      "icons": [{ "src": "/img/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Ver Tickets",
+      "short_name": "Tickets",
+      "url": "/tickets",
+      "icons": [{ "src": "/img/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Verificaciones QR",
+      "short_name": "Verificar",
+      "url": "/verificaciones",
+      "icons": [{ "src": "/img/icon-192.svg", "sizes": "192x192" }]
+    }
+  ]
+}

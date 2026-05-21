@@ -15,6 +15,36 @@
   });
 }());
 
+// ── PWA: manifest + service worker ─────────────────────────────────
+(function () {
+  // Inyectar etiquetas PWA en <head>
+  var head = document.head;
+
+  function addMeta(name, content) {
+    var m = document.createElement('meta');
+    m.name = name; m.content = content;
+    head.appendChild(m);
+  }
+  function addLink(rel, href, extra) {
+    var l = document.createElement('link');
+    l.rel = rel; l.href = href;
+    if (extra) Object.assign(l, extra);
+    head.appendChild(l);
+  }
+
+  addLink('manifest', '/manifest.json');
+  addMeta('theme-color', '#1a7a4a');
+  addMeta('apple-mobile-web-app-capable', 'yes');
+  addMeta('apple-mobile-web-app-title', 'AGORA');
+  addMeta('apple-mobile-web-app-status-bar-style', 'black-translucent');
+  addLink('apple-touch-icon', '/img/icon-192.svg');
+
+  // Registrar service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(function () {});
+  }
+}());
+
 // ── Sidebar hamburger ───────────────────────────────────────────────
 (function () {
   const overlay = document.createElement('div');
