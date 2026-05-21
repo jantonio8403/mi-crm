@@ -76,11 +76,12 @@
       <th>Área responsable</th>
       <th>Estatus</th>
       <th>Creado</th>
+      <th>Fecha cierre</th>
     </tr>
   </thead>
   <tbody>
   <% if (tickets.length === 0) { %>
-    <tr><td colspan="6" style="text-align:center;padding:20px;color:#888">Sin resultados para los filtros seleccionados</td></tr>
+    <tr><td colspan="7" style="text-align:center;padding:20px;color:#888">Sin resultados para los filtros seleccionados</td></tr>
   <% } %>
   <% tickets.forEach(t => { %>
     <tr>
@@ -94,6 +95,7 @@
         </span>
       </td>
       <td style="white-space:nowrap"><%= t.creado_en %></td>
+      <td style="white-space:nowrap"><%= t.cerrado_en ? new Date(t.cerrado_en).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) : '—' %></td>
     </tr>
   <% }) %>
   </tbody>
