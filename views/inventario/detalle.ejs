@@ -210,6 +210,13 @@
         </div>
         <% } %>
 
+        <% if (!canEditar) { %>
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;border-radius:6px;padding:12px 14px;font-size:13px;line-height:1.6">
+          Para solicitar modificaciones a este bien, crea un <a href="/tickets/nuevo" style="color:#1e40af;font-weight:600;text-decoration:underline">ticket</a> dirigido al Jefe de Servicios Generales.
+        </div>
+        <% } %>
+
+        <% if (canEditar) { %>
         <!-- Registrar mantenimiento -->
         <div class="card">
           <div class="card-header"><h3>Registrar mantenimiento</h3></div>
@@ -291,6 +298,7 @@
             <button type="submit" class="btn btn-secondary btn-sm">Registrar movimiento</button>
           </form>
         </div>
+        <% } %>
 
       </div>
     </div>

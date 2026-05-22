@@ -130,9 +130,12 @@ router.get('/', requireAuth, async (req, res, next) => {
     const { categoria, estado, condicion, area, buscar, page = 1 } = req.query;
     const limit = 20;
     const offset = (parseInt(page) - 1) * limit;
+    const u = req.session.usuario;
+    const esJefeArea = u.rol === 'jefe_area';
 
     let where = 'b.activo=1';
     const params = [];
+    if (esJefeArea) { where += ' AND LOWER(b.resguardante) = LOWER(?)'; params.push(u.nombre); }
     if (categoria) { where += ' AND b.categoria=?';  params.push(categoria); }
     if (estado)    { where += ' AND b.estado=?';     params.push(estado); }
     if (condicion) { where += ' AND b.condicion=?';  params.push(condicion); }
@@ -152,17 +155,24 @@ router.get('/', requireAuth, async (req, res, next) => {
       LIMIT ? OFFSET ?
     `, [...params, limit, offset]);
 
-    const statsRows = await query(
-      `SELECT estado, COUNT(*) as c FROM bienes WHERE activo=1 GROUP BY estado`
-    );
-    const stats = { activo: 0, en_mantenimiento: 0, en_traslado: 0, dado_de_baja: 0 };
-    statsRows.forEach(r => { stats[r.estado] = r.c; });
+    let stats = { activo: 0, en_mantenimiento: 0, en_traslado: 0, dado_de_baja: 0 };
+    if (esJefeArea) {
+      const statsRows = await query(
+        `SELECT estado, COUNT(*) as c FROM bienes WHERE activo=1 AND LOWER(resguardante)=LOWER(?) GROUP BY estado`,
+        [u.nombre]
+      );
+      statsRows.forEach(r => { stats[r.estado] = r.c; });
+    } else {
+      const statsRows = await query(`SELECT estado, COUNT(*) as c FROM bienes WHERE activo=1 GROUP BY estado`);
+      statsRows.forEach(r => { stats[r.estado] = r.c; });
+    }
 
     const areas = await query('SELECT * FROM areas WHERE activa=1 ORDER BY nombre');
 
     res.render('inventario/lista', {
       titulo: 'Inventario de Bienes',
       bienes, areas, stats, CATEGORIAS, ESTADOS, CONDICIONES,
+      esJefeArea,
       filtros: { categoria, estado, condicion, area, buscar },
       paginacion: { page: parseInt(page), total: totalRow.c, limit, pages: Math.ceil(totalRow.c / limit) },
     });
@@ -397,6 +407,12 @@ router.get('/:id', requireAuth, async (req, res, next) => {
       FROM bienes b LEFT JOIN areas a ON b.area_id = a.id
       WHERE b.id=?`, [req.params.id]);
     if (!bien) { req.flash('error', 'Bien no encontrado'); return res.redirect('/inventario'); }
+
+    const u = req.session.usuario;
+    if (u.rol === 'jefe_area' && (!bien.resguardante || bien.resguardante.toLowerCase() !== u.nombre.toLowerCase())) {
+      req.flash('error', 'Solo puedes ver los bienes que tienes bajo resguardo');
+      return res.redirect('/inventario');
+    }
 
     const mantenimientos = await query(
       `SELECT bm.*, u.nombre as usuario_nombre FROM bien_mantenimientos bm

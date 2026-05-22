@@ -17,6 +17,12 @@
     <% if (success && success.length) { %><div class="alert alert-success">✓ <%= success[0] %></div><% } %>
     <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
 
+    <% if (esJefeArea) { %>
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:13px">
+      Estás viendo los bienes que tienes bajo resguardo. Para solicitar cualquier modificación, crea un <a href="/tickets/nuevo" style="color:#1e40af;font-weight:600;text-decoration:underline">ticket</a> dirigido al Jefe de Servicios Generales.
+    </div>
+    <% } %>
+
     <!-- Stats -->
     <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
       <div class="stat-card">
