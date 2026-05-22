@@ -100,9 +100,18 @@
   window.sidebarToggle = function (id) {
     var sec = document.getElementById('sec-' + id);
     if (!sec) return;
-    sec.classList.toggle('collapsed');
+    var wasCollapsed = sec.classList.contains('collapsed');
     var s = loadState();
-    s[id] = sec.classList.contains('collapsed');
+    // Colapsar todas las secciones (acordeón)
+    document.querySelectorAll('.sidebar-section[id]').forEach(function (other) {
+      other.classList.add('collapsed');
+      s[other.id.replace('sec-', '')] = true;
+    });
+    // Si la sección estaba cerrada, abrirla
+    if (wasCollapsed) {
+      sec.classList.remove('collapsed');
+      s[id] = false;
+    }
     saveState(s);
   };
 }());
