@@ -30,6 +30,7 @@ const multerFotos = multer({
 
 const CAT_MAP = {
   'mobiliario': 'mobiliario',
+  'mobiliario médico': 'mobiliario_medico', 'mobiliario medico': 'mobiliario_medico', 'mobiliario_medico': 'mobiliario_medico',
   'equipo médico': 'equipo_medico', 'equipo medico': 'equipo_medico', 'equipo_medico': 'equipo_medico',
   'equipo de cómputo': 'equipo_computo', 'equipo de computo': 'equipo_computo',
   'equipo cómputo': 'equipo_computo', 'equipo computo': 'equipo_computo', 'equipo_computo': 'equipo_computo',
@@ -88,12 +89,13 @@ function parseFecha(str) {
 }
 
 const CATEGORIAS = {
-  mobiliario:      'Mobiliario',
-  equipo_medico:   'Equipo Médico',
-  equipo_computo:  'Equipo de Cómputo',
-  instrumental:    'Instrumental Médico',
-  vehiculo:        'Vehículo / Ambulancia',
-  electromecanico: 'Equipo Electromecánico',
+  mobiliario:         'Mobiliario',
+  mobiliario_medico:  'Mobiliario Médico',
+  equipo_medico:      'Equipo Médico',
+  equipo_computo:     'Equipo de Cómputo',
+  instrumental:       'Instrumental Médico',
+  vehiculo:           'Vehículo / Ambulancia',
+  electromecanico:    'Equipo Electromecánico',
 };
 
 const ESTADOS = {
