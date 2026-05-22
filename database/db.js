@@ -362,11 +362,19 @@ async function initDB() {
     responsable_recepcion VARCHAR(150) NULL,
     cargo_recepcion VARCHAR(150) NULL,
     observaciones TEXT NULL,
+    archivo_soporte VARCHAR(255) NULL,
     archivo_firmado VARCHAR(255) NULL,
     creado_por INT NULL,
     creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (creado_por) REFERENCES usuarios(id) ON DELETE SET NULL
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+  // Migración: archivo_soporte en entradas
+  const colSoporte = await query(`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='entradas' AND COLUMN_NAME='archivo_soporte'`);
+  if (!colSoporte.length) {
+    await query(`ALTER TABLE entradas ADD COLUMN archivo_soporte VARCHAR(255) NULL AFTER observaciones`);
+  }
 
   await query(`CREATE TABLE IF NOT EXISTS entrada_bienes (
     id INT AUTO_INCREMENT PRIMARY KEY,

@@ -95,9 +95,19 @@
       <!-- Panel lateral -->
       <div style="display:flex;flex-direction:column;gap:16px">
 
+        <% if (entrada.archivo_soporte) { %>
+        <div class="card">
+          <div class="card-header"><h3>Documento soporte</h3></div>
+          <a href="/uploads/entradas/<%= entrada.archivo_soporte %>" target="_blank"
+             class="btn btn-secondary" style="display:block;text-align:center">
+            📎 Ver documento soporte
+          </a>
+        </div>
+        <% } %>
+
         <% if (canEdit) { %>
         <div class="card">
-          <div class="card-header"><h3>Documento firmado</h3></div>
+          <div class="card-header"><h3>Acta firmada</h3></div>
           <% if (entrada.archivo_firmado) { %>
             <a href="/uploads/entradas/<%= entrada.archivo_firmado %>" target="_blank" class="btn btn-secondary" style="display:block;text-align:center;margin-bottom:12px">
               📎 Ver archivo firmado

@@ -43,7 +43,8 @@ const storage = multer.diskStorage({
     cb(null, dir);
   },
   filename: (req, file, cb) => {
-    cb(null, `entrada-${req.params.id}-${Date.now()}${path.extname(file.originalname)}`);
+    const prefix = req.params.id ? `entrada-${req.params.id}` : `entrada-soporte`;
+    cb(null, `${prefix}-${Date.now()}${path.extname(file.originalname)}`);
   }
 });
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
@@ -83,7 +84,7 @@ router.get('/nueva', requireAdmin, async (req, res) => {
 });
 
 // ── POST / ───────────────────────────────────────────────────────
-router.post('/', requireAdmin, async (req, res) => {
+router.post('/', requireAdmin, upload.single('archivo_soporte'), async (req, res) => {
   const {
     tipo, fecha_entrada, numero_documento, fecha_documento,
     proveedor_donante, responsable_entrega, cargo_entrega,
@@ -108,11 +109,12 @@ router.post('/', requireAdmin, async (req, res) => {
     const result = await query(
       `INSERT INTO entradas (folio, tipo, fecha_entrada, numero_documento, fecha_documento,
          proveedor_donante, responsable_entrega, cargo_entrega,
-         responsable_recepcion, cargo_recepcion, observaciones, creado_por)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+         responsable_recepcion, cargo_recepcion, observaciones, archivo_soporte, creado_por)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [folio, tipo, fecha_entrada, numero_documento || null, fecha_documento || null,
        proveedor_donante || null, responsable_entrega || null, cargo_entrega || null,
-       responsable_recepcion || null, cargo_recepcion || null, observaciones || null, u.id]
+       responsable_recepcion || null, cargo_recepcion || null, observaciones || null,
+       req.file ? req.file.filename : null, u.id]
     );
     const entradaId = result.insertId;
 
