@@ -1,9 +1,7 @@
-const CACHE = 'agora-v2';
+const CACHE = 'agora-v3';
 
 // Recursos estáticos que se cachean al instalar
 const PRECACHE = [
-  '/css/app.css',
-  '/js/app.js',
   '/img/favicon.svg',
   '/img/icon-192.svg',
   '/img/icon-512.svg',
