@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css?v=11">
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1><%= salida.folio %></h1>
+    <div class="topbar-user"><span><%= usuario.nombre %></span></div>
+  </div>
+  <div class="page-content">
+    <% if (success && success.length) { %><div class="alert alert-success">✓ <%= success[0] %></div><% } %>
+    <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+
+    <div class="flex items-center mb-16" style="gap:8px;flex-wrap:wrap">
+      <a href="/salidas" class="btn btn-secondary">← Regresar</a>
+      <a href="/salidas/<%= salida.id %>/pdf" target="_blank" class="btn btn-primary">📄 Ver / Imprimir PDF</a>
+      <% if (canEdit && esRetornable && salida.estado === 'en_curso') { %>
+        <a href="/salidas/<%= salida.id %>/retorno" class="btn btn-secondary">↩ Registrar retorno</a>
+      <% } %>
+    </div>
+
+    <div class="two-col" style="align-items:start">
+
+      <!-- Columna principal -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <!-- Datos de la salida -->
+        <div class="card">
+          <div class="card-header">
+            <h3><%= TIPOS[salida.tipo] %></h3>
+            <% if (salida.estado === 'cerrada') { %>
+              <span class="badge badge-enviado">Cerrada</span>
+            <% } else { %>
+              <span class="badge badge-en_proceso">En curso</span>
+            <% } %>
+          </div>
+          <div class="detalle-grid">
+            <div class="detalle-item"><label>Folio</label><p><strong style="color:var(--verde)"><%= salida.folio %></strong></p></div>
+            <div class="detalle-item"><label>Tipo</label><p><%= TIPOS[salida.tipo] %></p></div>
+            <div class="detalle-item"><label>Destino</label><p><strong><%= salida.destino_nombre %></strong></p></div>
+            <% if (salida.destino_responsable) { %>
+            <div class="detalle-item"><label>Responsable receptor</label><p><%= salida.destino_responsable %><% if(salida.destino_cargo) { %><br><span class="text-gris text-sm"><%= salida.destino_cargo %></span><% } %></p></div>
+            <% } %>
+            <div class="detalle-item"><label>Fecha de salida</label><p><%= fmtFecha(salida.fecha_salida, false) %></p></div>
+            <% if (salida.fecha_retorno_estimada) { %>
+            <div class="detalle-item"><label>Retorno estimado</label><p><%= fmtFecha(salida.fecha_retorno_estimada, false) %></p></div>
+            <% } %>
+            <% if (salida.fecha_retorno_real) { %>
+            <div class="detalle-item"><label>Retorno real</label><p><strong style="color:var(--verde)"><%= fmtFecha(salida.fecha_retorno_real, false) %></strong></p></div>
+            <% } %>
+            <% if (salida.autorizante_nombre) { %>
+            <div class="detalle-item"><label>Autorizante</label><p><%= salida.autorizante_nombre %><% if(salida.autorizante_cargo) { %><br><span class="text-gris text-sm"><%= salida.autorizante_cargo %></span><% } %></p></div>
+            <% } %>
+          </div>
+          <% if (salida.motivo) { %>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--borde)">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gris)">Motivo</label>
+            <p style="font-size:13px;margin-top:4px"><%= salida.motivo %></p>
+          </div>
+          <% } %>
+          <% if (salida.observaciones) { %>
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--borde)">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gris)">Observaciones</label>
+            <p style="font-size:13px;margin-top:4px"><%= salida.observaciones %></p>
+          </div>
+          <% } %>
+        </div>
+
+        <!-- Bienes -->
+        <div class="card">
+          <div class="card-header"><h3>Bienes (<%= bienes.length %>)</h3></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>N° Inventario</th><th>Nombre</th><th>Área</th><th>N° Serie</th>
+                  <th>Cond. salida</th>
+                  <% if (salida.estado === 'cerrada' && esRetornable) { %><th>Cond. retorno</th><th>Obs. retorno</th><% } %>
+                </tr>
+              </thead>
+              <tbody>
+              <% bienes.forEach(b => { %>
+                <tr>
+                  <td><a href="/inventario/<%= b.bien_id %>" style="font-weight:700;font-size:12px;color:var(--verde)"><%= b.numero_inventario %></a></td>
+                  <td style="font-size:13px;font-weight:600"><%= b.nombre %><% if(b.marca||b.modelo) { %><br><span class="text-gris text-sm"><%= [b.marca,b.modelo].filter(Boolean).join(' · ') %></span><% } %></td>
+                  <td class="text-sm"><%= b.area_nombre||'—' %></td>
+                  <td class="text-sm"><%= b.numero_serie||'—' %></td>
+                  <td><span class="badge" style="background:<%= b.condicion_salida==='bueno'?'#dcfce7':b.condicion_salida==='regular'?'#fef9c3':'#fee2e2' %>;color:<%= b.condicion_salida==='bueno'?'#166534':b.condicion_salida==='regular'?'#854d0e':'#991b1b' %>"><%= CONDICIONES[b.condicion_salida]||b.condicion_salida %></span></td>
+                  <% if (salida.estado === 'cerrada' && esRetornable) { %>
+                  <td>
+                    <% if (b.condicion_retorno) { %>
+                    <span class="badge" style="background:<%= b.condicion_retorno==='bueno'?'#dcfce7':b.condicion_retorno==='regular'?'#fef9c3':'#fee2e2' %>;color:<%= b.condicion_retorno==='bueno'?'#166534':b.condicion_retorno==='regular'?'#854d0e':'#991b1b' %>"><%= CONDICIONES[b.condicion_retorno] %></span>
+                    <% } else { %><span class="text-gris text-sm">—</span><% } %>
+                  </td>
+                  <td class="text-sm text-gris"><%= b.observaciones_retorno||'—' %></td>
+                  <% } %>
+                </tr>
+              <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Panel lateral -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <!-- Documento firmado -->
+        <% if (canEdit) { %>
+        <div class="card">
+          <div class="card-header"><h3>Documento firmado</h3></div>
+          <% if (salida.archivo_firmado) { %>
+            <a href="/uploads/salidas/<%= salida.archivo_firmado %>" target="_blank" class="btn btn-secondary" style="display:block;text-align:center;margin-bottom:12px">
+              📎 Ver archivo firmado
+            </a>
+          <% } else { %>
+            <p class="text-sm text-gris" style="margin-bottom:12px">Sin archivo adjunto.</p>
+          <% } %>
+          <form method="POST" action="/salidas/<%= salida.id %>/firmar" enctype="multipart/form-data">
+            <div class="form-group" style="margin-bottom:10px">
+              <label style="font-size:12px"><%= salida.archivo_firmado ? 'Reemplazar archivo' : 'Subir documento firmado' %></label>
+              <input type="file" name="archivo_firmado" accept=".pdf,image/*" required>
+              <p class="text-sm text-gris" style="margin-top:4px">PDF, JPG o PNG · máx. 10 MB</p>
+            </div>
+            <button type="submit" class="btn btn-secondary btn-sm" style="width:100%">↑ Adjuntar</button>
+          </form>
+        </div>
+        <% } %>
+
+        <!-- Retorno pendiente -->
+        <% if (canEdit && esRetornable && salida.estado === 'en_curso') { %>
+        <div class="card" style="border:1px solid #fde68a;background:#fffbeb">
+          <div class="card-header"><h3 style="color:#92400e">Retorno pendiente</h3></div>
+          <p class="text-sm" style="color:#92400e;margin-bottom:12px">
+            Esta salida está en curso. Cuando los bienes regresen al hospital, registra el retorno para actualizar su estado.
+          </p>
+          <a href="/salidas/<%= salida.id %>/retorno" class="btn btn-primary" style="width:100%;text-align:center;display:block">
+            ↩ Registrar retorno
+          </a>
+        </div>
+        <% } %>
+
+        <!-- Registro de sistema -->
+        <div class="card">
+          <div class="card-header"><h3>Registro</h3></div>
+          <p class="text-sm text-gris">Generado por: <strong><%= salida.creado_por_nombre %></strong></p>
+          <p class="text-sm text-gris" style="margin-top:4px">Fecha: <%= fmtFecha(salida.creado_en, false) %></p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+</body></html>

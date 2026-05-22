@@ -275,6 +275,48 @@ async function initDB() {
     await query(`ALTER TABLE resguardo_bienes ADD COLUMN numero_serie VARCHAR(100) NULL AFTER modelo`);
   }
 
+  // Tablas de salidas de bienes
+  await query(`CREATE TABLE IF NOT EXISTS salidas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    folio VARCHAR(20) NOT NULL UNIQUE,
+    consecutivo INT NOT NULL,
+    anio INT NOT NULL,
+    tipo ENUM('mantenimiento','prestamo','donacion','baja') NOT NULL,
+    estado ENUM('en_curso','cerrada') NOT NULL DEFAULT 'en_curso',
+    destino_nombre VARCHAR(200) NOT NULL,
+    destino_responsable VARCHAR(200) NULL,
+    destino_cargo VARCHAR(200) NULL,
+    fecha_salida DATE NOT NULL,
+    fecha_retorno_estimada DATE NULL,
+    fecha_retorno_real DATE NULL,
+    motivo TEXT NULL,
+    observaciones TEXT NULL,
+    autorizante_nombre VARCHAR(200) NULL,
+    autorizante_cargo VARCHAR(200) NULL,
+    archivo_firmado VARCHAR(255) NULL,
+    creado_por_id INT NOT NULL,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (creado_por_id) REFERENCES usuarios(id)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+  await query(`CREATE TABLE IF NOT EXISTS salida_bienes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    salida_id INT NOT NULL,
+    bien_id INT NOT NULL,
+    numero_inventario VARCHAR(50) NOT NULL,
+    nombre VARCHAR(200) NOT NULL,
+    categoria VARCHAR(50) NOT NULL,
+    area_nombre VARCHAR(100) NULL,
+    marca VARCHAR(100) NULL,
+    modelo VARCHAR(100) NULL,
+    numero_serie VARCHAR(100) NULL,
+    condicion_salida VARCHAR(20) NOT NULL,
+    condicion_retorno VARCHAR(20) NULL,
+    observaciones_retorno TEXT NULL,
+    FOREIGN KEY (salida_id) REFERENCES salidas(id) ON DELETE CASCADE,
+    FOREIGN KEY (bien_id) REFERENCES bienes(id)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
   // Tablas de resguardos de inventario
   await query(`CREATE TABLE IF NOT EXISTS resguardos (
     id INT AUTO_INCREMENT PRIMARY KEY,

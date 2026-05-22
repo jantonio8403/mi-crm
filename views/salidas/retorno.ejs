@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css?v=11">
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1>Registrar Retorno</h1>
+    <div class="topbar-user"><span><%= usuario.nombre %></span></div>
+  </div>
+  <div class="page-content">
+    <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+
+    <div class="flex items-center mb-16">
+      <a href="/salidas/<%= salida.id %>" class="btn btn-secondary">← Regresar</a>
+    </div>
+
+    <!-- Resumen de la salida -->
+    <div style="background:var(--verde-fondo);border:1px solid var(--borde);border-radius:6px;padding:12px 16px;margin-bottom:20px;max-width:900px">
+      <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px">
+        <span><strong>Folio:</strong> <span style="color:var(--verde);font-weight:700"><%= salida.folio %></span></span>
+        <span><strong>Tipo:</strong> <%= TIPOS[salida.tipo] %></span>
+        <span><strong>Destino:</strong> <%= salida.destino_nombre %></span>
+        <% if (salida.fecha_retorno_estimada) { %>
+        <span><strong>Retorno est.:</strong> <%= fmtFecha(salida.fecha_retorno_estimada, false) %></span>
+        <% } %>
+      </div>
+    </div>
+
+    <form method="POST" action="/salidas/<%= salida.id %>/retorno">
+
+      <!-- Fecha y obs. general -->
+      <div class="card" style="max-width:900px;margin-bottom:16px">
+        <h4 style="margin-bottom:16px;color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em">Datos del retorno</h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Fecha de retorno *</label>
+            <input type="date" name="fecha_retorno_real" required value="<%= new Date().toISOString().split('T')[0] %>">
+          </div>
+          <div class="form-group form-full">
+            <label>Observaciones generales del retorno</label>
+            <textarea name="obs_general" rows="2" placeholder="Estado general al regreso, incidencias, etc."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Condición por bien -->
+      <div class="card" style="max-width:900px;margin-bottom:16px">
+        <h4 style="margin-bottom:4px;color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em">Condición de retorno por bien</h4>
+        <p class="text-sm text-gris" style="margin-bottom:16px">Indica la condición en que regresa cada bien. Esto actualizará su estado en el inventario.</p>
+
+        <% bienes.forEach(b => { %>
+        <div style="border:1px solid var(--borde);border-radius:8px;padding:14px 16px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:12px">
+            <div>
+              <div style="font-weight:700;font-size:14px"><%= b.numero_inventario %> — <%= b.nombre %></div>
+              <div class="text-sm text-gris" style="margin-top:2px">
+                Condición al salir:
+                <span class="badge" style="background:<%= b.condicion_salida==='bueno'?'#dcfce7':b.condicion_salida==='regular'?'#fef9c3':'#fee2e2' %>;color:<%= b.condicion_salida==='bueno'?'#166534':b.condicion_salida==='regular'?'#854d0e':'#991b1b' %>;font-size:11px">
+                  <%= CONDICIONES[b.condicion_salida] %>
+                </span>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <label style="font-size:12px;font-weight:600">Condición al regresar:</label>
+              <% ['bueno','regular','malo'].forEach(c => { %>
+              <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer">
+                <input type="radio" name="condicion_retorno[<%= b.id %>]" value="<%= c %>"
+                  <%= c === b.condicion_salida ? 'checked' : '' %>>
+                <%= CONDICIONES[c] %>
+              </label>
+              <% }) %>
+            </div>
+          </div>
+          <div style="margin-top:10px">
+            <input type="text" name="obs_retorno[<%= b.id %>]"
+              placeholder="Observaciones del bien al retorno (opcional)"
+              style="width:100%;box-sizing:border-box;font-size:13px">
+          </div>
+        </div>
+        <% }) %>
+      </div>
+
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#1e40af;max-width:900px">
+        Al confirmar, los bienes pasarán a estado <strong>Activo</strong> con la condición registrada y la salida quedará cerrada.
+      </div>
+
+      <div class="flex gap-8">
+        <button type="submit" class="btn btn-primary">Confirmar retorno</button>
+        <a href="/salidas/<%= salida.id %>" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+</body></html>

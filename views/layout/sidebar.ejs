@@ -42,6 +42,9 @@
     <% if (usuario && ['admin','director','jefe_area'].includes(usuario.rol)) { %>
       <a href="/resguardos"><span class="icon">📋</span> Resguardos</a>
     <% } %>
+    <% if (usuario && ['admin','director','jefe_area'].includes(usuario.rol)) { %>
+      <a href="/salidas"><span class="icon">🚚</span> Salidas</a>
+    <% } %>
   </div>
   <% if (usuario && usuario.rol === 'admin') { %>
   <div class="sidebar-section">
