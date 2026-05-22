@@ -53,11 +53,34 @@ body {
   font-size: 10px; opacity: 0.65; margin: 0; padding: 0;
 }
 
-.sidebar-section { padding: 12px 0; }
-.sidebar-label {
-  font-size: 10px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .08em; opacity: .6; padding: 0 16px 6px;
+.sidebar-standalone { padding: 8px 0 4px; }
+.sidebar-section { padding: 6px 0 4px; }
+
+.sidebar-section-toggle {
+  display: flex; align-items: center; gap: 6px;
+  width: 100%; padding: 7px 16px;
+  background: none; border: none; cursor: pointer;
+  color: rgba(255,255,255,.55);
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  border-left: 3px solid transparent;
+  transition: color .15s, background .15s;
+  line-height: 1;
 }
+.sidebar-section-toggle:hover { color: rgba(255,255,255,.85); background: rgba(255,255,255,.06); }
+.sidebar-section-label { flex: 1; text-align: left; }
+.sidebar-section-chevron {
+  font-size: 15px; line-height: 1; opacity: .7;
+  display: inline-block;
+  transition: transform .2s ease;
+  transform: rotate(90deg);
+}
+.sidebar-section.collapsed .sidebar-section-chevron { transform: rotate(0deg); }
+.sidebar-section-body {
+  overflow: hidden; max-height: 600px;
+  transition: max-height .28s ease-in-out;
+}
+.sidebar-section.collapsed .sidebar-section-body { max-height: 0; }
 
 .sidebar a {
   display: flex; align-items: center; gap: 10px;
@@ -66,10 +89,8 @@ body {
   border-left: 3px solid transparent;
   transition: background .15s;
 }
-.sidebar a:hover, .sidebar a.activo {
-  background: rgba(255,255,255,.12); color: #fff;
-  border-left-color: #fff;
-}
+.sidebar a:hover { background: rgba(255,255,255,.1); color: #fff; border-left-color: rgba(255,255,255,.5); }
+.sidebar a.activo { background: rgba(255,255,255,.2); color: #fff; border-left-color: #6ee7a8; font-weight: 600; }
 .sidebar a span.icon { width: 18px; text-align: center; font-size: 15px; }
 
 .sidebar-footer {

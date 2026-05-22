@@ -32,6 +32,7 @@ app.use((req, res, next) => {
   res.locals.success = req.flash('success');
   res.locals.error = req.flash('error');
   res.locals.tickets_badge = 0;
+  res.locals.currentPath = (req.originalUrl || '').split('?')[0];
   res.locals.fmtFecha = function (d, conHora = true) {
     if (!d) return '—';
     const opts = {

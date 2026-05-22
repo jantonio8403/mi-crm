@@ -6,53 +6,89 @@
     </div>
     <p class="sidebar-hospital">H.B.C. 12 Camas · Berriozábal</p>
   </div>
-  <div class="sidebar-section">
-    <p class="sidebar-label">General</p>
-    <a href="/dashboard"><span class="icon">⊞</span> Dashboard</a>
-  </div>
-  <div class="sidebar-section">
-    <p class="sidebar-label">Correspondencia</p>
-    <a href="/correspondencia/salientes/nuevo?tipo=oficio"><span class="icon">✉</span> Nuevo Oficio</a>
-    <a href="/correspondencia/salientes/nuevo?tipo=memorandum"><span class="icon">📝</span> Nuevo Memorándum</a>
-    <a href="/correspondencia/salientes"><span class="icon">📤</span> Emitidos</a>
-    <a href="/correspondencia/entrante/nuevo"><span class="icon">➕</span> Registrar Recibido</a>
-    <a href="/correspondencia/entrante"><span class="icon">📥</span> Recibidos</a>
-    <a href="/directorio"><span class="icon">📒</span> Directorio</a>
-  </div>
-  <div class="sidebar-section">
-    <p class="sidebar-label">Tickets</p>
-    <a href="/tickets/nuevo"><span class="icon">🎫</span> Nuevo Ticket</a>
-    <a href="/tickets" style="justify-content:space-between">
-      <span><span class="icon">📋</span> Ver Tickets</span>
-      <% if (tickets_badge > 0) { %>
-        <span class="sidebar-badge"><%= tickets_badge %></span>
-      <% } %>
+
+  <div class="sidebar-standalone">
+    <a href="/dashboard" class="<%= currentPath === '/dashboard' ? 'activo' : '' %>">
+      <span class="icon">⊞</span> Dashboard
     </a>
   </div>
-  <div class="sidebar-section">
-    <p class="sidebar-label">Inventario</p>
-    <% if (usuario && ['admin','director'].includes(usuario.rol)) { %>
-      <a href="/verificaciones"><span class="icon">🔍</span> Verificaciones QR</a>
-    <% } %>
-    <% if (usuario && usuario.rol === 'admin') { %>
-      <a href="/inventario/nuevo"><span class="icon">➕</span> Registrar Bien</a>
-      <a href="/inventario/importar"><span class="icon">⬆</span> Importar CSV</a>
-    <% } %>
-    <a href="/inventario"><span class="icon">📦</span> Ver Inventario</a>
-    <% if (usuario && ['admin','director','jefe_area'].includes(usuario.rol)) { %>
-      <a href="/resguardos"><span class="icon">📋</span> Resguardos</a>
-    <% } %>
-    <% if (usuario && ['admin','director','jefe_area'].includes(usuario.rol)) { %>
-      <a href="/salidas"><span class="icon">🚚</span> Salidas</a>
-    <% } %>
+
+  <div class="sidebar-section" id="sec-correspondencia">
+    <button class="sidebar-section-toggle" onclick="sidebarToggle('correspondencia')" type="button">
+      <span class="sidebar-section-label">Correspondencia</span>
+      <span class="sidebar-section-chevron">›</span>
+    </button>
+    <div class="sidebar-section-body">
+      <a href="/correspondencia/salientes" class="<%= currentPath.startsWith('/correspondencia/salientes') ? 'activo' : '' %>">
+        <span class="icon">📤</span> Emitidos
+      </a>
+      <a href="/correspondencia/entrante" class="<%= currentPath.startsWith('/correspondencia/entrante') ? 'activo' : '' %>">
+        <span class="icon">📥</span> Recibidos
+      </a>
+      <a href="/directorio" class="<%= currentPath.startsWith('/directorio') ? 'activo' : '' %>">
+        <span class="icon">📒</span> Directorio
+      </a>
+    </div>
   </div>
+
+  <div class="sidebar-section" id="sec-tickets">
+    <button class="sidebar-section-toggle" onclick="sidebarToggle('tickets')" type="button">
+      <span class="sidebar-section-label">Tickets</span>
+      <% if (tickets_badge > 0) { %><span class="sidebar-badge"><%= tickets_badge %></span><% } %>
+      <span class="sidebar-section-chevron">›</span>
+    </button>
+    <div class="sidebar-section-body">
+      <a href="/tickets" class="<%= currentPath.startsWith('/tickets') ? 'activo' : '' %>">
+        <span class="icon">📋</span> Ver Tickets
+      </a>
+      <a href="/tickets/nuevo" class="<%= currentPath === '/tickets/nuevo' ? 'activo' : '' %>">
+        <span class="icon">🎫</span> Nuevo Ticket
+      </a>
+    </div>
+  </div>
+
+  <div class="sidebar-section" id="sec-inventario">
+    <button class="sidebar-section-toggle" onclick="sidebarToggle('inventario')" type="button">
+      <span class="sidebar-section-label">Inventario</span>
+      <span class="sidebar-section-chevron">›</span>
+    </button>
+    <div class="sidebar-section-body">
+      <a href="/inventario" class="<%= currentPath.startsWith('/inventario') ? 'activo' : '' %>">
+        <span class="icon">📦</span> Ver Inventario
+      </a>
+      <% if (usuario && ['admin','director','jefe_area'].includes(usuario.rol)) { %>
+      <a href="/resguardos" class="<%= currentPath.startsWith('/resguardos') ? 'activo' : '' %>">
+        <span class="icon">📋</span> Resguardos
+      </a>
+      <a href="/salidas" class="<%= currentPath.startsWith('/salidas') ? 'activo' : '' %>">
+        <span class="icon">🚚</span> Salidas
+      </a>
+      <% } %>
+      <% if (usuario && ['admin','director'].includes(usuario.rol)) { %>
+      <a href="/verificaciones" class="<%= currentPath.startsWith('/verificaciones') ? 'activo' : '' %>">
+        <span class="icon">🔍</span> Verificaciones QR
+      </a>
+      <% } %>
+    </div>
+  </div>
+
   <% if (usuario && usuario.rol === 'admin') { %>
-  <div class="sidebar-section">
-    <p class="sidebar-label">Administración</p>
-    <a href="/usuarios"><span class="icon">👥</span> Usuarios</a>
-    <a href="/areas"><span class="icon">🏥</span> Áreas</a>
+  <div class="sidebar-section" id="sec-admin">
+    <button class="sidebar-section-toggle" onclick="sidebarToggle('admin')" type="button">
+      <span class="sidebar-section-label">Administración</span>
+      <span class="sidebar-section-chevron">›</span>
+    </button>
+    <div class="sidebar-section-body">
+      <a href="/usuarios" class="<%= currentPath.startsWith('/usuarios') ? 'activo' : '' %>">
+        <span class="icon">👥</span> Usuarios
+      </a>
+      <a href="/areas" class="<%= currentPath.startsWith('/areas') ? 'activo' : '' %>">
+        <span class="icon">🏥</span> Áreas
+      </a>
+    </div>
   </div>
   <% } %>
+
   <div class="sidebar-footer">
     <a href="/perfil" class="sidebar-footer-link">
       <div class="sidebar-footer-avatar">👤</div>

@@ -73,3 +73,37 @@
   });
 }());
 
+// ── Sidebar: secciones colapsables ─────────────────────────────
+(function () {
+  var STORAGE_KEY = 'agora-sb-v1';
+
+  function loadState() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch (_) { return {}; }
+  }
+  function saveState(s) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch (_) {}
+  }
+
+  var path = window.location.pathname;
+  var sections = document.querySelectorAll('.sidebar-section[id]');
+
+  sections.forEach(function (sec) {
+    var id = sec.id.replace('sec-', '');
+    var hasActive = !!sec.querySelector('a.activo');
+    var state = loadState();
+    // Active section is always expanded; others use stored state (default: expanded)
+    if (!hasActive && state[id] === true) {
+      sec.classList.add('collapsed');
+    }
+  });
+
+  window.sidebarToggle = function (id) {
+    var sec = document.getElementById('sec-' + id);
+    if (!sec) return;
+    sec.classList.toggle('collapsed');
+    var s = loadState();
+    s[id] = sec.classList.contains('collapsed');
+    saveState(s);
+  };
+}());
+
