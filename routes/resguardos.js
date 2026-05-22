@@ -165,10 +165,10 @@ router.post('/', requireAuth, requireAdmin, async (req, res, next) => {
     for (const b of bienes) {
       await query(
         `INSERT INTO resguardo_bienes
-         (resguardo_id, bien_id, numero_inventario, nombre, categoria, area_nombre, marca, modelo, condicion)
-         VALUES (?,?,?,?,?,?,?,?,?)`,
+         (resguardo_id, bien_id, numero_inventario, nombre, categoria, area_nombre, marca, modelo, numero_serie, condicion)
+         VALUES (?,?,?,?,?,?,?,?,?,?)`,
         [resguardoId, b.id, b.numero_inventario, b.nombre, b.categoria,
-         b.area_nombre || null, b.marca || null, b.modelo || null, b.condicion]
+         b.area_nombre || null, b.marca || null, b.modelo || null, b.numero_serie || null, b.condicion]
       );
     }
 
@@ -291,8 +291,8 @@ function generarPDF(doc, resguardo, bienes, membretePath) {
   doc.moveDown(1);
 
   // ── Tabla de bienes ────────────────────────────────────────────────────
-  const cols = [74, 150, 88, 78, 70, 52];
-  const headers = ['N° Inventario', 'Nombre del bien', 'Categoría', 'Área', 'Marca / Modelo', 'Condición'];
+  const cols = [65, 120, 75, 65, 60, 72, 55];
+  const headers = ['N° Inventario', 'Nombre del bien', 'Categoría', 'Área', 'Marca / Modelo', 'N° Serie', 'Condición'];
   const rowH = 18;
   let x = margin;
   let y = doc.y;
@@ -321,6 +321,7 @@ function generarPDF(doc, resguardo, bienes, membretePath) {
       CATEGORIAS[b.categoria] || b.categoria,
       b.area_nombre || '—',
       marcaModelo || '—',
+      b.numero_serie || '—',
       CONDICIONES[b.condicion] || b.condicion,
     ];
 

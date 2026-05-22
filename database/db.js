@@ -266,6 +266,15 @@ async function initDB() {
       MODIFY COLUMN tipo ENUM('oficio','memorandum','circular') NOT NULL`);
   }
 
+  // Migrar: agregar numero_serie a resguardo_bienes
+  const [rsbNsCol] = await query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='resguardo_bienes' AND COLUMN_NAME='numero_serie'`
+  );
+  if (!rsbNsCol) {
+    await query(`ALTER TABLE resguardo_bienes ADD COLUMN numero_serie VARCHAR(100) NULL AFTER modelo`);
+  }
+
   // Tablas de resguardos de inventario
   await query(`CREATE TABLE IF NOT EXISTS resguardos (
     id INT AUTO_INCREMENT PRIMARY KEY,
