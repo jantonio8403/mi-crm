@@ -352,7 +352,7 @@ async function initDB() {
   await query(`CREATE TABLE IF NOT EXISTS entradas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     folio VARCHAR(20) NOT NULL UNIQUE,
-    tipo ENUM('compra','donacion','transferencia','otro') NOT NULL,
+    tipo ENUM('compra','donacion','transferencia','remision','otro') NOT NULL,
     fecha_entrada DATE NOT NULL,
     numero_documento VARCHAR(100) NULL,
     fecha_documento DATE NULL,
@@ -368,6 +368,9 @@ async function initDB() {
     creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (creado_por) REFERENCES usuarios(id) ON DELETE SET NULL
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+  // Migración: agregar 'remision' al ENUM tipo de entradas
+  await query(`ALTER TABLE entradas MODIFY COLUMN tipo ENUM('compra','donacion','transferencia','remision','otro') NOT NULL`);
 
   // Migración: archivo_soporte en entradas
   const colSoporte = await query(`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS

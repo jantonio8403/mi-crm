@@ -6,14 +6,14 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 
-const TIPOS = { compra: 'Compra', donacion: 'Donación', transferencia: 'Transferencia', otro: 'Otro' };
+const TIPOS = { compra: 'Compra', donacion: 'Donación', transferencia: 'Transferencia', remision: 'Remisión', otro: 'Otro' };
 const CONDICIONES = { bueno: 'Bueno', regular: 'Regular', malo: 'Malo' };
 const CATEGORIAS = {
   equipo_medico: 'Equipo Médico', equipo_computo: 'Equipo de Cómputo',
   mobiliario: 'Mobiliario', mobiliario_medico: 'Mobiliario Médico',
   vehiculo: 'Vehículo', herramienta: 'Herramienta', otro: 'Otro'
 };
-const LABEL_ORIGEN = { compra: 'Proveedor', donacion: 'Donante', transferencia: 'Unidad de origen', otro: 'Origen' };
+const LABEL_ORIGEN = { compra: 'Proveedor', donacion: 'Donante', transferencia: 'Unidad de origen', remision: 'Proveedor / Remitente', otro: 'Origen' };
 
 function requireLogin(req, res, next) {
   if (!req.session.usuario) return res.redirect('/login');
