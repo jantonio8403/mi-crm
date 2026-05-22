@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css?v=12">
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1>Entradas de Bienes</h1>
+    <div class="topbar-user"><span><%= usuario.nombre %></span></div>
+  </div>
+  <div class="page-content">
+    <% if (success && success.length) { %><div class="alert alert-success">✓ <%= success[0] %></div><% } %>
+    <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+
+    <div class="flex items-center justify-between mb-16" style="flex-wrap:wrap;gap:8px">
+      <% if (usuario.rol === 'admin') { %>
+        <a href="/entradas/nueva" class="btn btn-primary">+ Nueva Entrada</a>
+      <% } else { %>
+        <div></div>
+      <% } %>
+    </div>
+
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Folio</th>
+              <th>Tipo</th>
+              <th>Fecha</th>
+              <th>Origen / Proveedor</th>
+              <th>Bienes</th>
+              <th>Registrado por</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+          <% if (!entradas.length) { %>
+            <tr><td colspan="7" class="text-center text-gris" style="padding:32px">Sin entradas registradas</td></tr>
+          <% } %>
+          <% entradas.forEach(e => { %>
+            <tr>
+              <td><strong style="color:var(--verde);font-size:12px"><%= e.folio %></strong></td>
+              <td>
+                <span class="badge" style="background:<%=
+                  e.tipo==='compra'?'#dbeafe':e.tipo==='donacion'?'#d1fae5':e.tipo==='transferencia'?'#ede9fe':'#f3f4f6'
+                %>;color:<%=
+                  e.tipo==='compra'?'#1d4ed8':e.tipo==='donacion'?'#065f46':e.tipo==='transferencia'?'#5b21b6':'#374151'
+                %>"><%= TIPOS[e.tipo] %></span>
+              </td>
+              <td class="text-sm"><%= fmtFecha(e.fecha_entrada, false) %></td>
+              <td class="text-sm"><%= e.proveedor_donante || '—' %></td>
+              <td class="text-sm text-center"><strong><%= e.total_bienes %></strong></td>
+              <td class="text-sm text-gris"><%= e.creado_por_nombre || '—' %></td>
+              <td><a href="/entradas/<%= e.id %>" class="btn btn-sm btn-secondary">Ver</a></td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/js/app.js?v=12"></script>
+</body></html>

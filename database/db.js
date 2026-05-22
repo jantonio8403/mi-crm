@@ -348,6 +348,36 @@ async function initDB() {
     FOREIGN KEY (bien_id) REFERENCES bienes(id)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
 
+  // Tablas de entradas de bienes
+  await query(`CREATE TABLE IF NOT EXISTS entradas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    folio VARCHAR(20) NOT NULL UNIQUE,
+    tipo ENUM('compra','donacion','transferencia','otro') NOT NULL,
+    fecha_entrada DATE NOT NULL,
+    numero_documento VARCHAR(100) NULL,
+    fecha_documento DATE NULL,
+    proveedor_donante VARCHAR(200) NULL,
+    responsable_entrega VARCHAR(150) NULL,
+    cargo_entrega VARCHAR(150) NULL,
+    responsable_recepcion VARCHAR(150) NULL,
+    cargo_recepcion VARCHAR(150) NULL,
+    observaciones TEXT NULL,
+    archivo_firmado VARCHAR(255) NULL,
+    creado_por INT NULL,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (creado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+  await query(`CREATE TABLE IF NOT EXISTS entrada_bienes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    entrada_id INT NOT NULL,
+    bien_id INT NOT NULL,
+    condicion_entrada ENUM('bueno','regular','malo') NOT NULL DEFAULT 'bueno',
+    observaciones VARCHAR(500) NULL,
+    FOREIGN KEY (entrada_id) REFERENCES entradas(id) ON DELETE CASCADE,
+    FOREIGN KEY (bien_id) REFERENCES bienes(id) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
   // Datos iniciales solo si las tablas están vacías
   const [countRow] = await query('SELECT COUNT(*) as c FROM areas');
   if (countRow.c === 0) {

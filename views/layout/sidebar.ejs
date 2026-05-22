@@ -63,6 +63,9 @@
       <a href="/salidas" class="<%= currentPath.startsWith('/salidas') ? 'activo' : '' %>">
         <span class="icon">🚚</span> Salidas
       </a>
+      <a href="/entradas" class="<%= currentPath.startsWith('/entradas') ? 'activo' : '' %>">
+        <span class="icon">📥</span> Entradas
+      </a>
       <% } %>
       <% if (usuario && ['admin','director'].includes(usuario.rol)) { %>
       <a href="/verificaciones" class="<%= currentPath.startsWith('/verificaciones') ? 'activo' : '' %>">

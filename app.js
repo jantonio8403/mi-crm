@@ -73,6 +73,7 @@ app.use('/inventario', require('./routes/inventario'));
 app.use('/verificaciones', require('./routes/verificaciones'));
 app.use('/resguardos', require('./routes/resguardos'));
 app.use('/salidas', require('./routes/salidas'));
+app.use('/entradas', require('./routes/entradas'));
 
 app.get('/', (req, res) => {
   if (req.session.usuario) return res.redirect('/dashboard');

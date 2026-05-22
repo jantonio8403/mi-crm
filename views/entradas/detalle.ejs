@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css?v=12">
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1><%= entrada.folio %></h1>
+    <div class="topbar-user"><span><%= usuario.nombre %></span></div>
+  </div>
+  <div class="page-content">
+    <% if (success && success.length) { %><div class="alert alert-success">✓ <%= success[0] %></div><% } %>
+    <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+
+    <div class="flex items-center mb-16" style="gap:8px;flex-wrap:wrap">
+      <a href="/entradas" class="btn btn-secondary">← Regresar</a>
+      <a href="/entradas/<%= entrada.id %>/pdf" target="_blank" class="btn btn-primary">📄 Ver / Imprimir PDF</a>
+    </div>
+
+    <div class="two-col" style="align-items:start">
+
+      <!-- Columna principal -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <div class="card">
+          <div class="card-header">
+            <h3><%= TIPOS[entrada.tipo] %></h3>
+            <span class="badge" style="background:<%=
+              entrada.tipo==='compra'?'#dbeafe':entrada.tipo==='donacion'?'#d1fae5':entrada.tipo==='transferencia'?'#ede9fe':'#f3f4f6'
+            %>;color:<%=
+              entrada.tipo==='compra'?'#1d4ed8':entrada.tipo==='donacion'?'#065f46':entrada.tipo==='transferencia'?'#5b21b6':'#374151'
+            %>"><%= TIPOS[entrada.tipo] %></span>
+          </div>
+          <div class="detalle-grid">
+            <div class="detalle-item"><label>Folio</label><p><strong style="color:var(--verde)"><%= entrada.folio %></strong></p></div>
+            <div class="detalle-item"><label>Fecha de entrada</label><p><%= fmtFecha(entrada.fecha_entrada, false) %></p></div>
+            <% if (entrada.numero_documento) { %>
+            <div class="detalle-item"><label>Número de documento</label><p><%= entrada.numero_documento %></p></div>
+            <% } %>
+            <% if (entrada.fecha_documento) { %>
+            <div class="detalle-item"><label>Fecha del documento</label><p><%= fmtFecha(entrada.fecha_documento, false) %></p></div>
+            <% } %>
+            <% if (entrada.proveedor_donante) { %>
+            <div class="detalle-item"><label><%= LABEL_ORIGEN[entrada.tipo] %></label><p><strong><%= entrada.proveedor_donante %></strong></p></div>
+            <% } %>
+            <% if (entrada.responsable_entrega) { %>
+            <div class="detalle-item"><label>Quien entrega</label><p><%= entrada.responsable_entrega %><% if(entrada.cargo_entrega) { %><br><span class="text-gris text-sm"><%= entrada.cargo_entrega %></span><% } %></p></div>
+            <% } %>
+            <% if (entrada.responsable_recepcion) { %>
+            <div class="detalle-item"><label>Quien recibe</label><p><%= entrada.responsable_recepcion %><% if(entrada.cargo_recepcion) { %><br><span class="text-gris text-sm"><%= entrada.cargo_recepcion %></span><% } %></p></div>
+            <% } %>
+          </div>
+          <% if (entrada.observaciones) { %>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--borde)">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gris)">Observaciones</label>
+            <p style="font-size:13px;margin-top:4px"><%= entrada.observaciones %></p>
+          </div>
+          <% } %>
+        </div>
+
+        <!-- Tabla de bienes -->
+        <div class="card">
+          <div class="card-header"><h3>Bienes recibidos (<%= bienes.length %>)</h3></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>N° Inventario</th><th>Nombre</th><th>Categoría</th><th>N° Serie</th><th>Área</th><th>Resguardante</th><th>Condición</th>
+                </tr>
+              </thead>
+              <tbody>
+              <% bienes.forEach(b => { %>
+                <tr>
+                  <td><a href="/inventario/<%= b.bien_id %>" style="font-weight:700;font-size:12px;color:var(--verde)"><%= b.numero_inventario %></a></td>
+                  <td style="font-size:13px;font-weight:600"><%= b.nombre %><% if(b.marca||b.modelo) { %><br><span class="text-gris text-sm"><%= [b.marca,b.modelo].filter(Boolean).join(' · ') %></span><% } %></td>
+                  <td class="text-sm"><%= CATEGORIAS[b.categoria] || b.categoria %></td>
+                  <td class="text-sm"><%= b.numero_serie || '—' %></td>
+                  <td class="text-sm"><%= b.area_nombre || '—' %></td>
+                  <td class="text-sm"><%= b.resguardante || '—' %></td>
+                  <td><span class="badge" style="background:<%= b.condicion_entrada==='bueno'?'#dcfce7':b.condicion_entrada==='regular'?'#fef9c3':'#fee2e2' %>;color:<%= b.condicion_entrada==='bueno'?'#166534':b.condicion_entrada==='regular'?'#854d0e':'#991b1b' %>"><%= CONDICIONES[b.condicion_entrada] %></span></td>
+                </tr>
+              <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Panel lateral -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <% if (canEdit) { %>
+        <div class="card">
+          <div class="card-header"><h3>Documento firmado</h3></div>
+          <% if (entrada.archivo_firmado) { %>
+            <a href="/uploads/entradas/<%= entrada.archivo_firmado %>" target="_blank" class="btn btn-secondary" style="display:block;text-align:center;margin-bottom:12px">
+              📎 Ver archivo firmado
+            </a>
+          <% } else { %>
+            <p class="text-sm text-gris" style="margin-bottom:12px">Sin archivo adjunto.</p>
+          <% } %>
+          <form method="POST" action="/entradas/<%= entrada.id %>/firmar" enctype="multipart/form-data">
+            <div class="form-group" style="margin-bottom:10px">
+              <label style="font-size:12px"><%= entrada.archivo_firmado ? 'Reemplazar archivo' : 'Subir acta firmada' %></label>
+              <input type="file" name="archivo_firmado" accept=".pdf,image/*" required>
+              <p class="text-sm text-gris" style="margin-top:4px">PDF, JPG o PNG · máx. 10 MB</p>
+            </div>
+            <button type="submit" class="btn btn-secondary btn-sm" style="width:100%">↑ Adjuntar</button>
+          </form>
+        </div>
+        <% } %>
+
+        <div class="card">
+          <div class="card-header"><h3>Registro</h3></div>
+          <p class="text-sm text-gris">Registrado por: <strong><%= entrada.creado_por_nombre %></strong></p>
+          <p class="text-sm text-gris" style="margin-top:4px">Fecha: <%= fmtFecha(entrada.creado_en, true) %></p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/js/app.js?v=12"></script>
+</body></html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css?v=12">
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1>Nueva Entrada de Bienes</h1>
+    <div class="topbar-user"><span><%= usuario.nombre %></span></div>
+  </div>
+  <div class="page-content">
+    <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+    <div class="flex items-center mb-16">
+      <a href="/entradas" class="btn btn-secondary">← Regresar</a>
+    </div>
+
+    <form method="POST" action="/entradas" id="frm-entrada">
+
+      <!-- 1 · Tipo y documento -->
+      <div class="card" style="max-width:900px;margin-bottom:16px">
+        <h4 style="margin-bottom:16px;color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em">1 · Tipo de entrada y documento soporte</h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Tipo de entrada *</label>
+            <select name="tipo" id="sel-tipo" required onchange="actualizarLabels()">
+              <option value="">— Seleccionar —</option>
+              <% Object.entries(TIPOS).forEach(([v,l]) => { %>
+                <option value="<%= v %>"><%= l %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Fecha de entrada *</label>
+            <input type="date" name="fecha_entrada" required value="<%= new Date().toISOString().split('T')[0] %>">
+          </div>
+          <div class="form-group">
+            <label>Número de documento</label>
+            <input type="text" name="numero_documento" placeholder="N° de factura, oficio, acta, etc.">
+          </div>
+          <div class="form-group">
+            <label>Fecha del documento</label>
+            <input type="date" name="fecha_documento">
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 · Origen -->
+      <div class="card" style="max-width:900px;margin-bottom:16px">
+        <h4 style="margin-bottom:16px;color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em">2 · Origen</h4>
+        <div class="form-grid">
+          <div class="form-group form-full">
+            <label id="lbl-origen">Proveedor / Donante / Unidad de origen</label>
+            <input type="text" name="proveedor_donante" placeholder="Nombre de la empresa, institución o unidad médica">
+          </div>
+          <div class="form-group">
+            <label>Quien entrega</label>
+            <input type="text" name="responsable_entrega" placeholder="Nombre de la persona que entrega">
+          </div>
+          <div class="form-group">
+            <label>Cargo</label>
+            <input type="text" name="cargo_entrega" placeholder="Cargo o puesto">
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 · Recepción -->
+      <div class="card" style="max-width:900px;margin-bottom:16px">
+        <h4 style="margin-bottom:16px;color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em">3 · Recepción en el hospital</h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Quien recibe *</label>
+            <input type="text" name="responsable_recepcion" placeholder="Nombre de quien recibe en el hospital">
+          </div>
+          <div class="form-group">
+            <label>Cargo</label>
+            <input type="text" name="cargo_recepcion" placeholder="Cargo o puesto">
+          </div>
+          <div class="form-group form-full">
+            <label>Observaciones generales</label>
+            <textarea name="observaciones" rows="2" placeholder="Estado general del embarque, incidencias, notas..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 · Bienes -->
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+          <h4 style="color:var(--gris);font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin:0">4 · Bienes recibidos</h4>
+          <button type="button" onclick="addBien()" class="btn btn-secondary btn-sm">+ Agregar bien</button>
+        </div>
+        <p class="text-sm text-gris" style="margin-bottom:16px">Cada bien se registrará directamente en el inventario al guardar esta entrada.</p>
+        <div id="bienes-container"></div>
+      </div>
+
+      <div class="flex gap-8">
+        <button type="submit" class="btn btn-primary">Registrar entrada</button>
+        <a href="/entradas" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Template de fila de bien -->
+<script type="text/template" id="tpl-bien">
+<div class="bien-row" style="border:1px solid var(--borde);border-radius:8px;padding:16px;margin-bottom:12px;position:relative">
+  <button type="button" onclick="removeBien(this)"
+    style="position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;color:var(--gris);font-size:16px;line-height:1;padding:2px 6px"
+    title="Quitar bien">✕</button>
+  <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr">
+    <div class="form-group">
+      <label>N° Inventario *</label>
+      <input type="text" name="bienes[N][numero_inventario]" required placeholder="Ej. HBC-001">
+    </div>
+    <div class="form-group" style="grid-column:span 2">
+      <label>Nombre del bien *</label>
+      <input type="text" name="bienes[N][nombre]" required placeholder="Descripción del bien">
+    </div>
+    <div class="form-group">
+      <label>Categoría *</label>
+      <select name="bienes[N][categoria]" required>
+        <option value="">— Seleccionar —</option>
+        OPCIONES_CATEGORIA
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Marca</label>
+      <input type="text" name="bienes[N][marca]" placeholder="Marca">
+    </div>
+    <div class="form-group">
+      <label>Modelo</label>
+      <input type="text" name="bienes[N][modelo]" placeholder="Modelo">
+    </div>
+    <div class="form-group">
+      <label>N° de serie</label>
+      <input type="text" name="bienes[N][numero_serie]" placeholder="Número de serie" data-no-upper>
+    </div>
+    <div class="form-group">
+      <label>Área asignada</label>
+      <select name="bienes[N][area_id]">
+        <option value="">— Sin área —</option>
+        OPCIONES_AREA
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Resguardante</label>
+      <input type="text" name="bienes[N][resguardante]" placeholder="Nombre del resguardante">
+    </div>
+    <div class="form-group">
+      <label>Condición al llegar</label>
+      <select name="bienes[N][condicion]">
+        <option value="bueno">Bueno</option>
+        <option value="regular">Regular</option>
+        <option value="malo">Malo</option>
+      </select>
+    </div>
+    <div class="form-group form-full">
+      <label>Observaciones del bien</label>
+      <input type="text" name="bienes[N][observaciones]" placeholder="Observaciones particulares de este bien (opcional)">
+    </div>
+  </div>
+</div>
+</script>
+
+<script src="/js/app.js?v=12"></script>
+<script>
+var OPCIONES_CATEGORIA = '<% Object.entries(CATEGORIAS).forEach(([v,l]) => { %><option value="<%= v %>"><%= l %></option><% }) %>';
+var OPCIONES_AREA = '<option value="">— Sin área —</option><% areas.forEach(a => { %><option value="<%= a.id %>"><%= a.nombre %></option><% }) %>';
+var bienIdx = 0;
+
+function addBien() {
+  var tpl = document.getElementById('tpl-bien').innerHTML
+    .replace(/\[N\]/g, '[' + bienIdx + ']')
+    .replace('OPCIONES_CATEGORIA', OPCIONES_CATEGORIA)
+    .replace('OPCIONES_AREA', OPCIONES_AREA);
+  var div = document.createElement('div');
+  div.innerHTML = tpl;
+  document.getElementById('bienes-container').appendChild(div.firstElementChild);
+  bienIdx++;
+  actualizarContador();
+}
+
+function removeBien(btn) {
+  var container = document.getElementById('bienes-container');
+  if (container.querySelectorAll('.bien-row').length <= 1) return;
+  btn.closest('.bien-row').remove();
+  actualizarContador();
+}
+
+function actualizarContador() {
+  var n = document.querySelectorAll('.bien-row').length;
+  var h4 = document.querySelector('#frm-entrada h4:last-of-type');
+  // Actualizar header con conteo si aplica
+}
+
+var LABELS_ORIGEN = {
+  compra: 'Proveedor *',
+  donacion: 'Donante *',
+  transferencia: 'Unidad médica de origen *',
+  otro: 'Origen'
+};
+function actualizarLabels() {
+  var tipo = document.getElementById('sel-tipo').value;
+  var lbl = document.getElementById('lbl-origen');
+  lbl.textContent = LABELS_ORIGEN[tipo] || 'Proveedor / Donante / Unidad de origen';
+}
+
+// Agregar primer bien al cargar
+addBien();
+</script>
+</body></html>
