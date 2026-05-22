@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css?v=11">
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1>Nuevo Resguardo</h1>
+    <div class="topbar-user"><span><%= usuario.nombre %></span></div>
+  </div>
+  <div class="page-content">
+    <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+
+    <div class="flex items-center mb-16">
+      <a href="/resguardos" class="btn btn-secondary">← Regresar</a>
+    </div>
+
+    <div class="two-col" style="align-items:start">
+
+      <!-- Paso 1: seleccionar resguardante -->
+      <div class="card">
+        <div class="card-header"><h3>1 · Seleccionar resguardante</h3></div>
+        <form method="GET" action="/resguardos/nuevo">
+          <div class="form-group" style="margin-bottom:12px">
+            <label>Resguardante *</label>
+            <select name="resguardante" required onchange="this.form.submit()">
+              <option value="">— Seleccionar —</option>
+              <% resguardantes.forEach(r => { %>
+                <option value="<%= r.resguardante %>" <%= resguardanteSeleccionado === r.resguardante ? 'selected' : '' %>>
+                  <%= r.resguardante %>
+                </option>
+              <% }) %>
+            </select>
+          </div>
+        </form>
+        <p class="text-sm text-gris" style="margin-top:8px">
+          Solo aparecen personas que tienen bienes asignados como resguardantes en el inventario.
+        </p>
+      </div>
+
+      <!-- Instrucciones -->
+      <div class="card">
+        <div class="card-header"><h3>¿Cómo funciona?</h3></div>
+        <ol style="padding-left:20px;font-size:13px;line-height:2.2">
+          <li>Selecciona el resguardante de la lista</li>
+          <li>Marca los bienes que incluirá el resguardo</li>
+          <li>El sistema genera un PDF con tres espacios de firma</li>
+          <li>Imprime el PDF, recaba las firmas físicas</li>
+          <li>Sube el documento firmado (escaneado o foto) al sistema</li>
+        </ol>
+      </div>
+
+    </div>
+
+    <% if (resguardanteSeleccionado && bienes.length > 0) { %>
+    <!-- Paso 2: seleccionar bienes y crear -->
+    <form method="POST" action="/resguardos" style="margin-top:16px">
+      <input type="hidden" name="resguardante" value="<%= resguardanteSeleccionado %>">
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <h3>2 · Bienes de <em><%= resguardanteSeleccionado %></em></h3>
+          <div style="display:flex;gap:8px">
+            <button type="button" onclick="selAll(true)" class="btn btn-sm btn-secondary">Seleccionar todos</button>
+            <button type="button" onclick="selAll(false)" class="btn btn-sm btn-secondary">Quitar todos</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:40px"><input type="checkbox" id="chk-all" checked onchange="selAll(this.checked)"></th>
+                <th>N° Inventario</th>
+                <th>Nombre</th>
+                <th>Categoría</th>
+                <th>Área</th>
+                <th>Condición</th>
+              </tr>
+            </thead>
+            <tbody>
+            <% bienes.forEach(b => { %>
+              <tr>
+                <td><input type="checkbox" name="bienes_ids" value="<%= b.id %>" class="chk-bien" checked></td>
+                <td><strong style="font-size:12px"><%= b.numero_inventario %></strong></td>
+                <td style="font-size:13px"><%= b.nombre %></td>
+                <td class="text-sm"><%= CATEGORIAS[b.categoria] || b.categoria %></td>
+                <td class="text-sm"><%= b.area_nombre || '—' %></td>
+                <td class="text-sm"><%= b.condicion %></td>
+              </tr>
+            <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="max-width:600px;margin-bottom:16px">
+        <div class="card-header"><h3>3 · Observaciones (opcional)</h3></div>
+        <textarea name="notas" rows="3" placeholder="Notas adicionales para el resguardo..." style="width:100%;box-sizing:border-box"></textarea>
+      </div>
+
+      <div class="flex gap-8">
+        <button type="submit" class="btn btn-primary">Generar resguardo</button>
+        <a href="/resguardos/nuevo" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+    <% } else if (resguardanteSeleccionado && bienes.length === 0) { %>
+    <div class="alert alert-error" style="margin-top:16px">
+      ✕ No se encontraron bienes activos para "<%= resguardanteSeleccionado %>".
+    </div>
+    <% } %>
+
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+function selAll(val) {
+  document.querySelectorAll('.chk-bien').forEach(c => c.checked = val);
+  var all = document.getElementById('chk-all');
+  if (all) all.checked = val;
+}
+</script>
+</body></html>

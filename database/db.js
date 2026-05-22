@@ -266,6 +266,37 @@ async function initDB() {
       MODIFY COLUMN tipo ENUM('oficio','memorandum','circular') NOT NULL`);
   }
 
+  // Tablas de resguardos de inventario
+  await query(`CREATE TABLE IF NOT EXISTS resguardos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    folio VARCHAR(20) NOT NULL UNIQUE,
+    consecutivo INT NOT NULL,
+    anio INT NOT NULL,
+    resguardante VARCHAR(200) NOT NULL,
+    estado ENUM('pendiente','firmado') NOT NULL DEFAULT 'pendiente',
+    notas TEXT NULL,
+    archivo_firmado VARCHAR(255) NULL,
+    creado_por_id INT NOT NULL,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    firmado_en DATETIME NULL,
+    FOREIGN KEY (creado_por_id) REFERENCES usuarios(id)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+  await query(`CREATE TABLE IF NOT EXISTS resguardo_bienes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    resguardo_id INT NOT NULL,
+    bien_id INT NOT NULL,
+    numero_inventario VARCHAR(50) NOT NULL,
+    nombre VARCHAR(200) NOT NULL,
+    categoria VARCHAR(50) NOT NULL,
+    area_nombre VARCHAR(100) NULL,
+    marca VARCHAR(100) NULL,
+    modelo VARCHAR(100) NULL,
+    condicion VARCHAR(20) NOT NULL,
+    FOREIGN KEY (resguardo_id) REFERENCES resguardos(id) ON DELETE CASCADE,
+    FOREIGN KEY (bien_id) REFERENCES bienes(id)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
   // Datos iniciales solo si las tablas están vacías
   const [countRow] = await query('SELECT COUNT(*) as c FROM areas');
   if (countRow.c === 0) {

@@ -39,6 +39,9 @@
       <a href="/inventario/importar"><span class="icon">⬆</span> Importar CSV</a>
     <% } %>
     <a href="/inventario"><span class="icon">📦</span> Ver Inventario</a>
+    <% if (usuario && ['admin','director','jefe_area'].includes(usuario.rol)) { %>
+      <a href="/resguardos"><span class="icon">📋</span> Resguardos</a>
+    <% } %>
   </div>
   <% if (usuario && usuario.rol === 'admin') { %>
   <div class="sidebar-section">

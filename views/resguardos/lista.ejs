@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css?v=11">
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1>Resguardos de Inventario</h1>
+    <div class="topbar-user"><span><%= usuario.nombre %></span></div>
+  </div>
+  <div class="page-content">
+    <% if (success && success.length) { %><div class="alert alert-success">✓ <%= success[0] %></div><% } %>
+    <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+
+    <% if (esJefeArea) { %>
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:13px">
+      Aquí puedes consultar los resguardos firmados donde figuras como responsable de los bienes.
+    </div>
+    <% } %>
+
+    <div class="flex items-center justify-between mb-16">
+      <% if (!esJefeArea) { %>
+        <a href="/resguardos/nuevo" class="btn btn-primary">+ Nuevo Resguardo</a>
+      <% } else { %>
+        <span></span>
+      <% } %>
+    </div>
+
+    <% if (!esJefeArea) { %>
+    <form method="GET" class="filtros-bar" style="margin-bottom:16px">
+      <input type="text" name="resguardante" placeholder="Buscar por resguardante..." value="<%= filtros.resguardante %>">
+      <select name="estado">
+        <option value="">Todos los estados</option>
+        <option value="pendiente" <%= filtros.estado==='pendiente'?'selected':'' %>>Pendiente de firma</option>
+        <option value="firmado" <%= filtros.estado==='firmado'?'selected':'' %>>Firmado</option>
+      </select>
+      <button type="submit" class="btn btn-secondary">Filtrar</button>
+      <a href="/resguardos" class="btn btn-secondary">Limpiar</a>
+    </form>
+    <% } %>
+
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Folio</th>
+              <th>Resguardante</th>
+              <th>Bienes</th>
+              <th>Estado</th>
+              <th>Creado</th>
+              <th>Firmado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+          <% if (resguardos.length === 0) { %>
+            <tr><td colspan="7" class="text-center text-gris" style="padding:30px">Sin resguardos registrados</td></tr>
+          <% } %>
+          <% resguardos.forEach(r => { %>
+            <tr>
+              <td><strong style="font-size:12px;color:var(--verde)"><%= r.folio %></strong></td>
+              <td style="font-weight:600;font-size:13px"><%= r.resguardante %></td>
+              <td class="text-sm text-center"><%= r.total_bienes %></td>
+              <td>
+                <% if (r.estado === 'firmado') { %>
+                  <span class="badge badge-enviado">Firmado</span>
+                <% } else { %>
+                  <span class="badge badge-archivado">Pendiente</span>
+                <% } %>
+              </td>
+              <td class="text-sm"><%= fmtFecha(r.creado_en, false) %></td>
+              <td class="text-sm"><%= r.firmado_en ? fmtFecha(r.firmado_en, false) : '—' %></td>
+              <td style="display:flex;gap:6px">
+                <a href="/resguardos/<%= r.id %>" class="btn btn-sm btn-secondary">Ver</a>
+                <a href="/resguardos/<%= r.id %>/pdf" target="_blank" class="btn btn-sm btn-secondary">📄 PDF</a>
+              </td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+</body></html>

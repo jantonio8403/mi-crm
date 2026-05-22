@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title><%= titulo %> — HBC Berriozabal</title>
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css?v=11">
+</head>
+<body>
+<%- include('../layout/sidebar') %>
+<div class="main-wrapper">
+  <div class="topbar">
+    <h1><%= resguardo.folio %></h1>
+    <div class="topbar-user"><span><%= usuario.nombre %></span></div>
+  </div>
+  <div class="page-content">
+    <% if (success && success.length) { %><div class="alert alert-success">✓ <%= success[0] %></div><% } %>
+    <% if (error && error.length) { %><div class="alert alert-error">✕ <%= error[0] %></div><% } %>
+
+    <div class="flex items-center mb-16" style="gap:8px">
+      <a href="/resguardos" class="btn btn-secondary">← Regresar</a>
+      <a href="/resguardos/<%= resguardo.id %>/pdf" target="_blank" class="btn btn-primary">📄 Ver / Imprimir PDF</a>
+    </div>
+
+    <div class="two-col" style="align-items:start">
+
+      <!-- Columna principal: datos + bienes -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <!-- Datos del resguardo -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Datos del resguardo</h3>
+            <% if (resguardo.estado === 'firmado') { %>
+              <span class="badge badge-enviado">Firmado</span>
+            <% } else { %>
+              <span class="badge badge-archivado">Pendiente de firma</span>
+            <% } %>
+          </div>
+          <div class="detalle-grid">
+            <div class="detalle-item"><label>Folio</label><p><strong style="color:var(--verde)"><%= resguardo.folio %></strong></p></div>
+            <div class="detalle-item"><label>Resguardante</label><p><strong><%= resguardo.resguardante %></strong></p></div>
+            <div class="detalle-item"><label>Fecha de generación</label><p><%= fmtFecha(resguardo.creado_en, false) %></p></div>
+            <div class="detalle-item"><label>Generado por</label><p><%= resguardo.creado_por_nombre || '—' %></p></div>
+            <% if (resguardo.firmado_en) { %>
+            <div class="detalle-item"><label>Fecha de firma</label><p><%= fmtFecha(resguardo.firmado_en, false) %></p></div>
+            <% } %>
+          </div>
+          <% if (resguardo.notas) { %>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--borde)">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gris)">Observaciones</label>
+            <p style="font-size:13px;margin-top:6px;white-space:pre-wrap"><%= resguardo.notas %></p>
+          </div>
+          <% } %>
+        </div>
+
+        <!-- Tabla de bienes incluidos -->
+        <div class="card">
+          <div class="card-header"><h3>Bienes incluidos (<%= bienes.length %>)</h3></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>N° Inventario</th>
+                  <th>Nombre</th>
+                  <th>Categoría</th>
+                  <th>Área</th>
+                  <th>Marca / Modelo</th>
+                  <th>Condición</th>
+                </tr>
+              </thead>
+              <tbody>
+              <% bienes.forEach(b => { %>
+                <tr>
+                  <td><strong style="font-size:12px"><%= b.numero_inventario %></strong></td>
+                  <td style="font-size:13px;font-weight:600"><%= b.nombre %></td>
+                  <td class="text-sm"><%= CATEGORIAS[b.categoria] || b.categoria %></td>
+                  <td class="text-sm"><%= b.area_nombre || '—' %></td>
+                  <td class="text-sm"><%= [b.marca, b.modelo].filter(Boolean).join(' / ') || '—' %></td>
+                  <td class="text-sm">
+                    <span class="badge" style="background:<%= b.condicion==='bueno'?'#dcfce7':b.condicion==='regular'?'#fef9c3':'#fee2e2' %>;color:<%= b.condicion==='bueno'?'#166534':b.condicion==='regular'?'#854d0e':'#991b1b' %>">
+                      <%= CONDICIONES[b.condicion] || b.condicion %>
+                    </span>
+                  </td>
+                </tr>
+              <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Panel lateral -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <!-- Archivo firmado -->
+        <div class="card">
+          <div class="card-header"><h3>Documento firmado</h3></div>
+          <% if (resguardo.archivo_firmado) { %>
+            <div style="margin-bottom:12px">
+              <a href="/uploads/resguardos/<%= resguardo.archivo_firmado %>" target="_blank" class="btn btn-secondary" style="width:100%;text-align:center;display:block">
+                📎 Ver archivo firmado
+              </a>
+            </div>
+          <% } else { %>
+            <p class="text-sm text-gris" style="margin-bottom:12px">Sin archivo firmado adjunto.</p>
+          <% } %>
+
+          <% if (canEdit) { %>
+          <form method="POST" action="/resguardos/<%= resguardo.id %>/firmar" enctype="multipart/form-data">
+            <div class="form-group" style="margin-bottom:10px">
+              <label style="font-size:12px"><%= resguardo.estado === 'pendiente' ? 'Subir documento firmado' : 'Reemplazar documento' %></label>
+              <input type="file" name="archivo_firmado" accept=".pdf,image/*">
+              <p class="text-sm text-gris" style="margin-top:4px">PDF, JPG o PNG · máx. 10 MB</p>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm" style="width:100%">
+              <%= resguardo.estado === 'pendiente' ? '✓ Marcar como firmado' : '↑ Actualizar archivo' %>
+            </button>
+          </form>
+          <% } %>
+        </div>
+
+        <!-- Firmas requeridas -->
+        <div class="card">
+          <div class="card-header"><h3>Firmas requeridas</h3></div>
+          <div style="font-size:13px;line-height:2.2">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:16px"><%= resguardo.estado==='firmado'?'✅':'⬜' %></span>
+              <div><strong><%= resguardo.resguardante %></strong><br><span class="text-gris text-sm">Resguardante</span></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+              <span style="font-size:16px"><%= resguardo.estado==='firmado'?'✅':'⬜' %></span>
+              <div><strong>Directora</strong><br><span class="text-gris text-sm">Directora del Hospital</span></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+              <span style="font-size:16px"><%= resguardo.estado==='firmado'?'✅':'⬜' %></span>
+              <div><strong>Administradora</strong><br><span class="text-gris text-sm">Administradora</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+</body></html>
